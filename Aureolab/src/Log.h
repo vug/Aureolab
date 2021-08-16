@@ -3,8 +3,7 @@
 
 class Log {
 public:
-	// Initialize the Logger before using it
-	static void Init();
+	Log() = delete;
 
 	template<typename... Args>
 	static void Critical(fmt::format_string<Args...> fmt, Args &&...args) {
@@ -37,5 +36,6 @@ public:
 	}
 
 private:
+	static std::shared_ptr<spdlog::logger> Initialize();
 	static std::shared_ptr<spdlog::logger> logger_;
 };

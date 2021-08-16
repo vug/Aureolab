@@ -1,7 +1,6 @@
 ﻿#include "Log.h"
 
 int main() {
-	Log::Init();
 	Log::Critical("This is so critical!");
 	Log::Error("Halt! Ein Error!");
 	Log::Warning("I'm warning you.");
