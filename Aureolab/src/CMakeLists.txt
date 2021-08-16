@@ -1,4 +1,7 @@
-﻿add_executable (Aureolab Aureolab.cpp)
+﻿add_executable(Aureolab 
+	Aureolab.cpp 
+	Log.cpp Log.h
+)
 
 target_link_libraries(
 	Aureolab PRIVATE 
