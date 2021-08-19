@@ -1,5 +1,9 @@
 #pragma once
 #include <spdlog/spdlog.h>
+//#include <../../spdlog-src/include/spdlog/spdlog.h>
+//#include <../../out/build/x64-Debug/_deps/spdlog-src/include/spdlog/spdlog.h>
+
+#include <memory>
 
 class Log {
 public:

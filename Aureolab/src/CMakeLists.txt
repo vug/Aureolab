@@ -1,6 +1,6 @@
 ﻿add_executable(Aureolab 
 	Aureolab.cpp 
-	Log.cpp Log.h
+	Core/Log.cpp Core/Log.h
 )
 
 target_link_libraries(
