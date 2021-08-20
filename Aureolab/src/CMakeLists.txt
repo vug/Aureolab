@@ -9,6 +9,7 @@ target_link_libraries(
 	Aureolab PUBLIC 
 	spdlog
 	opengl32  # assuming this is system-wide available
+	glad
 	glfw
 )
 
