@@ -8,6 +8,8 @@
 target_link_libraries(
 	Aureolab PUBLIC 
 	spdlog
+	opengl32  # assuming this is system-wide available
+	glfw
 )
 
 target_compile_features(Aureolab PRIVATE cxx_std_17)
