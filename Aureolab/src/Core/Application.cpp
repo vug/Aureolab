@@ -14,6 +14,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     app->OnKeyPress(key, scancode, action, mods);
 }
 
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
+
 Application::Application(const std::string& name) : name(name) { 
     // Window::Initialize
     if (!glfwInit()) {
@@ -42,6 +47,7 @@ Application::Application(const std::string& name) : name(name) {
     glfwSetWindowUserPointer(window, this);
     glfwSetKeyCallback(window, key_callback);
     glfwSetErrorCallback(error_callback);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     {
         // GraphicsContext::Initialize
@@ -64,10 +70,6 @@ void Application::Run() {
 	Log::Info("{} is running. Creating window...", name);
 
     while (!glfwWindowShouldClose(window)) {
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-        glViewport(0, 0, width, height);
-
         for (auto layer : layers) {
             layer->OnUpdate(0.1f);
         }
