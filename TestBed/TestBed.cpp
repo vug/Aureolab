@@ -1,5 +1,7 @@
-#include "Core/EntryPoint.h"
 #include "Core/Log.h"
+#include "Core/EntryPoint.h"
+#include "Core/Application.h"
+#include "Core/Layer.h"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -8,13 +10,11 @@
 #include <array>
 #include <iostream>
 
-class TestBed : public Application {
+class Layer1 : public Layer {
 public:
-	TestBed(std::vector<std::string> args) : Application("AureLab Test Bed") {
-		Log::Info("Hi from TestBed! argc: {}, argv[0]: {}", args.size(), args[0]);
-	}
+    Layer1() : Layer("FirstLayer") { }
 
-	void OnStart() {
+    void OnAttach() {
         static const struct
         {
             float x, y;
@@ -89,9 +89,9 @@ public:
 
         glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)(sizeof(float) * 2));
         glEnableVertexAttribArray(vcol_location);
-	}
+    }
 
-	void OnUpdate(float timestep) {
+    void OnUpdate(float ts) {
         GLfloat MVP[] = { // identity
             1.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 1.0f, 0.0f, 0.0f,
@@ -105,25 +105,31 @@ public:
         glUseProgram(program);
         glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)MVP);
         glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(unsigned int), GL_UNSIGNED_INT, 0);
-	}
+    }
 
-	void OnEnd() {
+    void OnDetach() {
         // optional
         glDeleteVertexArrays(1, &vao);
         glDeleteBuffers(1, &vbo);
         glDeleteBuffers(1, &ebo);
         glDeleteProgram(program);
-	}
-
-    void OnKeyPress(int key, int scancode, int action, int mods) {
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-            Close();
     }
+
 private:
     GLuint vbo, vao, ebo;
     GLuint program;
     GLint mvp_location;
     std::array<unsigned int, 6> indices;
+};
+
+class TestBed : public Application {
+public:
+	TestBed(std::vector<std::string> args) : Application("AureLab Test Bed") {
+		Log::Info("Hi from TestBed! argc: {}, argv[0]: {}", args.size(), args[0]);
+
+        Layer* layer = new Layer1();
+        PushLayer(new Layer1());
+	}
 };
 
 Application* CreateApplication(std::vector<std::string> args) {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LayerList.h"
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -7,16 +9,12 @@
 #include <memory>
 #include <string>
 
-class Application {
+class Application : public LayerList {
 public:
 	Application(const std::string& name);
-	virtual void OnStart() = 0;
-	virtual void OnUpdate(float timestep) = 0;
-	virtual void OnEnd() = 0;
-	virtual void OnKeyPress(int key, int scancode, int action, int mods) = 0;
-
-	void Close();
 	GLFWwindow* GetWindow() { return window; }
+	void OnKeyPress(int key, int scancode, int action, int mods);
+	void Close();
 private:
 	void Run();
 	GLFWwindow* window = nullptr;

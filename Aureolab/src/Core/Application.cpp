@@ -14,13 +14,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     app->OnKeyPress(key, scancode, action, mods);
 }
 
-Application::Application(const std::string& name) : name(name) { }
-
-void Application::Run() {
-	Log::Info("{} is running. Creating window...", name);
-
-    glfwSetErrorCallback(error_callback);
-
+Application::Application(const std::string& name) : name(name) { 
+    // Window::Initialize
     if (!glfwInit()) {
         Log::Critical("Could not initialize GLFW. Exiting...");
         return;
@@ -46,33 +41,59 @@ void Application::Run() {
 
     glfwSetWindowUserPointer(window, this);
     glfwSetKeyCallback(window, key_callback);
+    glfwSetErrorCallback(error_callback);
 
-    glfwMakeContextCurrent(window);
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    glfwSwapInterval(1);  // VSync enabled. (0 for disabling)
+    {
+        // GraphicsContext::Initialize
+        glfwMakeContextCurrent(window);
+        gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    }
+
+    glfwSwapInterval(1);  // VSync enabled. (0 for disabling), requires context
 
     Log::Info("OpenGL Info:");
     Log::Info("Renderer: {}", glGetString(GL_RENDERER));
     Log::Info("Vendor: {}", glGetString(GL_VENDOR));
     Log::Info("Version: {}", glGetString(GL_VERSION));
 
+    // Renderer::Initialize
+    // TODO: Enable GL debugging, other glEnable (blending, blend function, depth test etc) to application defaults
+}
+
+void Application::Run() {
+	Log::Info("{} is running. Creating window...", name);
+
     while (!glfwWindowShouldClose(window)) {
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
 
-        OnStart();
-        OnUpdate(0.1f);
-        OnEnd();
+        for (auto layer : layers) {
+            layer->OnUpdate(0.1f);
+        }
 
-        glfwSwapBuffers(window);
+        // Window::OnUpdate
         glfwPollEvents();
+        {
+            // GraphicsContext
+            glfwSwapBuffers(window);
+        }
     }
 
+    for (int i = 0; i < layers.size(); i++) {
+        PopLayer();
+    }
+
+    // Window::Shutdown
     glfwDestroyWindow(window);
     glfwTerminate();
 }
 
 void Application::Close() {
     glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
+void Application::OnKeyPress(int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        Close();
 }
