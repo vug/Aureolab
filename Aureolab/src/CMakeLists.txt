@@ -3,6 +3,7 @@
 	Core/Log.cpp Core/Log.h
     Core/EntryPoint.h 
 	Core/Application.cpp Core/Application.h
+	Core/Layer.h Core/LayerList.h Core/LayerList.cpp
 )
 
 target_link_libraries(
