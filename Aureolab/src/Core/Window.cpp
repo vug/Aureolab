@@ -4,16 +4,14 @@
 
 #include <cassert>
 
-Window* Window::CreateAndInitialize(const std::string& name, int width, int height) {
+Window* Window::Create(const std::string& name, int width, int height) {
 	Window* w = nullptr;
 	switch (PlatformUtils::GetPlatform()) {
 	case Platform::WINDOWS:
-		w = new WindowsWindow();
+		w = new WindowsWindow(name, width, height);
 		break;
 	default:
-		assert("Concrete window for this platform is not implemented yet.");
+		assert("Concrete window for this platform has not been implemented yet.");
 	}
-
-	w->Initialize(name, width, height);
 	return w;
 }

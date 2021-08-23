@@ -19,7 +19,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void WindowsWindow::Initialize(const std::string& name, int width, int height) {
+WindowsWindow::WindowsWindow(const std::string& name, int width, int height) 
+    : window(nullptr) {
     if (!glfwInit()) {
         Log::Critical("Could not initialize GLFW. Exiting...");
         return;

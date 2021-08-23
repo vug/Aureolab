@@ -4,7 +4,7 @@
 #include <string>
 
 Application::Application(const std::string& name) : name(name) { 
-    window = Window::CreateAndInitialize(name, 1000, 1000);
+    window = Window::Create(name, 1000, 1000);
 
     // Renderer::Initialize
     // TODO: Enable GL debugging, other glEnable (blending, blend function, depth test etc) to application defaults
