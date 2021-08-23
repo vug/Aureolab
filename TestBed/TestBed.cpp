@@ -3,8 +3,6 @@
 #include "Core/Application.h"
 #include "Core/Layer.h"
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
 #include <array>
@@ -116,10 +114,10 @@ public:
     }
 
 private:
-    GLuint vbo, vao, ebo;
-    GLuint program;
-    GLint mvp_location;
-    std::array<unsigned int, 6> indices;
+    GLuint vbo = -1, vao = -1, ebo = -1;
+    GLuint program = -1;
+    GLint mvp_location = -1;
+    std::array<unsigned int, 6> indices = {};
 };
 
 class TestBed : public Application {

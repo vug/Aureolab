@@ -11,7 +11,7 @@ Application::Application(const std::string& name) : name(name) {
 }
 
 void Application::Run() {
-	Log::Info("{} ", name);
+	Log::Info("{} app entering main loop...", name);
 
     while (window->IsRunning()) {
         for (auto layer : layers) {
