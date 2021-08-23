@@ -31,6 +31,7 @@ WindowsWindow::WindowsWindow(const std::string& name, int width, int height)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // other hints: GLFW_OPENGL_DEBUG_CONTEXT, GLFW_COCOA_RETINA_FRAMEBUFFER 
 
+    // Creates both a window and a graphics context.
     window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
     if (!window) {
         glfwTerminate();
@@ -43,27 +44,11 @@ WindowsWindow::WindowsWindow(const std::string& name, int width, int height)
     glfwSetErrorCallback(error_callback);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    {
-        // GraphicsContext::Initialize
-        glfwMakeContextCurrent(window);
-        gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-
-        Log::Info("OpenGL Info:");
-        Log::Info("Renderer: {}", glGetString(GL_RENDERER));
-        Log::Info("Vendor: {}", glGetString(GL_VENDOR));
-        Log::Info("Version: {}", glGetString(GL_VERSION));
-    }
-
-    glfwSwapInterval(1);  // VSync enabled. (0 for disabling), requires context
-    Log::Info("GLFW Window and graphics context are initialized");
+    Log::Info("GLFW Window has been initialized");
 }
 
 void WindowsWindow::OnUpdate() {
     glfwPollEvents();
-    {
-        // GraphicsContext
-        glfwSwapBuffers(window);
-    }
 }
 
 bool WindowsWindow::IsRunning() {
