@@ -14,6 +14,9 @@ public:
 
 	virtual int GetWidth() override;
 	virtual int GetHeight() override;
+
+	// needs to be casted after acquired
+	virtual void* GetNativeWindow() override { return window; }
 private:
 	GLFWwindow* window;
 };
