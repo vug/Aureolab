@@ -3,9 +3,11 @@
     Core/EntryPoint.h 
 	Core/Application.cpp Core/Application.h
 	Core/Layer.h Core/LayerList.h Core/LayerList.cpp
-	Core/Window.h Core/Window.cpp
 	Platform/Platform.h
+	Core/Window.h Core/Window.cpp
 	Platform/WindowsWindow.h  Platform/WindowsWindow.cpp
+	Core/GraphicsContext.h Core/GraphicsContext.cpp
+    Platform/OpenGLContext.h Platform/OpenGLContext.cpp
 )
 
 target_include_directories(Aureolab PUBLIC
