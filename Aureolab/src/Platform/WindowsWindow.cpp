@@ -26,10 +26,13 @@ WindowsWindow::WindowsWindow(const std::string& name, int width, int height)
         return;
     }
 
+    // Graphics Context related hints.
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API); // GLFW_OPENGL_ES_API
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // other hints: GLFW_OPENGL_DEBUG_CONTEXT, GLFW_COCOA_RETINA_FRAMEBUFFER 
+    // glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); // TODO: when in debug mode
+    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // TODO: removes deprecated features
 
     // Creates both a window and a graphics context.
     window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
