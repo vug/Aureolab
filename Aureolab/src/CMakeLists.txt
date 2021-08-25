@@ -10,9 +10,12 @@
     Platform/OpenGLContext.h Platform/OpenGLContext.cpp
 )
 
-target_include_directories(Aureolab PUBLIC
-	.
-)
+# If a debug build configuration define AL_DEBUG processor macro
+add_compile_definitions("$<$<CONFIG:Debug>:AL_DEBUG>")
+add_compile_definitions("$<$<CONFIG:RelWithDebInfo>:AL_DEBUG>")
+
+# Make Aureolab/src header files to be included via relative path from src/ folder, e.g. "Core/Application.h" or "Platform/Platform.h"
+target_include_directories(Aureolab PUBLIC .)
 
 target_link_libraries(
 	Aureolab PUBLIC 

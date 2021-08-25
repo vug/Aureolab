@@ -4,6 +4,6 @@ project(Aureolab
         VERSION 0.1
         DESCRIPTION "An engine & editor for studying computer graphics")
 
-add_subdirectory(Aureolab/src)
 add_subdirectory(Aureolab/vendors)
+add_subdirectory(Aureolab/src)
 add_subdirectory(TestBed)
