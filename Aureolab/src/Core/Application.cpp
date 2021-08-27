@@ -3,12 +3,6 @@
 
 #include <string>
 
-#ifdef AL_DEBUG
-int y;
-#else
-int x;
-#endif
-
 Application::Application(const std::string& name) : name(name) { 
     window = Window::Create(name, 1000, 1000);
     context = GraphicsContext::Create(window);
