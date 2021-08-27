@@ -13,6 +13,8 @@ public:
 	virtual int GetWidth() = 0;
 	virtual int GetHeight() = 0;
 
+	virtual float GetTime() = 0;
+
 	// needs to be casted to concrete Window after acquired
 	virtual void* GetNativeWindow() = 0;
 };

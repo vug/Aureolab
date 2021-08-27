@@ -76,3 +76,7 @@ int WindowsWindow::GetHeight() {
     glfwGetWindowSize(window, nullptr, &h);
     return h;
 }
+
+float WindowsWindow::GetTime() {
+    return glfwGetTime();
+}
