@@ -31,7 +31,7 @@ public:
 
 	template<typename TEvent> // A Concrete Event class
 	bool Dispatch(std::function<void(TEvent&)> func) {
-		static_assert(std::is_base_of_v<Event, TEvent>);
+		static_assert(std::is_base_of_v<Event, TEvent>, "Given type should be derived from Event class");
 
 		// Check whether incoming concrete event type is the target type of this Dispatch call
 		if (typeid(TEvent) == typeid(event)) { // Reference to event cannot be dynamic_cast'ed safely

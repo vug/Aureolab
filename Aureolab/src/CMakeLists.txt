@@ -8,7 +8,7 @@
 	Platform/WindowsWindow.h  Platform/WindowsWindow.cpp
 	Core/GraphicsContext.h Core/GraphicsContext.cpp
     Platform/OpenGLContext.h Platform/OpenGLContext.cpp
-    Events/Event.h Events/WindowEvent.h
+    Events/Event.h Events/WindowEvent.h Events/KeyEvent.h Events/MouseEvent.h
 )
 
 # If a debug build configuration define AL_DEBUG processor macro
