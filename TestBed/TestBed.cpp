@@ -3,6 +3,8 @@
 #include "Core/Application.h"
 #include "Core/Layer.h"
 #include "Events/Event.h"
+#include "Events/KeyEvent.h"
+#include "Events/MouseEvent.h"
 
 #include <glad/glad.h>
 
@@ -115,7 +117,44 @@ public:
     }
 
     void OnEvent(Event& ev) {
+        auto dispatcher = EventDispatcher(ev);
+        dispatcher.Dispatch<WindowResizeEvent>(AL_BIND_EVENT_FN(Layer1::OnWindowResize));
+        dispatcher.Dispatch<KeyPressedEvent>(AL_BIND_EVENT_FN(Layer1::OnKeyPressed));
+        dispatcher.Dispatch<KeyReleasedEvent>(AL_BIND_EVENT_FN(Layer1::OnKeyReleased));
+        dispatcher.Dispatch<MouseMovedEvent>(AL_BIND_EVENT_FN(Layer1::OnMouseMoved));
+        dispatcher.Dispatch<MouseScrolledEvent>(AL_BIND_EVENT_FN(Layer1::OnMouseScrolled));
+        dispatcher.Dispatch<MouseButtonPressedEvent>(AL_BIND_EVENT_FN(Layer1::OnMouseButtonPressed));
+        dispatcher.Dispatch<MouseButtonReleasedEvent>(AL_BIND_EVENT_FN(Layer1::OnMouseButtonReleased));
     }
+
+    void OnWindowResize(WindowResizeEvent& e) {
+        Log::Debug("Layer1 received: {}", e.ToString());
+    }
+
+    void OnKeyPressed(KeyPressedEvent& ev) {
+        Log::Debug("Layer1 received: {}", ev.ToString());
+    }
+
+    void OnKeyReleased(KeyReleasedEvent& ev) {
+        Log::Debug("Layer1 received: {}", ev.ToString());
+    }
+
+    void OnMouseMoved(MouseMovedEvent& ev) {
+        Log::Debug("Layer1 received: {}", ev.ToString());
+    }
+
+    void OnMouseScrolled(MouseScrolledEvent& ev) {
+        Log::Debug("Layer1 received: {}", ev.ToString());
+    }
+
+    void OnMouseButtonPressed(MouseButtonPressedEvent& ev) {
+        Log::Debug("Layer1 received: {}", ev.ToString());
+    }
+
+    void OnMouseButtonReleased(MouseButtonReleasedEvent& ev) {
+        Log::Debug("Layer1 received: {}", ev.ToString());
+    }
+
 private:
     GLuint vbo = -1, vao = -1, ebo = -1;
     GLuint program = -1;
