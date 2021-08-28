@@ -13,7 +13,6 @@ class Application : public LayerList {
 public:
 	Application(const std::string& name);
 	void OnEvent(Event& e);
-	void OnWindowResize(WindowResizeEvent& e);
 	void OnWindowClose(WindowCloseEvent& e);
 private:
 	void Run();
