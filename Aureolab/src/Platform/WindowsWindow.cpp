@@ -78,5 +78,5 @@ int WindowsWindow::GetHeight() {
 }
 
 float WindowsWindow::GetTime() {
-    return glfwGetTime();
+    return (float)glfwGetTime();
 }

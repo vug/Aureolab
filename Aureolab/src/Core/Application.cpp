@@ -17,7 +17,7 @@ void Application::Run() {
     float lastUpdateTime = window->GetTime();
     while (window->IsRunning()) {
         float timestep = window->GetTime() - lastUpdateTime;
-        lastUpdateTime - timestep;
+        lastUpdateTime = window->GetTime();
 
         for (auto layer : layers) {
             layer->OnUpdate(timestep);

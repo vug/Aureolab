@@ -23,6 +23,7 @@ inline const char* glMessageSourceToString(GLenum source) {
         return "Unspecified";
     default:
         assert(false); // unknown source
+        return "Unknown";
     }
 };
 
@@ -48,6 +49,7 @@ inline const char* glMessageTypeToString(GLenum type) {
         return "Unspecified";
     default:
         assert(false); // unknown type
+        return "Unknown";
     }
 }
 
@@ -61,6 +63,8 @@ inline const char* glMessageSeverityToString(GLenum severity) {
         return "Low";
     case GL_DEBUG_SEVERITY_NOTIFICATION:
         return "Notification";
+    default:
+        return "Unknown";
     }
 }
 
