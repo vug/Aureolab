@@ -50,8 +50,7 @@ WindowsWindow::WindowsWindow(const std::string& name, int width, int height)
     });
     glfwSetWindowCloseCallback(window, [](GLFWwindow* window) {
         UserPointer& ptr = *(UserPointer*)glfwGetWindowUserPointer(window);
-        WindowCloseEvent ev;
-        ptr.Dispatch(ev);
+        ptr.Dispatch(WindowCloseEvent());
     });
     glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
         // TODO: handle other keys, and repetition
@@ -65,10 +64,6 @@ WindowsWindow::WindowsWindow(const std::string& name, int width, int height)
 
 void WindowsWindow::OnUpdate() {
     glfwPollEvents();
-}
-
-bool WindowsWindow::IsRunning() {
-    return !glfwWindowShouldClose(window);
 }
 
 void WindowsWindow::Shutdown() {

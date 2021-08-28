@@ -11,7 +11,6 @@ public:
 	virtual void SetEventCallback(const EventCallbackFn callback) = 0;
 
 	virtual void OnUpdate() = 0;
-	virtual bool IsRunning() = 0;
 	virtual void Shutdown() = 0;
 	
 	virtual int GetWidth() = 0;

@@ -17,6 +17,7 @@ public:
 	void OnWindowClose(WindowCloseEvent& e);
 private:
 	void Run();
+	bool isRunning = true;
 	Window* window = nullptr;
 	GraphicsContext* context = nullptr;
 	std::string name;

@@ -13,10 +13,9 @@ Application::Application(const std::string& name) : name(name) {
     // TODO: Enable GL debugging, other glEnable (blending, blend function, depth test etc) to application defaults
 }
 
-void Application::OnEvent(Event& e) {
-    auto dispatcher = EventDispatcher(e);
-
     dispatcher.Dispatch<WindowResizeEvent>(AL_BIND_EVENT_FN(Application::OnWindowResize));
+void Application::OnEvent(Event& ev) {
+    auto dispatcher = EventDispatcher(ev);
     dispatcher.Dispatch<WindowCloseEvent>(AL_BIND_EVENT_FN(Application::OnWindowClose));
 }
 
@@ -26,15 +25,14 @@ void Application::OnWindowResize(WindowResizeEvent& e) {
 }
 
 void Application::OnWindowClose(WindowCloseEvent& e) {
-    // TODO: Placeholder log for development testing. Will implement properly.
-    Log::Info("Application::OnWindowClose received: {}", e.ToString());
+    isRunning = false;
 }
 
 void Application::Run() {
 	Log::Info("{} app entering main loop...", name);
 
     float lastUpdateTime = window->GetTime();
-    while (window->IsRunning()) {
+    while (isRunning) {
         float timestep = window->GetTime() - lastUpdateTime;
         lastUpdateTime = window->GetTime();
 

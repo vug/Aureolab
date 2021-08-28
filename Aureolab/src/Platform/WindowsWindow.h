@@ -11,7 +11,6 @@ public:
 	virtual void SetEventCallback(const EventCallbackFn callback) override { userPointer.eventCallback = callback; };
 
 	virtual void OnUpdate() override;
-	virtual bool IsRunning() override;
 	virtual void Shutdown() override;
 
 	virtual int GetWidth() override;
