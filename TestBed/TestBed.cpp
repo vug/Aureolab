@@ -2,6 +2,7 @@
 #include "Core/EntryPoint.h"
 #include "Core/Application.h"
 #include "Core/Layer.h"
+#include "Events/Event.h"
 
 #include <glad/glad.h>
 
@@ -113,6 +114,8 @@ public:
         glDeleteProgram(program);
     }
 
+    void OnEvent(Event& ev) {
+    }
 private:
     GLuint vbo = -1, vao = -1, ebo = -1;
     GLuint program = -1;

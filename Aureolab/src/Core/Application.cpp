@@ -16,8 +16,11 @@ Application::Application(const std::string& name) : name(name) {
 void Application::OnEvent(Event& ev) {
     auto dispatcher = EventDispatcher(ev);
     dispatcher.Dispatch<WindowCloseEvent>(AL_BIND_EVENT_FN(Application::OnWindowClose));
-}
 
+    for (int i = 0; i < layers.size(); i++) {
+        auto layer = layers[i];
+        layer->OnEvent(ev);
+    }
 }
 
 void Application::OnWindowClose(WindowCloseEvent& e) {
