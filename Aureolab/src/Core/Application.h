@@ -12,8 +12,9 @@
 class Application : public LayerList {
 public:
 	Application(const std::string& name);
-	void OnEvent(Event& e);
-	void OnWindowClose(WindowCloseEvent& e);
+	void OnEvent(Event& ev);
+	void OnWindowClose(WindowCloseEvent& ev);
+	void OnFrameBufferResized(FrameBufferResizeEvent& ev);
 private:
 	void Run();
 	bool isRunning = true;

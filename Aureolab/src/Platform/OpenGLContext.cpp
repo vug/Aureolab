@@ -125,6 +125,10 @@ void OpenGLContext::SwapBuffers() {
 	glfwSwapBuffers(context);
 }
 
+void OpenGLContext::SetViewportSize(unsigned int width, unsigned int height) {
+    glViewport(0, 0, width, height);
+}
+
 void OpenGLContext::SetVSync(bool toggle) {
     glfwSwapInterval(toggle);
 }

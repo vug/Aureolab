@@ -13,6 +13,7 @@ public:
 
 	virtual void OnUpdate() override;
 
+	virtual void SetViewportSize(unsigned int width, unsigned int height) override;
 	virtual void SetVSync(bool toggle) override;
 private:
 	virtual void SwapBuffers() override;

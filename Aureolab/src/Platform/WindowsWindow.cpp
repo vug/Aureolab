@@ -14,10 +14,6 @@ static void error_callback(int error, const char* description) {
     Log::Error("Error [{}]: {}", error, description);
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
-}
-
 WindowsWindow::WindowsWindow(const std::string& name, int width, int height) 
     : window(nullptr) {
     if (!glfwInit()) {
@@ -100,7 +96,10 @@ WindowsWindow::WindowsWindow(const std::string& name, int width, int height)
     });
 
 
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow * window, int width, int height) {
+        UserPointer& ptr = *(UserPointer*)glfwGetWindowUserPointer(window);
+        ptr.Dispatch(FrameBufferResizeEvent((unsigned int)width, (unsigned int)height));
+    });
 
     Log::Info("GLFW Window has been initialized");
 }

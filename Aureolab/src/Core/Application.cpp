@@ -16,6 +16,7 @@ Application::Application(const std::string& name) : name(name) {
 void Application::OnEvent(Event& ev) {
     auto dispatcher = EventDispatcher(ev);
     dispatcher.Dispatch<WindowCloseEvent>(AL_BIND_EVENT_FN(Application::OnWindowClose));
+    dispatcher.Dispatch<FrameBufferResizeEvent>(AL_BIND_EVENT_FN(Application::OnFrameBufferResized));
 
     for (int i = 0; i < layers.size(); i++) {
         auto layer = layers[i];
@@ -25,6 +26,10 @@ void Application::OnEvent(Event& ev) {
 
 void Application::OnWindowClose(WindowCloseEvent& e) {
     isRunning = false;
+}
+
+void Application::OnFrameBufferResized(FrameBufferResizeEvent& ev) {
+    context->SetViewportSize(ev.GetWidth(), ev.GetHeight());
 }
 
 void Application::Run() {
