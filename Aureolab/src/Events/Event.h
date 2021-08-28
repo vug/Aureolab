@@ -30,7 +30,7 @@ public:
 		: event(event) {}
 
 	template<typename TEvent> // A Concrete Event class
-	bool Dispatch(std::function<bool(TEvent&)> func) {
+	bool Dispatch(std::function<void(TEvent&)> func) {
 		static_assert(std::is_base_of_v<Event, TEvent>);
 
 		// Check whether incoming concrete event type is the target type of this Dispatch call

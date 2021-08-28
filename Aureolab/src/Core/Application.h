@@ -3,6 +3,8 @@
 #include "LayerList.h"
 #include "Window.h"
 #include "GraphicsContext.h"
+#include "Events/Event.h"
+#include "Events/WindowEvent.h"
 
 #include <memory>
 #include <string>
@@ -10,6 +12,9 @@
 class Application : public LayerList {
 public:
 	Application(const std::string& name);
+	void OnEvent(Event& e);
+	void OnWindowResize(WindowResizeEvent& e);
+	void OnWindowClose(WindowCloseEvent& e);
 private:
 	void Run();
 	Window* window = nullptr;
