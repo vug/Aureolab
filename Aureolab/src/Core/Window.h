@@ -1,10 +1,14 @@
 #pragma once
+#include "Events/Event.h"
 
+#include <functional>
 #include <string>
 
 class Window {
 public:
 	static Window* Create(const std::string& name, int width, int height); // factory method design pattern
+	using EventCallbackFn = std::function<void(Event&)>;
+	virtual void SetEventCallback(const EventCallbackFn callback) = 0;
 
 	virtual void OnUpdate() = 0;
 	virtual bool IsRunning() = 0;

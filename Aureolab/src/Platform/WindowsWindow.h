@@ -8,6 +8,8 @@
 class WindowsWindow : public Window {
 public:
 	WindowsWindow(const std::string& name, int width, int height);
+	virtual void SetEventCallback(const EventCallbackFn callback) override { userPointer.eventCallback = callback; };
+
 	virtual void OnUpdate() override;
 	virtual bool IsRunning() override;
 	virtual void Shutdown() override;
@@ -21,4 +23,9 @@ public:
 	virtual void* GetNativeWindow() override { return window; }
 private:
 	GLFWwindow* window;
+
+	struct UserPointer {
+		EventCallbackFn eventCallback;
+		void Dispatch(Event& ev) { if (eventCallback != nullptr) eventCallback(ev); }
+	} userPointer;
 };

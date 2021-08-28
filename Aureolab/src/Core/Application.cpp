@@ -6,6 +6,7 @@
 
 Application::Application(const std::string& name) : name(name) { 
     window = Window::Create(name, 1000, 1000);
+    window->SetEventCallback(AL_BIND_EVENT_FN(Application::OnEvent));
     context = GraphicsContext::Create(window);
 
     // Renderer::Initialize
@@ -31,11 +32,6 @@ void Application::OnWindowClose(WindowCloseEvent& e) {
 
 void Application::Run() {
 	Log::Info("{} app entering main loop...", name);
-    // TODO: Trigger events for development testing. Will remove after we get actual events from Window system.
-    WindowResizeEvent ev1(1280, 720);
-    OnEvent(ev1);
-    WindowCloseEvent ev2;
-    OnEvent(ev2);
 
     float lastUpdateTime = window->GetTime();
     while (window->IsRunning()) {
