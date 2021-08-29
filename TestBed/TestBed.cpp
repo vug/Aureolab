@@ -7,6 +7,9 @@
 #include "Events/MouseEvent.h"
 
 #include <glad/glad.h>
+//#define GLM_FORCE_CTOR_INIT /* initialize vectors and matrices */
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <array>
 #include <iostream>
@@ -93,18 +96,12 @@ public:
     }
 
     void OnUpdate(float ts) {
-        GLfloat MVP[] = { // identity
-            1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f,
-        };
-
+        mvp *= glm::rotate(glm::mat4(1.0f), ts, glm::vec3(0.0f, 0.0f, 1.0f));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
         glUseProgram(program);
-        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)MVP);
+        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, glm::value_ptr(mvp));
         glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(unsigned int), GL_UNSIGNED_INT, 0);
     }
 
@@ -160,6 +157,7 @@ private:
     GLuint program = -1;
     GLint mvp_location = -1;
     std::array<unsigned int, 6> indices = {};
+    glm::mat4 mvp = glm::mat4(1.0f);
 };
 
 class TestBed : public Application {

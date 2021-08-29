@@ -3,6 +3,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <memory>
 
@@ -143,12 +145,8 @@ int main(int argc, char* argv[]) {
     while (!glfwWindowShouldClose(window)) {
         float ratio;
         int width, height;
-        GLfloat MVP[] = { // identity
-            1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f,
-        };
+        glm::mat4 mvp(1.0f);
+        mvp = glm::rotate(mvp, (float)glfwGetTime(), glm::vec3(0.0f, 0.1f, 0.1f));
 
         glfwGetFramebufferSize(window, &width, &height);
         ratio = width / (float)height;
@@ -158,7 +156,7 @@ int main(int argc, char* argv[]) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(program);
-        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)MVP);
+        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, glm::value_ptr(mvp));
         glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(unsigned int), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
