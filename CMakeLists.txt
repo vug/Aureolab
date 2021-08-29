@@ -7,3 +7,4 @@ project(Aureolab
 add_subdirectory(Aureolab/vendors)
 add_subdirectory(Aureolab/src)
 add_subdirectory(TestBed)
+add_subdirectory(DependencyTestBed)
