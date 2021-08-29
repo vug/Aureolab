@@ -24,6 +24,7 @@ target_link_libraries(
 	opengl32  # assuming this is system-wide available
 	glad
 	glfw
+	glm
 )
 
 target_compile_features(Aureolab PRIVATE cxx_std_17)

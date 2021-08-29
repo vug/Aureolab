@@ -4,3 +4,4 @@ set(FETCHCONTENT_QUIET OFF) # turn on for getting debug information about a spec
 add_subdirectory(spdlog)
 add_subdirectory(glfw)
 add_subdirectory(glad)
+add_subdirectory(glm)
