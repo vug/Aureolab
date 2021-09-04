@@ -5,6 +5,7 @@
 #include "Events/Event.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
+#include "Renderer/VertexBuffer.h"
 
 #include <glad/glad.h>
 //#define GLM_FORCE_CTOR_INIT /* initialize vectors and matrices */
@@ -80,6 +81,7 @@ public:
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
+        VertexBuffer* vb = VertexBuffer::Create();
         glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);

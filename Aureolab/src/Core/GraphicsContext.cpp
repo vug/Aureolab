@@ -1,7 +1,7 @@
 #include "Window.h"
 #include "GraphicsContext.h"
 #include "Platform/Platform.h"
-#include "Platform/OpenGLContext.h"
+#include "Platform/OpenGL/OpenGLContext.h"
 
 #include <GLFW/glfw3.h>
 

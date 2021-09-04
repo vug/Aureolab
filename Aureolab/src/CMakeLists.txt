@@ -7,9 +7,11 @@
 	Core/Window.h Core/Window.cpp
 	Platform/WindowsWindow.h  Platform/WindowsWindow.cpp
 	Core/GraphicsContext.h Core/GraphicsContext.cpp
-    Platform/OpenGLContext.h Platform/OpenGLContext.cpp
+    Platform/OpenGL/OpenGLContext.h Platform/OpenGL/OpenGLContext.cpp
+	Renderer/VertexBuffer.h Renderer/VertexBuffer.cpp
+	Platform/OpenGL/OpenGLVertexBuffer.h Platform/OpenGL/OpenGLVertexBuffer.cpp
     Events/Event.h Events/WindowEvent.h Events/KeyEvent.h Events/MouseEvent.h
-)
+ )
 
 # If a debug build configuration define AL_DEBUG processor macro
 add_compile_definitions("$<$<CONFIG:Debug>:AL_DEBUG>")
