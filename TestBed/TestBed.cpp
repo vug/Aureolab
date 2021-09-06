@@ -6,6 +6,7 @@
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
 #include "Renderer/VertexBuffer.h"
+#include "Platform/OpenGL/OpenGLVertexBuffer.h"
 
 #include <glad/glad.h>
 //#define GLM_FORCE_CTOR_INIT /* initialize vectors and matrices */
@@ -20,17 +21,18 @@ public:
     Layer1() : Layer("FirstLayer") { }
 
     void OnAttach() {
-        static const struct
-        {
-            float x, y;
-            float r, g, b;
-        } vertices[] =
-        {
-            { -0.6f, -0.4f, 1.f, 0.f, 0.f },
-            {  0.6f, -0.4f, 0.f, 1.f, 0.f },
-            {   0.f,  0.6f, 0.f, 0.f, 1.f },
-            { -0.3f,  0.8f, 1.f, 0.f, 1.f },
+         struct Vertex {
+            glm::vec2 pos;
+            glm::vec3 color;
+         };
+
+        Vertex vertices[] = {
+            { {-0.6f, -0.4f}, {1.f, 0.f, 0.f} },
+            {  {0.6f, -0.4f}, {0.f, 1.f, 0.f} },
+            {  {0.f,  0.6f}, {0.f, 0.f, 1.f} },
+            { {-0.3f,  0.8f}, {1.f, 0.f, 1.f} },
         };
+
         indices = {
             0, 1, 2,
             0, 2, 3,
@@ -81,20 +83,18 @@ public:
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
-        VertexBuffer* vb = VertexBuffer::Create();
-        glGenBuffers(1, &vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        VertexBuffer* vb = new OpenGLVertexBuffer(
+            {
+                VertexSpecification{ (unsigned int)vpos_location, VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false },
+                VertexSpecification{ (unsigned int)vcol_location, VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false },
+            },
+            4,
+            (void*)vertices
+        );
 
         glGenBuffers(1, &ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices.data(), GL_STATIC_DRAW);
-
-        glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)0);
-        glEnableVertexAttribArray(vpos_location);
-
-        glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)(sizeof(float) * 2));
-        glEnableVertexAttribArray(vcol_location);
     }
 
     void OnUpdate(float ts) {
