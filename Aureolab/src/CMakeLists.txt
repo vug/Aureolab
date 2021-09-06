@@ -9,7 +9,7 @@
 	Core/GraphicsContext.h Core/GraphicsContext.cpp
     Platform/OpenGL/OpenGLContext.h Platform/OpenGL/OpenGLContext.cpp
 	Renderer/VertexBuffer.h Renderer/VertexBuffer.cpp
-	Platform/OpenGL/OpenGLVertexBuffer.h Platform/OpenGL/OpenGLVertexBuffer.cpp
+	Platform/OpenGL/OpenGLVertexBuffer.h 
     Events/Event.h Events/WindowEvent.h Events/KeyEvent.h Events/MouseEvent.h
  )
 

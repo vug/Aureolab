@@ -9,7 +9,7 @@ VertexBuffer* VertexBuffer::Create() {
 	VertexBuffer* vbo = nullptr;
 	switch (GraphicsContext::graphicsAPI) {
 	case GraphicsAPI::OPENGL:
-		vbo = new OpenGLVertexBuffer();
+		//vbo = new OpenGLVertexBuffer();
 		break;
 	default:
 		assert(false); // Only OpenGL is implemented.

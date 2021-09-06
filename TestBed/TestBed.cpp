@@ -21,22 +21,25 @@ public:
     Layer1() : Layer("FirstLayer") { }
 
     void OnAttach() {
-         struct Vertex {
-            glm::vec2 pos;
-            glm::vec3 color;
-         };
+		struct Vertex {
+			glm::vec2 pos;
+			glm::vec3 color;
+		};
 
-        Vertex vertices[] = {
-            { {-0.6f, -0.4f}, {1.f, 0.f, 0.f} },
-            {  {0.6f, -0.4f}, {0.f, 1.f, 0.f} },
-            {  {0.f,  0.6f}, {0.f, 0.f, 1.f} },
-            { {-0.3f,  0.8f}, {1.f, 0.f, 1.f} },
-        };
+		std::vector<Vertex> vertices1 = {
+			{ {-0.6f, -0.4f}, {1.f, 0.f, 0.f} },
+			{  {0.6f, -0.4f}, {0.f, 1.f, 0.f} },
+		};
+		std::vector<Vertex> vertices2 = {
+		   {  {0.f,  0.6f}, {0.f, 0.f, 1.f} },
+		};
+		Vertex vertex3 = { {-0.3f,  0.8f}, {1.f, 0.f, 1.f} };
+        Vertex vertex4 = { {-0.3f,  0.8f}, {1.f, 1.f, 0.f} };
 
-        indices = {
-            0, 1, 2,
-            0, 2, 3,
-        };
+		indices = {
+			0, 1, 2,
+			0, 2, 3,
+		};
 
         static const char* vertex_shader_text =
             "#version 460 core\n"
@@ -83,14 +86,14 @@ public:
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
-        VertexBuffer* vb = new OpenGLVertexBuffer(
-            {
-                VertexSpecification{ (unsigned int)vpos_location, VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false },
-                VertexSpecification{ (unsigned int)vcol_location, VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false },
-            },
-            4,
-            (void*)vertices
-        );
+        std::vector<VertexSpecification> specs = {
+            VertexSpecification{ (unsigned int)vpos_location, VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false },
+            VertexSpecification{ (unsigned int)vcol_location, VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false },
+        };
+        auto vb = new OpenGLVertexBuffer<Vertex>(specs, vertices1);
+        vb->AppendVertices(vertices2);
+        vb->AppendVertex(vertex3);
+        vb->UpdateVertex(3, vertex4);
 
         glGenBuffers(1, &ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
