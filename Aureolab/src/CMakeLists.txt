@@ -3,14 +3,16 @@
     Core/EntryPoint.h 
 	Core/Application.cpp Core/Application.h
 	Core/Layer.h Core/LayerList.h Core/LayerList.cpp
+	Events/Event.h Events/WindowEvent.h Events/KeyEvent.h Events/MouseEvent.h
 	Platform/Platform.h
 	Core/Window.h Core/Window.cpp
 	Platform/WindowsWindow.h  Platform/WindowsWindow.cpp
 	Core/GraphicsContext.h Core/GraphicsContext.cpp
     Platform/OpenGL/OpenGLContext.h Platform/OpenGL/OpenGLContext.cpp
 	Renderer/VertexBuffer.h Platform/OpenGL/OpenGLVertexBuffer.h
-    Events/Event.h Events/WindowEvent.h Events/KeyEvent.h Events/MouseEvent.h
- )
+    Renderer/Shader.h Renderer/Shader.cpp
+	Platform/OpenGL/OpenGLShader.h Platform/OpenGL/OpenGLShader.cpp
+)
 
 # If a debug build configuration define AL_DEBUG processor macro
 add_compile_definitions("$<$<CONFIG:Debug>:AL_DEBUG>")

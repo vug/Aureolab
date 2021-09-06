@@ -5,6 +5,7 @@
 #include "Events/Event.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
+#include "Renderer/Shader.h"
 #include "Renderer/VertexBuffer.h"
 #include "Platform/OpenGL/OpenGLVertexBuffer.h"
 
@@ -41,54 +42,14 @@ public:
 			0, 2, 3,
 		};
 
-        static const char* vertex_shader_text =
-            "#version 460 core\n"
-            "uniform mat4 MVP;\n"
-            "layout (location = 0) in vec2 vPos;\n"
-            "layout (location = 1) in vec3 vCol;\n"
-            "varying vec3 color;\n"
-            "void main()\n"
-            "{\n"
-            "    gl_Position = MVP * vec4(vPos, 0.0, 1.0);\n"
-            "    color = vCol;\n"
-            "}\n";
-
-        static const char* fragment_shader_text =
-            "#version 460 core\n"
-            "varying vec3 color;\n"
-            "void main()\n"
-            "{\n"
-            "    gl_FragColor = vec4(color, 1.0);\n"
-            "}\n";
-
-        GLuint vertex_shader, fragment_shader;
-
-        vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
-        glCompileShader(vertex_shader);
-
-        fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
-        glCompileShader(fragment_shader);
-
-        program = glCreateProgram();
-        glAttachShader(program, vertex_shader);
-        glAttachShader(program, fragment_shader);
-        glLinkProgram(program);
-
-
-        GLint vpos_location, vcol_location;
-
-        mvp_location = glGetUniformLocation(program, "MVP");
-        vpos_location = glGetAttribLocation(program, "vPos");
-        vcol_location = glGetAttribLocation(program, "vCol");
+        shader = Shader::Create("assets/VertexColor2D.glsl");
 
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
         std::vector<VertexSpecification> specs = {
-            VertexSpecification{ (unsigned int)vpos_location, VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false },
-            VertexSpecification{ (unsigned int)vcol_location, VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false },
+            VertexSpecification{ shader->GetAttribLocation("vPos"), VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false},
+            VertexSpecification{ shader->GetAttribLocation("vCol"), VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false},
         };
         auto vb = VertexBuffer<Vertex>::Create(specs, vertices1);
         vb->AppendVertices(vertices2);
@@ -105,17 +66,17 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-        glUseProgram(program);
-        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, glm::value_ptr(mvp));
+        shader->Bind();
+        shader->UploadUniformMat4("MVP", mvp);
         glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(unsigned int), GL_UNSIGNED_INT, 0);
     }
 
     void OnDetach() {
         // optional
         glDeleteVertexArrays(1, &vao);
-        glDeleteBuffers(1, &vbo);
+        //glDeleteBuffers(1, &vbo);
         glDeleteBuffers(1, &ebo);
-        glDeleteProgram(program);
+        delete shader;
     }
 
     void OnEvent(Event& ev) {
@@ -158,11 +119,10 @@ public:
     }
 
 private:
-    GLuint vbo = -1, vao = -1, ebo = -1;
-    GLuint program = -1;
-    GLint mvp_location = -1;
+    GLuint vao = -1, ebo = -1;
     std::array<unsigned int, 6> indices = {};
     glm::mat4 mvp = glm::mat4(1.0f);
+    Shader* shader = nullptr;
 };
 
 class TestBed : public Application {
