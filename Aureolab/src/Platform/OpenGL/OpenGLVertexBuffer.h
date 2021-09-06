@@ -31,6 +31,7 @@ GLenum ALTypeToGLType(VertexAttributeType alType) {
 		return GL_DOUBLE;
 	default:
 		assert(false); // AL type not implemented
+		return -1;
 	}
 }
 
@@ -55,6 +56,7 @@ inline unsigned int TypeSize(VertexAttributeType type) {
 		return sizeof(GL_DOUBLE);
 	default:
 		assert(false); // AL type not implemented
+		return -1;
 	}
 }
 
@@ -74,15 +76,18 @@ OpenGLVertexSpecification::OpenGLVertexSpecification(const VertexSpecification& 
 
 
 template<typename TVertex>
-class OpenGLVertexBuffer : public VertexBuffer {
+class OpenGLVertexBuffer : public VertexBuffer<TVertex> {
 public:
 	OpenGLVertexBuffer(std::vector<VertexSpecification> specs, const std::vector<TVertex>& vertices = {});
 
-	void SetVertices(const std::vector<TVertex>& newVertices);
-	void AppendVertex(const TVertex& vertex);
-	void AppendVertices(const std::vector<TVertex>& newVertices);
-	void UpdateVertex(unsigned int index, const TVertex& vertex);
-	void DeleteVertex(unsigned int index);
+	virtual void SetVertices(const std::vector<TVertex>& newVertices) override;
+	virtual void AppendVertex(const TVertex& vertex) override;
+	virtual void AppendVertices(const std::vector<TVertex>& newVertices) override;
+	virtual void UpdateVertex(unsigned int index, const TVertex& vertex) override;
+	virtual void DeleteVertex(unsigned int index) override;
+
+	virtual void Bind() override;
+	virtual void Unbind() override;
 private:
 	unsigned int rendererID = -1;
 	unsigned int vertexSize = 0; // aka stride. total size of all attributes in bytes.
@@ -98,7 +103,7 @@ OpenGLVertexBuffer<TVertex>::OpenGLVertexBuffer(std::vector<VertexSpecification>
 		: vertices(vertices) { // copies vertices data
 	// Generate Buffer
 	glGenBuffers(1, &rendererID);
-	glBindBuffer(GL_ARRAY_BUFFER, rendererID);
+	Bind();
 
 	// Prepare Attributes
 	for (auto& spec : specs) {
@@ -118,8 +123,8 @@ void OpenGLVertexBuffer<TVertex>::DeclareAttributes() {
 	assert(vertexSize > 0); // needs vertexSize computed
 	for (unsigned int ix = 0; ix < attributeSpecs.size(); ix++) {
 		const auto& spec = attributeSpecs[ix];
-		int offset = ix == 0 ? 0 : attributeSpecs[ix - 1].size;
-		glVertexAttribPointer(spec.index, spec.numComponents, ALTypeToGLType(spec.type), spec.normalized, vertexSize, (void*)offset);
+		unsigned int offset = ix == 0 ? 0 : attributeSpecs[ix - 1].size;
+		glVertexAttribPointer(spec.index, spec.numComponents, ALTypeToGLType(spec.type), spec.normalized, vertexSize, (void*)(std::uintptr_t)offset);
 		glEnableVertexAttribArray(spec.index);
 	}
 }
@@ -162,3 +167,12 @@ void OpenGLVertexBuffer<TVertex>::DeleteVertex(unsigned int index) {
 	UploadBuffer();
 }
 
+template<typename TVertex>
+void OpenGLVertexBuffer<TVertex>::Bind() {
+	glBindBuffer(GL_ARRAY_BUFFER, rendererID);
+}
+
+template<typename TVertex>
+void OpenGLVertexBuffer<TVertex>::Unbind() {
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}

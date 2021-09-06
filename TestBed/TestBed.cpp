@@ -90,7 +90,7 @@ public:
             VertexSpecification{ (unsigned int)vpos_location, VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false },
             VertexSpecification{ (unsigned int)vcol_location, VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false },
         };
-        auto vb = new OpenGLVertexBuffer<Vertex>(specs, vertices1);
+        auto vb = VertexBuffer<Vertex>::Create(specs, vertices1);
         vb->AppendVertices(vertices2);
         vb->AppendVertex(vertex3);
         vb->UpdateVertex(3, vertex4);
