@@ -95,7 +95,6 @@ private:
 	std::vector<TVertex> vertices;
 
 	void UploadBuffer();
-	void DeclareAttributes();
 };
 
 template<typename TVertex>
@@ -110,16 +109,6 @@ OpenGLVertexBuffer<TVertex>::OpenGLVertexBuffer(std::vector<VertexSpecification>
 		attributeSpecs.push_back(spec);
 	}
 	vertexSize = std::accumulate(attributeSpecs.begin(), attributeSpecs.end(), 0, [&](int sum, const OpenGLVertexSpecification& curr) { return sum + curr.size; });
-	DeclareAttributes();
-
-	// Upload Data
-	if (vertices.empty()) return;
-	assert(sizeof(TVertex) == vertexSize); // given vertex size should match vertex specification
-	UploadBuffer();
-}
-
-template<typename TVertex>
-void OpenGLVertexBuffer<TVertex>::DeclareAttributes() {
 	assert(vertexSize > 0); // needs vertexSize computed
 	for (unsigned int ix = 0; ix < attributeSpecs.size(); ix++) {
 		const auto& spec = attributeSpecs[ix];
@@ -127,6 +116,11 @@ void OpenGLVertexBuffer<TVertex>::DeclareAttributes() {
 		glVertexAttribPointer(spec.index, spec.numComponents, ALTypeToGLType(spec.type), spec.normalized, vertexSize, (void*)(std::uintptr_t)offset);
 		glEnableVertexAttribArray(spec.index);
 	}
+
+	// Upload Data
+	if (vertices.empty()) return;
+	assert(sizeof(TVertex) == vertexSize); // given vertex size should match vertex specification
+	UploadBuffer();
 }
 
 template<typename TVertex>
