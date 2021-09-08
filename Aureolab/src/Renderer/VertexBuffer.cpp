@@ -1,5 +1,6 @@
 #include "VertexBuffer.h"
 
+#include "Core/GraphicsContext.h"
 #include "Platform/OpenGL/OpenGLVertexBuffer.h"
 
 VertexBuffer* VertexBuffer::Create(std::vector<VertexAttributeSpecification> specs) {

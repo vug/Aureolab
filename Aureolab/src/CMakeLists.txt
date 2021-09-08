@@ -9,7 +9,7 @@
 	Platform/WindowsWindow.h  Platform/WindowsWindow.cpp
 	Core/GraphicsContext.h Core/GraphicsContext.cpp
     Platform/OpenGL/OpenGLContext.h Platform/OpenGL/OpenGLContext.cpp
-	Renderer/VertexSpecification.h
+	Renderer/VertexSpecification.h Platform/OpenGL/OpenGLVertexSpecification.h Platform/OpenGL/OpenGLVertexSpecification.cpp
 	Renderer/VertexBuffer.h Renderer/VertexBuffer.cpp
 	Platform/OpenGL/OpenGLVertexBuffer.h Platform/OpenGL/OpenGLVertexBuffer.cpp
 	Renderer/VertexArray.h Renderer/VertexArray.cpp
