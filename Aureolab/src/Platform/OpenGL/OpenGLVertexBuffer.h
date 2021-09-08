@@ -9,7 +9,7 @@
 
 class OpenGLVertexBuffer : public VertexBuffer {
 public:
-	OpenGLVertexBuffer(const std::vector<VertexSpecification>& specs);
+	OpenGLVertexBuffer(const std::vector<VertexAttributeSpecification>& specs);
 
 	virtual unsigned int GetVertexSize() override;
 	virtual void Bind() override;
@@ -17,7 +17,7 @@ public:
 private:
 	unsigned int rendererID = -1;
 	unsigned int vertexSize = 0; // aka stride. total size of all attributes in bytes.
-	std::vector<VertexSpecification> attributeSpecs;
+	std::vector<VertexAttributeSpecification> attributeSpecs;
 
 	virtual void UploadBuffer(size_t size, void* data) override;
 };

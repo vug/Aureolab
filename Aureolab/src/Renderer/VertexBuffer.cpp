@@ -2,7 +2,7 @@
 
 #include "Platform/OpenGL/OpenGLVertexBuffer.h"
 
-VertexBuffer* VertexBuffer::Create(std::vector<VertexSpecification> specs) {
+VertexBuffer* VertexBuffer::Create(std::vector<VertexAttributeSpecification> specs) {
 	VertexBuffer* vbo = nullptr;
 	switch (GraphicsContext::graphicsAPI) {
 	case GraphicsAPI::OPENGL:

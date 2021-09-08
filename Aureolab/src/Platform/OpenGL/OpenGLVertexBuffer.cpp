@@ -55,15 +55,12 @@ inline unsigned int TypeSize(VertexAttributeType type) {
 	}
 }
 
-//
-//
-
-OpenGLVertexBuffer::OpenGLVertexBuffer(const std::vector<VertexSpecification>& specs)
+OpenGLVertexBuffer::OpenGLVertexBuffer(const std::vector<VertexAttributeSpecification>& specs)
 	: attributeSpecs(specs) {
 	glGenBuffers(1, &rendererID);
 	Bind();
 
-	vertexSize = std::accumulate(attributeSpecs.begin(), attributeSpecs.end(), 0, [&](int sum, const VertexSpecification& spec) {
+	vertexSize = std::accumulate(attributeSpecs.begin(), attributeSpecs.end(), 0, [&](int sum, const VertexAttributeSpecification& spec) {
 		unsigned int componentSize = TypeSize(spec.type);
 		unsigned int size = componentSize * spec.numComponents;
 		return sum + size; 

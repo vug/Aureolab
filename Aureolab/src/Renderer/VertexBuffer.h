@@ -10,7 +10,7 @@
 
 class VertexBuffer {
 public:
-	static VertexBuffer* Create(std::vector<VertexSpecification> specs);
+	static VertexBuffer* Create(std::vector<VertexAttributeSpecification> specs);
 
 	template <typename TVertex>
 	void SetVertices(const std::vector<TVertex>& newVertices);

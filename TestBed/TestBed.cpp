@@ -49,9 +49,9 @@ public:
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
-        std::vector<VertexSpecification> specs = {
-            VertexSpecification{ shader->GetAttribLocation("vPos"), VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false},
-            VertexSpecification{ shader->GetAttribLocation("vCol"), VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false},
+        std::vector<VertexAttributeSpecification> specs = {
+            VertexAttributeSpecification{ shader->GetAttribLocation("vPos"), VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false},
+            VertexAttributeSpecification{ shader->GetAttribLocation("vCol"), VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false},
         };
         auto vb = VertexBuffer::Create(specs);
         vb->SetVertices(vertices1);

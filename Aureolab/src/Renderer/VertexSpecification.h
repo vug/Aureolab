@@ -18,7 +18,7 @@ enum class VertexAttributeType {
 	float64,
 };
 
-class VertexSpecification {
+class VertexAttributeSpecification {
 public:
 	unsigned int index;
 	VertexAttributeSemantic semantic;
