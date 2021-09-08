@@ -8,6 +8,7 @@
 #include "Renderer/Shader.h"
 #include "Renderer/VertexArray.h"
 #include "Renderer/VertexBuffer.h"
+#include "Renderer/IndexBuffer.h"
 #include "Platform/OpenGL/OpenGLVertexBuffer.h"
 
 #include <glad/glad.h>
@@ -55,12 +56,12 @@ public:
         vb->AppendVertex(vertex3);
         vb->UpdateVertex(3, vertex4);
 
+        ib = IndexBuffer::Create();
+        ib->UploadIndices(indices);
+
         va = VertexArray::Create();
         va->AddVertexBuffer(*vb);
-
-        glGenBuffers(1, &ebo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices.data(), GL_STATIC_DRAW);
+        va->SetIndexBuffer(*ib);
     }
 
     void OnUpdate(float ts) {
@@ -75,8 +76,8 @@ public:
 
     void OnDetach() {
         // optional
-        glDeleteBuffers(1, &ebo);
         delete vb;
+        delete ib;
         delete va;
         delete shader;
     }
@@ -121,10 +122,10 @@ public:
     }
 
 private:
-    VertexBuffer* vb;
-    VertexArray* va;
-    GLuint ebo = -1;
-    std::array<unsigned int, 6> indices = {};
+    VertexBuffer* vb = nullptr;
+    IndexBuffer* ib = nullptr;
+    VertexArray* va = nullptr;
+    std::vector<unsigned int> indices = {};
     glm::mat4 mvp = glm::mat4(1.0f);
     Shader* shader = nullptr;
 };

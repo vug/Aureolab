@@ -36,3 +36,8 @@ void OpenGLVertexArray::AddVertexBuffer(const VertexBuffer& vertexBuffer) {
 		offset = sizes[ix];
 	}
 }
+
+void OpenGLVertexArray::SetIndexBuffer(const IndexBuffer& indexBuffer) {
+	Bind();
+	indexBuffer.Bind();
+}
