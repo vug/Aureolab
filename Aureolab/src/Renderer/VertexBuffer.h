@@ -31,15 +31,20 @@ public:
 	bool normalized = false;
 };
 
-template <typename TVertex>
 class VertexBuffer {
 public:
+	template <typename TVertex>
 	static VertexBuffer* Create(std::vector<VertexSpecification> specs, const std::vector<TVertex>& vertices = {});
 
+	template <typename TVertex>
 	void SetVertices(const std::vector<TVertex>& newVertices);
+	template <typename TVertex>
 	void AppendVertices(const std::vector<TVertex>& newVertices);
+	template <typename TVertex>
 	void AppendVertex(const TVertex& vertex);
+	template <typename TVertex>
 	void UpdateVertex(unsigned int index, const TVertex& vertex);
+	template <typename TVertex>
 	void DeleteVertex(unsigned int index);
 
 	virtual unsigned int GetVertexSize() = 0;
@@ -47,12 +52,14 @@ public:
 	virtual void Unbind() = 0;
 
 protected:
-	virtual void UploadBuffer(unsigned int size, void* data) = 0;
+	virtual void UploadBuffer(size_t size, void* data) = 0;
+	template <typename TVertex>
 	std::vector<TVertex>* GetVertices();
+
 private:
+	template <typename TVertex>
 	void UploadVertices();
-	void* vertices = new std::vector<TVertex>();
-	void* data;
+	void* vertices = nullptr;
 };
 
 
@@ -60,11 +67,11 @@ private:
 #include "Platform/OpenGL/OpenGLVertexBuffer.h"
 
 template <typename TVertex>
-VertexBuffer<TVertex>* VertexBuffer<TVertex>::Create(std::vector<VertexSpecification> specs, const std::vector<TVertex>& vertices) {
+VertexBuffer* VertexBuffer::Create(std::vector<VertexSpecification> specs, const std::vector<TVertex>& vertices) {
 	VertexBuffer* vbo = nullptr;
 	switch (GraphicsContext::graphicsAPI) {
 	case GraphicsAPI::OPENGL:
-		vbo = new OpenGLVertexBuffer<TVertex>(specs);
+		vbo = new OpenGLVertexBuffer(specs);
 		vbo->SetVertices(vertices);
 		break;
 	default:
@@ -74,45 +81,48 @@ VertexBuffer<TVertex>* VertexBuffer<TVertex>::Create(std::vector<VertexSpecifica
 }
 
 template<typename TVertex>
-std::vector<TVertex>* VertexBuffer<TVertex>::GetVertices() {
+std::vector<TVertex>* VertexBuffer::GetVertices() {
+	if (vertices == nullptr) {
+		vertices = (void*)new std::vector<TVertex>();
+	}
 	return (std::vector<TVertex>*)vertices;
 }
 
-template<typename TVertex>
-void VertexBuffer<TVertex>::UploadVertices() {
-	UploadBuffer(GetVertexSize() * GetVertices()->size(), GetVertices()->data());
+template <typename TVertex>
+void VertexBuffer::UploadVertices() {
+	UploadBuffer(GetVertexSize() * GetVertices<TVertex>()->size(), GetVertices<TVertex>()->data());
 }
 
 template<typename TVertex>
-void VertexBuffer<TVertex>::SetVertices(const std::vector<TVertex>& newVertices) {
-	auto verts = GetVertices();
+void VertexBuffer::SetVertices(const std::vector<TVertex>& newVertices) {
+	auto verts = GetVertices<TVertex>();
 	*verts = newVertices; // copy operation
-	UploadVertices();
+	UploadVertices<TVertex>();
 }
 
 template<typename TVertex>
-void VertexBuffer<TVertex>::AppendVertex(const TVertex& vertex) {
-	GetVertices()->push_back(vertex);
-	UploadVertices();
+void VertexBuffer::AppendVertex(const TVertex& vertex) {
+	GetVertices<TVertex>()->push_back(vertex);
+	UploadVertices<TVertex>();
 }
 
 template<typename TVertex>
-void VertexBuffer<TVertex>::AppendVertices(const std::vector<TVertex>& newVertices) {
-	auto verts = GetVertices();
+void VertexBuffer::AppendVertices(const std::vector<TVertex>& newVertices) {
+	auto verts = GetVertices<TVertex>();
 	verts->insert(verts->end(), newVertices.begin(), newVertices.end());
-	UploadVertices();
+	UploadVertices<TVertex>();
 }
 
 template<typename TVertex>
-void VertexBuffer<TVertex>::UpdateVertex(unsigned int index, const TVertex& vertex) {
+void VertexBuffer::UpdateVertex(unsigned int index, const TVertex& vertex) {
+	assert(index < GetVertices<TVertex>()->size());
+	(*GetVertices<TVertex>())[index] = vertex;
+	UploadVertices<TVertex>();
+}
+
+template <typename TVertex>
+void VertexBuffer::DeleteVertex(unsigned int index) {
 	assert(index < GetVertices()->size());
-	(*GetVertices())[index] = vertex;
-	UploadVertices();
-}
-
-template<typename TVertex>
-void VertexBuffer<TVertex>::DeleteVertex(unsigned int index) {
-	assert(index < vertices.size());
-	vertices.erase(vertices.begin() + index);
+	GetVertices()->erase(GetVertices()->begin() + index);
 	UploadVertices();
 }

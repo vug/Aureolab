@@ -74,9 +74,7 @@ OpenGLVertexSpecification::OpenGLVertexSpecification(const VertexSpecification& 
 }
 
 
-
-template<typename TVertex>
-class OpenGLVertexBuffer : public VertexBuffer<TVertex> {
+class OpenGLVertexBuffer : public VertexBuffer {
 public:
 	OpenGLVertexBuffer(std::vector<VertexSpecification> specs);
 
@@ -87,13 +85,11 @@ private:
 	unsigned int rendererID = -1;
 	unsigned int vertexSize = 0; // aka stride. total size of all attributes in bytes.
 	std::vector<OpenGLVertexSpecification> attributeSpecs = {};
-	//std::vector<TVertex> vertices;
 
-	virtual void UploadBuffer(unsigned int size, void* data) override;
+	virtual void UploadBuffer(size_t size, void* data) override;
 };
 
-template<typename TVertex>
-OpenGLVertexBuffer<TVertex>::OpenGLVertexBuffer(std::vector<VertexSpecification> specs)  { // copies vertices data
+OpenGLVertexBuffer::OpenGLVertexBuffer(std::vector<VertexSpecification> specs)  { // copies vertices data
 	// Generate Buffer
 	glGenBuffers(1, &rendererID);
 	Bind();
@@ -112,24 +108,20 @@ OpenGLVertexBuffer<TVertex>::OpenGLVertexBuffer(std::vector<VertexSpecification>
 	}
 }
 
-template<typename TVertex>
-unsigned int OpenGLVertexBuffer<TVertex>::GetVertexSize() {
+unsigned int OpenGLVertexBuffer::GetVertexSize() {
 	return vertexSize;
 }
 
-template<typename TVertex>
-void OpenGLVertexBuffer<TVertex>::UploadBuffer(unsigned int size, void* data) {
+void OpenGLVertexBuffer::UploadBuffer(size_t size, void* data) {
 	//assert(vertices.size() > 0); // don't upload empty container
 	Bind();
 	glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)size, data, GL_STATIC_DRAW);
 }
 
-template<typename TVertex>
-void OpenGLVertexBuffer<TVertex>::Bind() {
+void OpenGLVertexBuffer::Bind() {
 	glBindBuffer(GL_ARRAY_BUFFER, rendererID);
 }
 
-template<typename TVertex>
-void OpenGLVertexBuffer<TVertex>::Unbind() {
+void OpenGLVertexBuffer::Unbind() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
