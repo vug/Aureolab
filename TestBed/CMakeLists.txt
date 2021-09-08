@@ -16,3 +16,5 @@ add_custom_target(copy_assets
 )
 
 add_dependencies(TestBed copy_assets)
+
+target_compile_features(TestBed PRIVATE cxx_std_17)
