@@ -1,40 +1,16 @@
 #pragma once
 
+#include "Core/GraphicsContext.h"
+#include "VertexSpecification.h"
+
 #include <any>
 #include <cassert>
 #include <vector>
 
-enum class VertexAttributeSemantic {
-	Position, 
-	Color,
-	Normal,
-	UV,
-};
-
-enum class VertexAttributeType {
-	int8,
-	uint8,
-	int16,
-	uint16,
-	int32,
-	uint32,
-	float32,
-	float64,
-};
-
-class VertexSpecification {
-public:
-	unsigned int index;
-	VertexAttributeSemantic semantic;
-	VertexAttributeType type;
-	int numComponents;
-	bool normalized = false;
-};
 
 class VertexBuffer {
 public:
-	template <typename TVertex>
-	static VertexBuffer* Create(std::vector<VertexSpecification> specs, const std::vector<TVertex>& vertices = {});
+	static VertexBuffer* Create(std::vector<VertexSpecification> specs);
 
 	template <typename TVertex>
 	void SetVertices(const std::vector<TVertex>& newVertices);
@@ -52,34 +28,22 @@ public:
 	virtual void Unbind() = 0;
 
 protected:
+	// Concrete implementations should provide functionality to upload a void* into buffer.
 	virtual void UploadBuffer(size_t size, void* data) = 0;
 	template <typename TVertex>
+	// Cast the vector blob stored in (void*)vertices member into std::vector<TVertex>
 	std::vector<TVertex>* GetVertices();
 
 private:
 	template <typename TVertex>
 	void UploadVertices();
+	// This void* is not the exact content of the buffer, but a pointer to an std::vector<TVertex>.
+	// Templated data members require the class itself to be templated. The template, then, disperses to any other classes that interacts with this one.
+	// To prevent the whole codebase to be templated with TVertex, instead, have this type unsafe pointer to store the vector as a blob.
 	void* vertices = nullptr;
 };
 
-
-#include "Core/GraphicsContext.h"
-#include "Platform/OpenGL/OpenGLVertexBuffer.h"
-
-template <typename TVertex>
-VertexBuffer* VertexBuffer::Create(std::vector<VertexSpecification> specs, const std::vector<TVertex>& vertices) {
-	VertexBuffer* vbo = nullptr;
-	switch (GraphicsContext::graphicsAPI) {
-	case GraphicsAPI::OPENGL:
-		vbo = new OpenGLVertexBuffer(specs);
-		vbo->SetVertices(vertices);
-		break;
-	default:
-		assert(false); // Only OpenGL is implemented.
-	}
-	return vbo;
-}
-
+// Templated methods are written in this header file to allow typenames to be anything without explicitly state them before usage.
 template<typename TVertex>
 std::vector<TVertex>* VertexBuffer::GetVertices() {
 	if (vertices == nullptr) {
@@ -122,7 +86,7 @@ void VertexBuffer::UpdateVertex(unsigned int index, const TVertex& vertex) {
 
 template <typename TVertex>
 void VertexBuffer::DeleteVertex(unsigned int index) {
-	assert(index < GetVertices()->size());
-	GetVertices()->erase(GetVertices()->begin() + index);
+	assert(index < GetVertices<TVertex>()->size());
+	GetVertices<TVertex>()->erase(GetVertices<TVertex>()->begin() + index);
 	UploadVertices();
 }

@@ -55,30 +55,24 @@ inline unsigned int TypeSize(VertexAttributeType type) {
 	}
 }
 
-// Same as VertexSpecification, additionaly OpenGL version has a size field in bytes
-OpenGLVertexSpecification::OpenGLVertexSpecification(const VertexSpecification& spec)
-	: VertexSpecification(spec) {
-	unsigned int componentSize = TypeSize(spec.type);
-	size = componentSize * spec.numComponents;
-}
+//
+//
 
-
-
-
-OpenGLVertexBuffer::OpenGLVertexBuffer(std::vector<VertexSpecification> specs) { // copies vertices data
-	// Generate Buffer
+OpenGLVertexBuffer::OpenGLVertexBuffer(const std::vector<VertexSpecification>& specs)
+	: attributeSpecs(specs) {
 	glGenBuffers(1, &rendererID);
 	Bind();
 
-	// Prepare Attributes
-	for (auto& spec : specs) {
-		attributeSpecs.push_back(spec);
-	}
-	vertexSize = std::accumulate(attributeSpecs.begin(), attributeSpecs.end(), 0, [&](int sum, const OpenGLVertexSpecification& curr) { return sum + curr.size; });
+	vertexSize = std::accumulate(attributeSpecs.begin(), attributeSpecs.end(), 0, [&](int sum, const VertexSpecification& spec) {
+		unsigned int componentSize = TypeSize(spec.type);
+		unsigned int size = componentSize * spec.numComponents;
+		return sum + size; 
+	});
+
 	assert(vertexSize > 0); // needs vertexSize computed
 	for (unsigned int ix = 0; ix < attributeSpecs.size(); ix++) {
 		const auto& spec = attributeSpecs[ix];
-		unsigned int offset = ix == 0 ? 0 : attributeSpecs[ix - 1].size;
+		unsigned int offset = ix == 0 ? 0 : TypeSize(attributeSpecs[ix - 1].type) * attributeSpecs[ix - 1].numComponents;
 		glVertexAttribPointer(spec.index, spec.numComponents, ALTypeToGLType(spec.type), spec.normalized, vertexSize, (void*)(std::uintptr_t)offset);
 		glEnableVertexAttribArray(spec.index);
 	}

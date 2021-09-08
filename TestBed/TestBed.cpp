@@ -53,7 +53,8 @@ public:
             VertexSpecification{ shader->GetAttribLocation("vPos"), VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false},
             VertexSpecification{ shader->GetAttribLocation("vCol"), VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false},
         };
-        auto vb = VertexBuffer::Create(specs, vertices1);
+        auto vb = VertexBuffer::Create(specs);
+        vb->SetVertices(vertices1);
         vb->AppendVertices(vertices2);
         vb->AppendVertex(vertex3);
         vb->UpdateVertex(3, vertex4);

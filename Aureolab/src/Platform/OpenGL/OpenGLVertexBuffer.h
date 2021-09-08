@@ -7,17 +7,9 @@
 
 #include <vector>
 
-
-class OpenGLVertexSpecification : public VertexSpecification {
-public:
-	OpenGLVertexSpecification(const VertexSpecification& spec);
-	unsigned int size; // Size of 
-};
-
-
 class OpenGLVertexBuffer : public VertexBuffer {
 public:
-	OpenGLVertexBuffer(std::vector<VertexSpecification> specs);
+	OpenGLVertexBuffer(const std::vector<VertexSpecification>& specs);
 
 	virtual unsigned int GetVertexSize() override;
 	virtual void Bind() override;
@@ -25,7 +17,7 @@ public:
 private:
 	unsigned int rendererID = -1;
 	unsigned int vertexSize = 0; // aka stride. total size of all attributes in bytes.
-	std::vector<OpenGLVertexSpecification> attributeSpecs = {};
+	std::vector<VertexSpecification> attributeSpecs;
 
 	virtual void UploadBuffer(size_t size, void* data) override;
 };
