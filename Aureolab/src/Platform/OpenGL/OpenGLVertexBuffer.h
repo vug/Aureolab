@@ -78,28 +78,22 @@ OpenGLVertexSpecification::OpenGLVertexSpecification(const VertexSpecification& 
 template<typename TVertex>
 class OpenGLVertexBuffer : public VertexBuffer<TVertex> {
 public:
-	OpenGLVertexBuffer(std::vector<VertexSpecification> specs, const std::vector<TVertex>& vertices = {});
+	OpenGLVertexBuffer(std::vector<VertexSpecification> specs);
 
-	virtual void SetVertices(const std::vector<TVertex>& newVertices) override;
-	virtual void AppendVertex(const TVertex& vertex) override;
-	virtual void AppendVertices(const std::vector<TVertex>& newVertices) override;
-	virtual void UpdateVertex(unsigned int index, const TVertex& vertex) override;
-	virtual void DeleteVertex(unsigned int index) override;
-
+	virtual unsigned int GetVertexSize() override;
 	virtual void Bind() override;
 	virtual void Unbind() override;
 private:
 	unsigned int rendererID = -1;
 	unsigned int vertexSize = 0; // aka stride. total size of all attributes in bytes.
 	std::vector<OpenGLVertexSpecification> attributeSpecs = {};
-	std::vector<TVertex> vertices;
+	//std::vector<TVertex> vertices;
 
-	void UploadBuffer();
+	virtual void UploadBuffer(unsigned int size, void* data) override;
 };
 
 template<typename TVertex>
-OpenGLVertexBuffer<TVertex>::OpenGLVertexBuffer(std::vector<VertexSpecification> specs, const std::vector<TVertex>& vertices) 
-		: vertices(vertices) { // copies vertices data
+OpenGLVertexBuffer<TVertex>::OpenGLVertexBuffer(std::vector<VertexSpecification> specs)  { // copies vertices data
 	// Generate Buffer
 	glGenBuffers(1, &rendererID);
 	Bind();
@@ -116,50 +110,18 @@ OpenGLVertexBuffer<TVertex>::OpenGLVertexBuffer(std::vector<VertexSpecification>
 		glVertexAttribPointer(spec.index, spec.numComponents, ALTypeToGLType(spec.type), spec.normalized, vertexSize, (void*)(std::uintptr_t)offset);
 		glEnableVertexAttribArray(spec.index);
 	}
-
-	// Upload Data
-	if (vertices.empty()) return;
-	assert(sizeof(TVertex) == vertexSize); // given vertex size should match vertex specification
-	UploadBuffer();
 }
 
 template<typename TVertex>
-void OpenGLVertexBuffer<TVertex>::UploadBuffer() {
-	assert(vertices.size() > 0); // don't upload empty container
+unsigned int OpenGLVertexBuffer<TVertex>::GetVertexSize() {
+	return vertexSize;
+}
+
+template<typename TVertex>
+void OpenGLVertexBuffer<TVertex>::UploadBuffer(unsigned int size, void* data) {
+	//assert(vertices.size() > 0); // don't upload empty container
 	Bind();
-	glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)vertexSize * vertices.size(), vertices.data(), GL_STATIC_DRAW);
-}
-
-template<typename TVertex>
-void OpenGLVertexBuffer<TVertex>::SetVertices(const std::vector<TVertex>& newVertices) {
-	vertices = newVertices; // copy operation
-	UploadBuffer();
-}
-
-template<typename TVertex>
-void OpenGLVertexBuffer<TVertex>::AppendVertex(const TVertex& vertex) {
-	vertices.push_back(vertex);
-	UploadBuffer();
-}
-
-template<typename TVertex>
-void OpenGLVertexBuffer<TVertex>::AppendVertices(const std::vector<TVertex>& newVertices) {
-	vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
-	UploadBuffer();
-}
-
-template<typename TVertex>
-void OpenGLVertexBuffer<TVertex>::UpdateVertex(unsigned int index, const TVertex& vertex) {
-	assert(index < vertices.size());
-	vertices[index] = vertex;
-	UploadBuffer();
-}
-
-template<typename TVertex>
-void OpenGLVertexBuffer<TVertex>::DeleteVertex(unsigned int index) {
-	assert(index < vertices.size());
-	vertices.erase(vertices.begin() + index);
-	UploadBuffer();
+	glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)size, data, GL_STATIC_DRAW);
 }
 
 template<typename TVertex>
