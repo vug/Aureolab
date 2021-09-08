@@ -126,6 +126,7 @@ OpenGLVertexBuffer<TVertex>::OpenGLVertexBuffer(std::vector<VertexSpecification>
 template<typename TVertex>
 void OpenGLVertexBuffer<TVertex>::UploadBuffer() {
 	assert(vertices.size() > 0); // don't upload empty container
+	Bind();
 	glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)vertexSize * vertices.size(), vertices.data(), GL_STATIC_DRAW);
 }
 
