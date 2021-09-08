@@ -23,6 +23,7 @@ public:
 	template <typename TVertex>
 	void DeleteVertex(unsigned int index);
 
+	virtual std::vector<unsigned int> GetAttributeSizes() = 0;
 	virtual unsigned int GetVertexSize() = 0;
 	virtual void Bind() = 0;
 	virtual void Unbind() = 0;

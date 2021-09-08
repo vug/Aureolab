@@ -11,6 +11,7 @@ class OpenGLVertexBuffer : public VertexBuffer {
 public:
 	OpenGLVertexBuffer(const std::vector<VertexAttributeSpecification>& specs);
 
+	virtual std::vector<unsigned int> GetAttributeSizes() override;
 	virtual unsigned int GetVertexSize() override;
 	virtual void Bind() override;
 	virtual void Unbind() override;

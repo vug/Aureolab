@@ -60,23 +60,33 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(const std::vector<VertexAttributeSpecific
 	glGenBuffers(1, &rendererID);
 	Bind();
 
-	vertexSize = std::accumulate(attributeSpecs.begin(), attributeSpecs.end(), 0, [&](int sum, const VertexAttributeSpecification& spec) {
-		unsigned int componentSize = TypeSize(spec.type);
-		unsigned int size = componentSize * spec.numComponents;
+	auto attributeSizes = GetAttributeSizes();
+	vertexSize = std::accumulate(attributeSizes.begin(), attributeSizes.end(), 0, [&](int sum, unsigned int size) {
 		return sum + size; 
 	});
 
-	assert(vertexSize > 0); // needs vertexSize computed
+	unsigned int offset = 0;
 	for (unsigned int ix = 0; ix < attributeSpecs.size(); ix++) {
 		const auto& spec = attributeSpecs[ix];
-		unsigned int offset = ix == 0 ? 0 : TypeSize(attributeSpecs[ix - 1].type) * attributeSpecs[ix - 1].numComponents;
 		glVertexAttribPointer(spec.index, spec.numComponents, ALTypeToGLType(spec.type), spec.normalized, vertexSize, (void*)(std::uintptr_t)offset);
 		glEnableVertexAttribArray(spec.index);
+		offset = attributeSizes[ix];
 	}
 }
 
+// Size of all Vertex Attributes in Bytes, aka stride
 unsigned int OpenGLVertexBuffer::GetVertexSize() {
 	return vertexSize;
+}
+
+std::vector<unsigned int> OpenGLVertexBuffer::GetAttributeSizes() {
+	std::vector<unsigned int> sizes = {};
+	for (auto& spec : attributeSpecs) {
+		unsigned int componentSize = TypeSize(spec.type);
+		unsigned int size = componentSize * spec.numComponents;
+		sizes.push_back(size);
+	}
+	return sizes;
 }
 
 void OpenGLVertexBuffer::UploadBuffer(size_t size, void* data) {
