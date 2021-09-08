@@ -6,6 +6,7 @@
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
 #include "Renderer/Shader.h"
+#include "Renderer/VertexArray.h"
 #include "Renderer/VertexBuffer.h"
 #include "Platform/OpenGL/OpenGLVertexBuffer.h"
 
@@ -44,6 +45,7 @@ public:
 
         shader = Shader::Create("assets/VertexColor2D.glsl");
 
+        auto va = VertexArray::Create();
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
 
