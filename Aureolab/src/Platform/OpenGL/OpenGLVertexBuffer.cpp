@@ -18,6 +18,10 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(const std::vector<VertexAttributeSpecific
 	});
 }
 
+OpenGLVertexBuffer::~OpenGLVertexBuffer() {
+	glDeleteBuffers(1, &rendererID);
+}
+
 // Size of all Vertex Attributes in Bytes, aka stride
 const unsigned int OpenGLVertexBuffer::GetVertexSize() const {
 	return vertexSize;

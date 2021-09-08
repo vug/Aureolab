@@ -49,13 +49,13 @@ public:
             VertexAttributeSpecification{ shader->GetAttribLocation("vPos"), VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false},
             VertexAttributeSpecification{ shader->GetAttribLocation("vCol"), VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false},
         };
-        VertexBuffer* vb = VertexBuffer::Create(specs);
+        vb = VertexBuffer::Create(specs);
         vb->SetVertices(vertices1);
         vb->AppendVertices(vertices2);
         vb->AppendVertex(vertex3);
         vb->UpdateVertex(3, vertex4);
 
-        VertexArray* va = VertexArray::Create();
+        va = VertexArray::Create();
         va->AddVertexBuffer(*vb);
 
         glGenBuffers(1, &ebo);
@@ -75,9 +75,9 @@ public:
 
     void OnDetach() {
         // optional
-        //glDeleteVertexArrays(1, &vao);
-        //glDeleteBuffers(1, &vbo);
         glDeleteBuffers(1, &ebo);
+        delete vb;
+        delete va;
         delete shader;
     }
 
@@ -121,6 +121,8 @@ public:
     }
 
 private:
+    VertexBuffer* vb;
+    VertexArray* va;
     GLuint ebo = -1;
     std::array<unsigned int, 6> indices = {};
     glm::mat4 mvp = glm::mat4(1.0f);

@@ -10,6 +10,10 @@ OpenGLVertexArray::OpenGLVertexArray() {
     Bind();
 }
 
+OpenGLVertexArray::~OpenGLVertexArray() {
+	glDeleteVertexArrays(1, &rendererID);
+}
+
 void OpenGLVertexArray::Bind() {
     glBindVertexArray(rendererID);
 }
