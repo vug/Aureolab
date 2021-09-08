@@ -1,5 +1,16 @@
 #include "VertexArray.h"
 
+#include "Core/GraphicsContext.h"
+#include "Platform/OpenGL/OpenGLVertexArray.h"
+
 VertexArray* VertexArray::Create() {
-	return nullptr;
+	VertexArray* vao = nullptr;
+	switch (GraphicsContext::graphicsAPI) {
+	case GraphicsAPI::OPENGL:
+		vao = new OpenGLVertexArray();
+		break;
+	default:
+		assert(false); // Only OpenGL is implemented.
+	}
+	return vao;
 }

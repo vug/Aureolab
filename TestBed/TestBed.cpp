@@ -45,19 +45,18 @@ public:
 
         shader = Shader::Create("assets/VertexColor2D.glsl");
 
-        auto va = VertexArray::Create();
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-
         std::vector<VertexAttributeSpecification> specs = {
             VertexAttributeSpecification{ shader->GetAttribLocation("vPos"), VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false},
             VertexAttributeSpecification{ shader->GetAttribLocation("vCol"), VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false},
         };
-        auto vb = VertexBuffer::Create(specs);
+        VertexBuffer* vb = VertexBuffer::Create(specs);
         vb->SetVertices(vertices1);
         vb->AppendVertices(vertices2);
         vb->AppendVertex(vertex3);
         vb->UpdateVertex(3, vertex4);
+
+        VertexArray* va = VertexArray::Create();
+        va->AddVertexBuffer(*vb);
 
         glGenBuffers(1, &ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
@@ -76,7 +75,7 @@ public:
 
     void OnDetach() {
         // optional
-        glDeleteVertexArrays(1, &vao);
+        //glDeleteVertexArrays(1, &vao);
         //glDeleteBuffers(1, &vbo);
         glDeleteBuffers(1, &ebo);
         delete shader;
@@ -122,7 +121,7 @@ public:
     }
 
 private:
-    GLuint vao = -1, ebo = -1;
+    GLuint ebo = -1;
     std::array<unsigned int, 6> indices = {};
     glm::mat4 mvp = glm::mat4(1.0f);
     Shader* shader = nullptr;
