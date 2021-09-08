@@ -12,6 +12,8 @@
 	Renderer/VertexSpecification.h Platform/OpenGL/OpenGLVertexSpecification.h Platform/OpenGL/OpenGLVertexSpecification.cpp
 	Renderer/VertexBuffer.h Renderer/VertexBuffer.cpp
 	Platform/OpenGL/OpenGLVertexBuffer.h Platform/OpenGL/OpenGLVertexBuffer.cpp
+	Renderer/IndexBuffer.h Renderer/IndexBuffer.cpp
+	Platform/OpenGL/OpenGLIndexBuffer.h Platform/OpenGL/OpenGLIndexBuffer.cpp
 	Renderer/VertexArray.h Renderer/VertexArray.cpp
 	Platform/OpenGL/OpenGLVertexArray.h Platform/OpenGL/OpenGLVertexArray.cpp
     Renderer/Shader.h Renderer/Shader.cpp
