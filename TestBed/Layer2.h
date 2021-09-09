@@ -10,6 +10,7 @@
 
 #include <glad/glad.h>
 
+#include <random>
 #include <vector>
 
 class Layer2 : public Layer {
@@ -21,11 +22,13 @@ public:
 	Layer2() : Layer("Point Sprites") { }
 
 	void OnAttach() {
-		std::vector<Vertex> vertices = { 
-			{{ 0.0f,  0.0f,  0.0f}},
-			{{ 0.1f,  0.2f, -0.5f}},
-			{{-0.5f,  0.4f,  0.5f}},
-		};
+		std::seed_seq seed{ 123 };
+		std::mt19937 mt(seed);
+		std::uniform_real_distribution<float> uniform(-1.0f, 1.0f);
+		std::vector<Vertex> vertices = {};
+		for (int i = 0; i < 500; i++) {
+			vertices.push_back({ { uniform(mt), uniform(mt), uniform(mt)} });
+		}
 
 		shader = Shader::Create("assets/PointSprite.glsl");
 
@@ -45,16 +48,17 @@ public:
 		glPointSize(16.0f); // default size
 		
 		// Order Independence
-		//glDisable(GL_DEPTH_TEST);
-		//glEnable(GL_BLEND);
-		//glBlendFunc(GL_ONE, GL_ONE);
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
 	}
 
 	void OnUpdate(float ts) {
 		glm::mat4 projection = glm::perspective(glm::radians(45.f), aspect, 0.01f, 100.0f);
 		glm::vec3 eye({ 0.0, 0.0, 2.0 });
 		glm::mat4 view = glm::lookAt(eye, glm::vec3{ 0.0, 0.0, 0.0 }, glm::vec3{ 0.0, 1.0, 0.0 });
-		glm::mat4 model = glm::mat4(1.0f);
+		angle += ts * 0.5f;
+		model = glm::rotate(model, ts, { 0, std::sin(angle), std::cos(angle) });
 
 		glm::mat4 mvp = projection * view * model;
 
@@ -85,4 +89,6 @@ private:
 	VertexArray* vao = nullptr;
 	GraphicsAPI* ga = nullptr;
 	float aspect = 1.0f;
+	glm::mat4 model = glm::mat4(1.0f);
+	float angle = 0.0f;
 };
