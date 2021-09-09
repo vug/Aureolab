@@ -1,15 +1,15 @@
 #type vertex
 #version 460 core
 
-uniform mat4 u_ModelMatrix;
-uniform mat4 u_ProjectionMatrix;
+uniform mat4 u_MVP;
+uniform vec3 u_camPos;
 
 layout (location = 0) in vec3 a_Position;
 
 void main(void) {
-	vec4 pos = u_ProjectionMatrix * (u_ModelMatrix * vec4(a_Position, 1.0));
-	//gl_PointSize = (1.0f - pos.z / pos.w) * 64.0f;
-	gl_PointSize = 100.0f;
+	vec4 pos = u_MVP * vec4(a_Position, 1.0);
+	gl_PointSize = 1.0 / (1.0 + length(a_Position - u_camPos)) * 128.0f;
+	//gl_PointSize = 64.0f;
 	gl_Position = pos;
 }
 
