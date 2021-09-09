@@ -18,6 +18,8 @@
 	Platform/OpenGL/OpenGLVertexArray.h Platform/OpenGL/OpenGLVertexArray.cpp
     Renderer/Shader.h Renderer/Shader.cpp
 	Platform/OpenGL/OpenGLShader.h Platform/OpenGL/OpenGLShader.cpp
+    Renderer/GraphicsAPI.h Renderer/GraphicsAPI.cpp
+	Platform/OpenGL/OpenGLGraphicsAPI.h Platform/OpenGL/OpenGLGraphicsAPI.cpp
 )
 
 # If a debug build configuration define AL_DEBUG processor macro
