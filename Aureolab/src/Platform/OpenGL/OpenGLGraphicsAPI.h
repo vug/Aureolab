@@ -12,4 +12,5 @@ public:
 	virtual void Clear(bool colorBuffer = true, bool depthBuffer = true) override;
 
 	virtual void DrawIndexedTriangles(const VertexArray& vertexArray, unsigned int indexCount = 0) override;
+	virtual void DrawIndexedPoints(const VertexArray& vertexArray, unsigned int indexCount = 0) override;
 };

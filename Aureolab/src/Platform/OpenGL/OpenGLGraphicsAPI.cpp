@@ -21,3 +21,10 @@ void OpenGLGraphicsAPI::DrawIndexedTriangles(const VertexArray& vertexArray, uns
 	indexCount = indexCount == 0 ? vertexArray.GetIndexBuffer()->GetNumIndices() : indexCount;
 	glDrawElements(GL_TRIANGLES, (GLsizei)indexCount, GL_UNSIGNED_INT, 0);
 }
+
+void OpenGLGraphicsAPI::DrawIndexedPoints(const VertexArray& vertexArray, unsigned int indexCount) {
+	vertexArray.Bind();
+	indexCount = indexCount == 0 ? vertexArray.GetIndexBuffer()->GetNumIndices() : indexCount;
+	glDrawElements(GL_POINTS, (GLsizei)indexCount, GL_UNSIGNED_INT, 0);
+}
+
