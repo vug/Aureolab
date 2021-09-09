@@ -71,6 +71,7 @@ public:
 
         shader->Bind();
         shader->UploadUniformMat4("MVP", mvp);
+        va->Bind();
         glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(unsigned int), GL_UNSIGNED_INT, 0);
     }
 
