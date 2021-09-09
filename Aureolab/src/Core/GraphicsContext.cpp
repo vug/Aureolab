@@ -8,12 +8,12 @@
 #include <cassert>
 
 // Maybe in the future we can have a setter to change the graphics API on-the-fly
-GraphicsAPI GraphicsContext::graphicsAPI = GraphicsAPI::OPENGL;
+GraphicsContext::API GraphicsContext::graphicsAPI = API::OPENGL;
 
 GraphicsContext* GraphicsContext::Create(Window* window) {
 	GraphicsContext* gc = nullptr;
 	switch (graphicsAPI) { 
-	case GraphicsAPI::OPENGL:
+	case API::OPENGL:
 		gc = new OpenGLContext(window);
 		break;
 	default:

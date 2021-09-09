@@ -8,7 +8,7 @@
 IndexBuffer* IndexBuffer::Create() {
 	IndexBuffer* ebo = nullptr;
 	switch (GraphicsContext::graphicsAPI) {
-	case GraphicsAPI::OPENGL:
+	case GraphicsContext::API::OPENGL:
 		ebo = new OpenGLIndexBuffer();
 		break;
 	default:

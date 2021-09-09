@@ -8,7 +8,7 @@
 Shader* Shader::Create(const std::string& filepath) {
 	Shader* shader = nullptr;
 	switch (GraphicsContext::graphicsAPI) {
-	case GraphicsAPI::OPENGL:
+	case GraphicsContext::API::OPENGL:
 		shader = new OpenGLShader(filepath);
 		break;
 	default:

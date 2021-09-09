@@ -1,15 +1,14 @@
 #pragma once
 #include "Window.h"
 
-enum class GraphicsAPI {
-	OPENGL,
-	// DIRECTX, VULKAN
-};
-
 class GraphicsContext {
 public:
+	enum class API {
+		OPENGL,
+		// DIRECTX, VULKAN
+	};
 	static GraphicsContext* Create(Window* window); // factory method design pattern
-	static GraphicsAPI graphicsAPI;
+	static API graphicsAPI;
 
 	virtual void OnUpdate() = 0;
 

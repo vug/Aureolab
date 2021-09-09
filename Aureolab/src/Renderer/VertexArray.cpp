@@ -6,7 +6,7 @@
 VertexArray* VertexArray::Create() {
 	VertexArray* vao = nullptr;
 	switch (GraphicsContext::graphicsAPI) {
-	case GraphicsAPI::OPENGL:
+	case GraphicsContext::API::OPENGL:
 		vao = new OpenGLVertexArray();
 		break;
 	default:

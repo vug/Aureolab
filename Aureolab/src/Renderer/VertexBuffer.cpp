@@ -10,7 +10,7 @@ VertexBuffer::~VertexBuffer() {
 VertexBuffer* VertexBuffer::Create(std::vector<VertexAttributeSpecification> specs) {
 	VertexBuffer* vbo = nullptr;
 	switch (GraphicsContext::graphicsAPI) {
-	case GraphicsAPI::OPENGL:
+	case GraphicsContext::API::OPENGL:
 		vbo = new OpenGLVertexBuffer(specs);
 		break;
 	default:
