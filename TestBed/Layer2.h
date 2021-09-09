@@ -28,11 +28,13 @@ public:
 		std::uniform_real_distribution<float> uniform1(-1.0f, 1.0f);
 		std::uniform_real_distribution<float> uniform2(0.0f, 1.0f);
 		std::vector<Vertex> vertices = {};
-		for (int i = 0; i < 500; i++) {
-			vertices.push_back({ 
-				{ uniform1(mt), uniform1(mt), uniform1(mt) }, 
-				{ uniform2(mt), uniform2(mt), uniform2(mt) },
-			});
+		glm::vec3 color2 = { 1.0, 0.0, 0.0 };
+		glm::vec3 color1 = { 1.0, 1.0, 0.0 };
+		for (int i = 0; i < 1000; i++) {
+			glm::vec3 pos = { uniform1(mt), uniform1(mt), uniform1(mt) };
+			float distToCenter = glm::length(pos);
+			glm::vec3 col = color1 * (1 - distToCenter) + color2 * distToCenter;
+			vertices.push_back({ pos, col });
 		}
 
 		shader = Shader::Create("assets/PointSprite.glsl");
@@ -62,9 +64,10 @@ public:
 
 	void OnUpdate(float ts) {
 		glm::mat4 projection = glm::perspective(glm::radians(45.f), aspect, 0.01f, 100.0f);
-		glm::vec3 eye({ 0.0, 0.0, 2.0 });
+		glm::vec3 eye({ 0.0, 0.0, 4.0 });
 		glm::mat4 view = glm::lookAt(eye, glm::vec3{ 0.0, 0.0, 0.0 }, glm::vec3{ 0.0, 1.0, 0.0 });
 		angle += ts * 0.5f;
+		//model = glm::rotate(model, ts, { 0, 1, 0 });
 		model = glm::rotate(model, ts, { 0, std::sin(angle), std::cos(angle) });
 
 		glm::mat4 mvp = projection * view * model;
