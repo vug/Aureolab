@@ -20,7 +20,8 @@ void OpenGLIndexBuffer::Unbind() const {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void OpenGLIndexBuffer::UploadIndices(std::vector<unsigned int> indices) {
+void OpenGLIndexBuffer::UploadIndices(const std::vector<unsigned int>& indices) {
     Bind();
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
+    numIndices = indices.size();
 }

@@ -35,9 +35,11 @@ void OpenGLVertexArray::AddVertexBuffer(const VertexBuffer& vertexBuffer) {
 		glEnableVertexAttribArray(spec.index);
 		offset = sizes[ix];
 	}
+	vertexBuffers.push_back(&vertexBuffer);
 }
 
 void OpenGLVertexArray::SetIndexBuffer(const IndexBuffer& indexBuffer) {
 	Bind();
 	indexBuffer.Bind();
+	this->indexBuffer = &indexBuffer;
 }

@@ -12,7 +12,9 @@ public:
 	virtual void Bind() const override;
 	virtual void Unbind() const override;
 
-	virtual void UploadIndices(std::vector<unsigned int> indices) override;
+	virtual void UploadIndices(const std::vector<unsigned int>& indices) override;
+	virtual const size_t GetNumIndices() const override { return numIndices; };
 private:
 	unsigned int rendererID = -1;
+	size_t numIndices = 0;
 };
