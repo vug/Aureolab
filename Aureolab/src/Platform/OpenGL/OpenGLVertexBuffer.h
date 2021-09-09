@@ -16,8 +16,8 @@ public:
 	virtual const std::vector<unsigned int> GetAttributeSizes() const override;
 	virtual const unsigned int GetVertexSize() const override;
 
-	virtual void Bind() override;
-	virtual void Unbind() override;
+	virtual void Bind() const override;
+	virtual void Unbind() const override;
 private:
 	unsigned int rendererID = -1;
 	unsigned int vertexSize = 0; // aka stride. total size of all attributes in bytes.

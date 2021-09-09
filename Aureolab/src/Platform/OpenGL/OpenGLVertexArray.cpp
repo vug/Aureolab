@@ -14,11 +14,11 @@ OpenGLVertexArray::~OpenGLVertexArray() {
 	glDeleteVertexArrays(1, &rendererID);
 }
 
-void OpenGLVertexArray::Bind() {
+void OpenGLVertexArray::Bind() const {
     glBindVertexArray(rendererID);
 }
 
-void OpenGLVertexArray::Unbind() {
+void OpenGLVertexArray::Unbind() const {
     glBindVertexArray(0);
 }
 

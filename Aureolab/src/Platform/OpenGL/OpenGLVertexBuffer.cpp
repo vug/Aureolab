@@ -46,10 +46,10 @@ void OpenGLVertexBuffer::UploadBuffer(size_t size, void* data) {
 	glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)size, data, GL_STATIC_DRAW);
 }
 
-void OpenGLVertexBuffer::Bind() {
+void OpenGLVertexBuffer::Bind() const {
 	glBindBuffer(GL_ARRAY_BUFFER, rendererID);
 }
 
-void OpenGLVertexBuffer::Unbind() {
+void OpenGLVertexBuffer::Unbind() const {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

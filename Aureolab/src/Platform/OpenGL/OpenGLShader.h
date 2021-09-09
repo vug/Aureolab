@@ -10,8 +10,8 @@ public:
 	OpenGLShader(const std::string& filepath);
 	~OpenGLShader();
 
-	virtual void Bind() override;
-	virtual void Unbind() override;
+	virtual void Bind() const override;
+	virtual void Unbind() const override;
 
 	virtual unsigned int GetAttribLocation(const std::string& name) override;
 

@@ -18,11 +18,11 @@ OpenGLShader::~OpenGLShader() {
 	glDeleteProgram(rendererID);
 }
 
-void OpenGLShader::Bind() {
+void OpenGLShader::Bind() const {
 	glUseProgram(rendererID);
 }
 
-void OpenGLShader::Unbind() {
+void OpenGLShader::Unbind() const {
 	glUseProgram(0);
 }
 
@@ -72,22 +72,22 @@ void OpenGLShader::UploadUniformMat4(const std::string& name, const glm::mat4& m
 
 void OpenGLShader::UploadUniformFloats(const std::string& name, const std::vector<float>& values) {
 	GLint location = glGetUniformLocation(rendererID, name.c_str());
-	glUniform1fv(location, values.size(), values.data());
+	glUniform1fv(location, (GLsizei)values.size(), values.data());
 }
 
 void OpenGLShader::UploadUniformFloat2s(const std::string& name, const std::vector<glm::vec2>& values) {
 	GLint location = glGetUniformLocation(rendererID, name.c_str());
-	glUniform2fv(location, values.size() * 2, glm::value_ptr(values.data()[0]));
+	glUniform2fv(location, (GLsizei)values.size() * 2, glm::value_ptr(values.data()[0]));
 }
 
 void OpenGLShader::UploadUniformFloat3s(const std::string& name, const std::vector<glm::vec3>& values) {
 	GLint location = glGetUniformLocation(rendererID, name.c_str());
-	glUniform3fv(location, values.size() * 3, glm::value_ptr(values.data()[0]));
+	glUniform3fv(location, (GLsizei)values.size() * 3, glm::value_ptr(values.data()[0]));
 }
 
 void OpenGLShader::UploadUniformFloat4s(const std::string& name, const std::vector<glm::vec4>& values) {
 	GLint location = glGetUniformLocation(rendererID, name.c_str());
-	glUniform4fv(location, values.size() * 4, glm::value_ptr(values.data()[0]));
+	glUniform4fv(location, (GLsizei)values.size() * 4, glm::value_ptr(values.data()[0]));
 }
 
 std::string OpenGLShader::ReadFile(const std::string& filepath) {

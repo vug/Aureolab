@@ -27,8 +27,8 @@ public:
 	virtual const std::vector<unsigned int> GetAttributeSizes() const = 0;
 	virtual const unsigned int GetVertexSize() const = 0;
 
-	virtual void Bind() = 0;
-	virtual void Unbind() = 0;
+	virtual void Bind() const = 0;
+	virtual void Unbind() const = 0;
 
 protected:
 	// Concrete implementations should provide functionality to upload a void* into buffer.
