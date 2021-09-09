@@ -9,7 +9,7 @@ public:
 	TestBed(std::vector<std::string> args) : Application("AureLab Test Bed") {
 		Log::Info("Hi from TestBed! Called with following CLI arguments: argc: {}, argv[0]: {}", args.size(), args[0]);
 
-        PushLayer(new Layer1());
+        //PushLayer(new Layer1());
 		PushLayer(new Layer2());
 	}
 };
