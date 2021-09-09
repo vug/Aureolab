@@ -10,7 +10,6 @@ Application::Application(const std::string& name) : name(name) {
     context = GraphicsContext::Create(window);
 
     // Renderer::Initialize
-    // other glEnable (blending, blend function, depth test etc) to application defaults
 }
 
 void Application::OnEvent(Event& ev) {

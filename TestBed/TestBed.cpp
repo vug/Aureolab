@@ -10,6 +10,7 @@
 #include "Renderer/VertexBuffer.h"
 #include "Renderer/IndexBuffer.h"
 #include "Platform/OpenGL/OpenGLVertexBuffer.h"
+#include "Renderer/GraphicsAPI.h"
 
 #include <glad/glad.h>
 //#define GLM_FORCE_CTOR_INIT /* initialize vectors and matrices */
@@ -62,17 +63,19 @@ public:
         va = VertexArray::Create();
         va->AddVertexBuffer(*vb);
         va->SetIndexBuffer(*ib);
+
+        ga = GraphicsAPI::Create();
+        ga->Initialize();
+        ga->SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
     }
 
     void OnUpdate(float ts) {
         mvp *= glm::rotate(glm::mat4(1.0f), ts, glm::vec3(0.0f, 0.0f, 1.0f));
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
+        ga->Clear();
         shader->Bind();
         shader->UploadUniformMat4("MVP", mvp);
-        va->Bind();
-        glDrawElements(GL_TRIANGLES, (GLsizei)va->GetIndexBuffer()->GetNumIndices(), GL_UNSIGNED_INT, 0);
+        ga->DrawIndexedTriangles(*va);
     }
 
     void OnDetach() {
@@ -81,6 +84,7 @@ public:
         delete ib;
         delete va;
         delete shader;
+        delete ga;
     }
 
     void OnEvent(Event& ev) {
@@ -123,6 +127,7 @@ public:
     }
 
 private:
+    GraphicsAPI* ga = nullptr;
     VertexBuffer* vb = nullptr;
     IndexBuffer* ib = nullptr;
     VertexArray* va = nullptr;
