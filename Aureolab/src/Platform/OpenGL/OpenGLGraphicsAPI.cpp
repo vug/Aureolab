@@ -18,13 +18,19 @@ void OpenGLGraphicsAPI::Clear(bool colorBuffer, bool depthBuffer) {
 
 void OpenGLGraphicsAPI::DrawIndexedTriangles(const VertexArray& vertexArray, unsigned int indexCount) {
 	vertexArray.Bind();
-	indexCount = indexCount == 0 ? vertexArray.GetIndexBuffer()->GetNumIndices() : indexCount;
+	indexCount = indexCount == 0 ? (unsigned int)vertexArray.GetIndexBuffer()->GetNumIndices() : indexCount;
 	glDrawElements(GL_TRIANGLES, (GLsizei)indexCount, GL_UNSIGNED_INT, 0);
 }
 
 void OpenGLGraphicsAPI::DrawIndexedPoints(const VertexArray& vertexArray, unsigned int indexCount) {
 	vertexArray.Bind();
-	indexCount = indexCount == 0 ? vertexArray.GetIndexBuffer()->GetNumIndices() : indexCount;
+	indexCount = indexCount == 0 ? (unsigned int)vertexArray.GetIndexBuffer()->GetNumIndices() : indexCount;
 	glDrawElements(GL_POINTS, (GLsizei)indexCount, GL_UNSIGNED_INT, 0);
+}
+
+void OpenGLGraphicsAPI::DrawArrayPoints(const VertexArray& vertexArray, unsigned int start, unsigned int count) {
+	vertexArray.Bind();
+	count = count == 0 ? vertexArray.GetVertexBuffers()[0]->GetNumVertices() : count;
+	glDrawArrays(GL_POINTS, start, count);
 }
 

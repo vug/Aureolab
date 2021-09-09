@@ -18,3 +18,7 @@ VertexBuffer* VertexBuffer::Create(std::vector<VertexAttributeSpecification> spe
 	}
 	return vbo;
 }
+
+const unsigned int VertexBuffer::GetNumVertices() const {
+	return numVertices;
+}

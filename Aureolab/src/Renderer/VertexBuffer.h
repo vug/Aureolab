@@ -22,6 +22,7 @@ public:
 	void UpdateVertex(unsigned int index, const TVertex& vertex);
 	template <typename TVertex>
 	void DeleteVertex(unsigned int index);
+	const unsigned int GetNumVertices() const;
 
 	virtual const std::vector<VertexAttributeSpecification>& GetAttributeSpecs() const = 0;
 	virtual const std::vector<unsigned int> GetAttributeSizes() const = 0;
@@ -44,6 +45,7 @@ private:
 	// Templated data members require the class itself to be templated. The template, then, disperses to any other classes that interacts with this one.
 	// To prevent the whole codebase to be templated with TVertex, instead, have this type unsafe pointer to store the vector as a blob.
 	void* vertices = nullptr;
+	unsigned int numVertices = 0;
 };
 
 // Templated methods are written in this header file to allow typenames to be anything without explicitly state them before usage.
@@ -65,12 +67,14 @@ void VertexBuffer::SetVertices(const std::vector<TVertex>& newVertices) {
 	auto verts = GetVertices<TVertex>();
 	*verts = newVertices; // copy operation
 	UploadVertices<TVertex>();
+	numVertices = (unsigned int)newVertices.size();
 }
 
 template<typename TVertex>
 void VertexBuffer::AppendVertex(const TVertex& vertex) {
 	GetVertices<TVertex>()->push_back(vertex);
 	UploadVertices<TVertex>();
+	numVertices += 1;
 }
 
 template<typename TVertex>
@@ -78,6 +82,7 @@ void VertexBuffer::AppendVertices(const std::vector<TVertex>& newVertices) {
 	auto verts = GetVertices<TVertex>();
 	verts->insert(verts->end(), newVertices.begin(), newVertices.end());
 	UploadVertices<TVertex>();
+	numVertices += (unsigned int)newVertices.size();
 }
 
 template<typename TVertex>
@@ -92,4 +97,5 @@ void VertexBuffer::DeleteVertex(unsigned int index) {
 	assert(index < GetVertices<TVertex>()->size());
 	GetVertices<TVertex>()->erase(GetVertices<TVertex>()->begin() + index);
 	UploadVertices();
+	numVertices -= 1;
 }

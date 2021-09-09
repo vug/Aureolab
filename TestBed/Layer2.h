@@ -26,7 +26,6 @@ public:
 			{{ 0.1f,  0.2f, -0.5f}},
 			{{-0.5f,  0.4f,  0.5f}},
 		};
-		std::vector<unsigned int> indices = {0, 1, 2};
 
 		shader = Shader::Create("assets/PointSprite.glsl");
 
@@ -35,12 +34,8 @@ public:
 		});
 		vbo->SetVertices(vertices);
 
-		IndexBuffer* ebo = IndexBuffer::Create();
-		ebo->UploadIndices(indices);
-
 		vao = VertexArray::Create();
 		vao->AddVertexBuffer(*vbo);
-		vao->SetIndexBuffer(*ebo);
 
 		ga = GraphicsAPI::Create();
 		ga->Initialize();
@@ -67,7 +62,7 @@ public:
 		shader->Bind();
 		shader->UploadUniformMat4("u_MVP", mvp);
 		shader->UploadUniformFloat3("u_camPos", eye);
-		ga->DrawIndexedPoints(*vao);
+		ga->DrawArrayPoints(*vao);
 	}
 
 	void OnEvent(Event& ev) {
@@ -76,7 +71,7 @@ public:
 	}
 
 	void OnWindowResize(WindowResizeEvent& e) {
-		Log::Debug("Layer1 received: {}", e.ToString());
+		Log::Debug("Layer2 received: {}", e.ToString());
 		aspect = (float)e.GetWidth() / e.GetHeight();
 	}
 
