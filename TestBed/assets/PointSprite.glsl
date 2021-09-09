@@ -23,7 +23,7 @@ in vec3 v_Color;
 
 void main(void) {
 	const vec4 color1 = vec4(v_Color, 1.0);
-	const vec4 color2 = vec4(0.9, 0.7, 1.0, 1.0);
+	const vec4 color2 = vec4(v_Color, 0.0);
 
 	vec2 temp = gl_PointCoord - vec2(0.5);
 	float r2 = dot(temp, temp);

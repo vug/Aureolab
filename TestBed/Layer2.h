@@ -57,7 +57,7 @@ public:
 		// Order Independence
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ONE);
+		glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
 	}
 
 	void OnUpdate(float ts) {
