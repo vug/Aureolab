@@ -17,6 +17,7 @@ class Layer2 : public Layer {
 public:
 	struct Vertex {
 		glm::vec3 position;
+		glm::vec3 color;
 	};
 
 	Layer2() : Layer("Point Sprites") { }
@@ -24,16 +25,22 @@ public:
 	void OnAttach() {
 		std::seed_seq seed{ 123 };
 		std::mt19937 mt(seed);
-		std::uniform_real_distribution<float> uniform(-1.0f, 1.0f);
+		std::uniform_real_distribution<float> uniform1(-1.0f, 1.0f);
+		std::uniform_real_distribution<float> uniform2(0.0f, 1.0f);
 		std::vector<Vertex> vertices = {};
 		for (int i = 0; i < 500; i++) {
-			vertices.push_back({ { uniform(mt), uniform(mt), uniform(mt)} });
+			vertices.push_back({ 
+				{ uniform1(mt), uniform1(mt), uniform1(mt) }, 
+				{ uniform2(mt), uniform2(mt), uniform2(mt) },
+			});
 		}
 
 		shader = Shader::Create("assets/PointSprite.glsl");
+		shader->Bind();
 
 		VertexBuffer* vbo = VertexBuffer::Create({
 			VertexAttributeSpecification{ shader->GetAttribLocation("a_Position"), VertexAttributeSemantic::Position, VertexAttributeType::float32, 3, false},
+			VertexAttributeSpecification{ shader->GetAttribLocation("a_Color"), VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false},
 		});
 		vbo->SetVertices(vertices);
 
