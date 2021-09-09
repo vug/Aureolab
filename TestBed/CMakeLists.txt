@@ -1,7 +1,7 @@
 add_executable(TestBed 
 	TestBed.cpp
-	Layer1.h
- )
+	Layer1.h Layer2.h
+)
 
 target_link_libraries(
 	TestBed PRIVATE 
