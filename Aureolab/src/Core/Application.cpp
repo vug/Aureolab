@@ -20,7 +20,8 @@ void Application::OnEventApplication(Event& ev) {
     OnEvent(ev); // to client app
     for (int i = 0; i < layers.size(); i++) {
         auto layer = layers[i];
-        layer->OnEvent(ev); // to client app's layers
+        if (layer->GetIsRunning()) 
+            layer->OnEvent(ev); // to client app's layers
     }
 }
 
@@ -41,7 +42,8 @@ void Application::Run() {
         lastUpdateTime = window->GetTime();
 
         for (auto layer : layers) {
-            layer->OnUpdate(timestep);
+            if (layer->GetIsRunning())
+                layer->OnUpdate(timestep);
         }
         window->OnUpdate();
         context->OnUpdate();
