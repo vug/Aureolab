@@ -12,11 +12,13 @@
 class Application : public LayerList {
 public:
 	Application(const std::string& name);
-	void OnEvent(Event& ev);
-	void OnWindowClose(WindowCloseEvent& ev);
-	void OnFrameBufferResized(FrameBufferResizeEvent& ev);
+protected:
+	virtual void OnEvent(Event& ev) = 0;
 private:
 	void Run();
+	void OnEventApplication(Event& ev);
+	void OnWindowClose(WindowCloseEvent& ev);
+	void OnFrameBufferResized(FrameBufferResizeEvent& ev);
 	bool isRunning = true;
 	Window* window = nullptr;
 	GraphicsContext* context = nullptr;

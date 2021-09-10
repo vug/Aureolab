@@ -6,20 +6,21 @@
 
 Application::Application(const std::string& name) : name(name) { 
     window = Window::Create(name, 1000, 1000);
-    window->SetEventCallback(AL_BIND_EVENT_FN(Application::OnEvent));
+    window->SetEventCallback(AL_BIND_EVENT_FN(Application::OnEventApplication));
     context = GraphicsContext::Create(window);
 
     // Renderer::Initialize
 }
 
-void Application::OnEvent(Event& ev) {
+void Application::OnEventApplication(Event& ev) {
     auto dispatcher = EventDispatcher(ev);
     dispatcher.Dispatch<WindowCloseEvent>(AL_BIND_EVENT_FN(Application::OnWindowClose));
     dispatcher.Dispatch<FrameBufferResizeEvent>(AL_BIND_EVENT_FN(Application::OnFrameBufferResized));
 
+    OnEvent(ev); // to client app
     for (int i = 0; i < layers.size(); i++) {
         auto layer = layers[i];
-        layer->OnEvent(ev);
+        layer->OnEvent(ev); // to client app's layers
     }
 }
 
