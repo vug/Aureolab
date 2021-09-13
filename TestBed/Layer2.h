@@ -53,13 +53,13 @@ public:
 		ga->Initialize();
 		ga->SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
 
-		glEnable(GL_PROGRAM_POINT_SIZE);
-		glPointSize(16.0f); // default size
+		ga->Enable(GraphicsAbility::PointSize); // Rasterized point diameter will be determined in shaders, gl_PointSize variable.
+		//ga->SetDefaultPointSize(16.0f);
 		
 		// Order Independence
-		glDisable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
+		ga->Disable(GraphicsAbility::DepthTest); // Every point primitive will be rendered, don't care about which is behind or front.
+		ga->Enable(GraphicsAbility::Blend);
+		ga->SetBlendingFunction(BlendingFactor::SourceAlpha, BlendingFactor::DestinationAlpha);
 	}
 
 	void OnUpdate(float ts) {
