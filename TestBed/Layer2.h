@@ -8,8 +8,6 @@
 #include "Renderer/VertexArray.h"
 #include "Renderer/GraphicsAPI.h"
 
-#include <glad/glad.h>
-
 #include <random>
 #include <vector>
 
