@@ -47,7 +47,6 @@ private:
 			layers[j]->Pause();
 		}
 		layers[ix]->Play();
-		Log::Info("Playing layer {}...", ix);
 	}
 
 	virtual void OnImGuiRender() override {

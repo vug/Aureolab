@@ -22,29 +22,31 @@ public:
 
 	Layer2() : Layer("Point Sprites") { }
 
-	virtual void OnAttach() override {
+	const std::vector<Vertex>& CreatePoints(int numPoints) {
 		std::seed_seq seed{ 123 };
 		std::mt19937 mt(seed);
 		std::uniform_real_distribution<float> uniform1(-1.0f, 1.0f);
 		std::uniform_real_distribution<float> uniform2(0.0f, 1.0f);
-		std::vector<Vertex> vertices = {};
-		glm::vec3 color2 = { 1.0, 0.0, 0.0 };
-		glm::vec3 color1 = { 1.0, 1.0, 0.0 };
-		for (int i = 0; i < 1000; i++) {
+		std::vector<Vertex>* vertices = new std::vector<Vertex>();
+		for (int i = 0; i < numPoints; i++) {
 			glm::vec3 pos = { uniform1(mt), uniform1(mt), uniform1(mt) };
 			float distToCenter = glm::length(pos);
 			glm::vec3 col = color1 * (1 - distToCenter) + color2 * distToCenter;
-			vertices.push_back({ pos, col });
+			vertices->push_back({ pos, col });
 		}
+		return *vertices;
+	}
 
+	virtual void OnAttach() override {
 		shader = Shader::Create("assets/PointSprite.glsl");
 		shader->Bind();
 
-		VertexBuffer* vbo = VertexBuffer::Create({
+		vbo = VertexBuffer::Create({
 			VertexAttributeSpecification{ shader->GetAttribLocation("a_Position"), VertexAttributeSemantic::Position, VertexAttributeType::float32, 3, false},
 			VertexAttributeSpecification{ shader->GetAttribLocation("a_Color"), VertexAttributeSemantic::Color, VertexAttributeType::float32, 3, false},
 		});
-		vbo->SetVertices(vertices);
+		auto points = CreatePoints(numPoints);
+		vbo->SetVertices(points);
 
 		vao = VertexArray::Create();
 		vao->AddVertexBuffer(*vbo);
@@ -66,9 +68,11 @@ public:
 		glm::mat4 projection = glm::perspective(glm::radians(45.f), aspect, 0.01f, 100.0f);
 		glm::vec3 eye({ 0.0, 0.0, 4.0 });
 		glm::mat4 view = glm::lookAt(eye, glm::vec3{ 0.0, 0.0, 0.0 }, glm::vec3{ 0.0, 1.0, 0.0 });
-		angle += ts * 0.5f;
-		//model = glm::rotate(model, ts, { 0, 1, 0 });
-		model = glm::rotate(model, ts, { 0, std::sin(angle), std::cos(angle) });
+		if (isModelSpinning) {
+			angle += ts * 0.5f;
+			//model = glm::rotate(model, ts, { 0, 1, 0 });
+			model = glm::rotate(model, ts, { 0, std::sin(angle), std::cos(angle) });
+		}
 
 		glm::mat4 mvp = projection * view * model;
 
@@ -76,6 +80,10 @@ public:
 		shader->Bind();
 		shader->UploadUniformMat4("u_MVP", mvp);
 		shader->UploadUniformFloat3("u_camPos", eye);
+		shader->UploadUniformFloat("u_PointSize", pointSize);
+		shader->UploadUniformFloat("u_FocalDistance", focalDistance);
+		shader->UploadUniformFloat("u_BlurRadius", blurRadius);
+		shader->UploadUniformFloat("u_DepthOfField", depthOfField);
 		ga->DrawArrayPoints(*vao);
 	}
 
@@ -98,14 +106,40 @@ public:
 	virtual void OnImGuiRender() override {
 		ImGui::Begin("Point Sprites");
 		ImGui::Text("with out of focus blurring");
+		bool shouldRecreate = false;
+
+		shouldRecreate|= ImGui::InputInt("Points", &numPoints, 1, 100, ImGuiInputTextFlags_EnterReturnsTrue);
+		ImGui::SliderFloat("Size", &pointSize, 1.0f, 512.0f);
+		ImGui::SliderFloat("Focal Dist", &focalDistance, 0.1f, 8.0f);
+		ImGui::SliderFloat("Blur Radius", &blurRadius, 0.0f, 2.0f);
+		ImGui::SliderFloat("DoF", &depthOfField, 0.0f, 4.0f);
+		shouldRecreate |= ImGui::ColorEdit3("Color1", glm::value_ptr(color1));
+		shouldRecreate |= ImGui::ColorEdit3("Color2", glm::value_ptr(color2));
+		ImGui::Checkbox("Spin", &isModelSpinning);
+
+		if (shouldRecreate) {
+			Log::Info("New # of points: {}", numPoints);
+			std::vector<Vertex> points = CreatePoints(numPoints);
+			vbo->SetVertices(points);
+		}
 		ImGui::End();
 	}
 
 private:
 	Shader* shader = nullptr;
 	VertexArray* vao = nullptr;
+	VertexBuffer* vbo = nullptr;
 	GraphicsAPI* ga = nullptr;
 	float aspect = 1.0f;
 	glm::mat4 model = glm::mat4(1.0f);
 	float angle = 0.0f;
+
+	int numPoints = 1000;
+	float pointSize = 64.0f;
+	float focalDistance = 4.0f;
+	float blurRadius = 0.5f;
+	float depthOfField = 2.0f;
+	glm::vec3 color2 = { 1.0, 0.0, 0.0 };
+	glm::vec3 color1 = { 1.0, 1.0, 0.0 };
+	bool isModelSpinning = true;
 };

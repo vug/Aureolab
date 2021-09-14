@@ -3,6 +3,7 @@
 
 uniform mat4 u_MVP;
 uniform vec3 u_camPos;
+uniform float u_PointSize = 128.0f;
 
 layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec3 a_Color;
@@ -13,7 +14,7 @@ out float v_DistToCamera;
 void main(void) {
 	vec4 pos = u_MVP * vec4(a_Position, 1.0);
 	v_DistToCamera = pos.z;
-	gl_PointSize = 1.0 / (1.0 + v_DistToCamera) * 64.0f;
+	gl_PointSize = 1.0 / (1.0 + v_DistToCamera) * u_PointSize;
 	gl_Position = pos;
 	v_Color = a_Color;
 }
@@ -22,6 +23,10 @@ void main(void) {
 
 #type geometry
 #version 460 core
+
+uniform float u_FocalDistance = 4.0f;
+uniform float u_BlurRadius = 0.5f;
+uniform float u_DepthOfField = 2.0f;
 
 layout (points) in;
 layout (points, max_vertices = 6) out;
@@ -34,7 +39,8 @@ out vec3 g_Color;
 void main(void)
 {
 	int k;
-	float outOfFocus = pow(abs(v_DistToCamera[0] - 4.0) * 0.25, 2.0) * 0.5;
+	float normalizedFocalDist = abs(v_DistToCamera[0] - u_FocalDistance) / u_FocalDistance;
+	float outOfFocus = pow(normalizedFocalDist, u_DepthOfField) * u_BlurRadius;
 	for (k = 0; k < 6; k++) {
 		gl_Position = gl_in[0].gl_Position + vec4(cos(2. * 3.14159265 * k / 6) * outOfFocus, sin(2. * 3.14159265 * k / 6) * outOfFocus, 0.0, 0.0);
 		gl_PointSize = gl_in[0].gl_PointSize;
