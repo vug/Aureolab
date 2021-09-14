@@ -19,6 +19,9 @@ private:
 	void OnEventApplication(Event& ev);
 	void OnWindowClose(WindowCloseEvent& ev);
 	void OnFrameBufferResized(FrameBufferResizeEvent& ev);
+
+	virtual void OnImGuiRender() = 0;
+private:
 	bool isRunning = true;
 	Window* window = nullptr;
 	GraphicsContext* context = nullptr;

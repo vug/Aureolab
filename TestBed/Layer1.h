@@ -23,7 +23,7 @@ class Layer1 : public Layer {
 public:
     Layer1() : Layer("FirstLayer") { }
 
-    void OnAttach() {
+    virtual void OnAttach() override {
         struct Vertex {
             glm::vec2 pos;
             glm::vec3 color;
@@ -68,7 +68,7 @@ public:
         ga->SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
     }
 
-    void OnUpdate(float ts) {
+    virtual void OnUpdate(float ts) override {
         mvp *= glm::rotate(glm::mat4(1.0f), ts, glm::vec3(0.0f, 0.0f, 1.0f));
 
         ga->Clear();
@@ -77,7 +77,7 @@ public:
         ga->DrawIndexedTriangles(*va);
     }
 
-    void OnDetach() {
+    virtual void OnDetach() override {
         // optional
         delete vb;
         delete ib;
@@ -86,7 +86,7 @@ public:
         delete ga;
     }
 
-    void OnEvent(Event& ev) {
+    virtual void OnEvent(Event& ev) override {
         auto dispatcher = EventDispatcher(ev);
         dispatcher.Dispatch<WindowResizeEvent>(AL_BIND_EVENT_FN(Layer1::OnWindowResize));
         dispatcher.Dispatch<KeyPressedEvent>(AL_BIND_EVENT_FN(Layer1::OnKeyPressed));
@@ -96,6 +96,8 @@ public:
         dispatcher.Dispatch<MouseButtonPressedEvent>(AL_BIND_EVENT_FN(Layer1::OnMouseButtonPressed));
         dispatcher.Dispatch<MouseButtonReleasedEvent>(AL_BIND_EVENT_FN(Layer1::OnMouseButtonReleased));
     }
+
+    virtual void OnImGuiRender() override {}
 
     void OnWindowResize(WindowResizeEvent& e) {
         Log::Debug("Layer1 received: {}", e.ToString());

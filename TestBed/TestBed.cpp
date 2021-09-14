@@ -4,6 +4,8 @@
 #include "Layer1.h"
 #include "Layer2.h"
 
+#include "imgui.h"
+
 #include <vector>
 
 class TestBed : public Application {
@@ -45,6 +47,13 @@ private:
 			layers[j]->Pause();
 		}
 		layers[ix]->Play();
+		Log::Info("Playing layer {}...", ix);
+	}
+
+	virtual void OnImGuiRender() override {
+		ImGui::Begin("TestBed");
+		ImGui::Text("Welcome to AureoLab TestBed.\nUse [ and ] keys to switch between layers.");
+		ImGui::End();
 	}
 
 private:

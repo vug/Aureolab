@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Events/WindowEvent.h"
 #include "Log.h"
+#include "ImGuiHelper.h"
 
 #include <string>
 
@@ -9,7 +10,7 @@ Application::Application(const std::string& name) : name(name) {
     window->SetEventCallback(AL_BIND_EVENT_FN(Application::OnEventApplication));
     context = GraphicsContext::Create(window);
 
-    // Renderer::Initialize
+    ImGuiHelper::Initialize(window);
 }
 
 void Application::OnEventApplication(Event& ev) {
@@ -20,8 +21,9 @@ void Application::OnEventApplication(Event& ev) {
     OnEvent(ev); // to client app
     for (int i = 0; i < layers.size(); i++) {
         auto layer = layers[i];
-        if (layer->GetIsRunning()) 
+        if (layer->GetIsRunning()) {
             layer->OnEvent(ev); // to client app's layers
+        }
     }
 }
 
@@ -41,10 +43,15 @@ void Application::Run() {
         float timestep = window->GetTime() - lastUpdateTime;
         lastUpdateTime = window->GetTime();
 
+        ImGuiHelper::BeginFrame();
+        OnImGuiRender();
         for (auto layer : layers) {
-            if (layer->GetIsRunning())
+            if (layer->GetIsRunning()) {
+                layer->OnImGuiRender();
                 layer->OnUpdate(timestep);
+            }
         }
+        ImGuiHelper::RenderFrame();
         window->OnUpdate();
         context->OnUpdate();
     }
@@ -53,6 +60,7 @@ void Application::Run() {
         PopLayer();
     }
 
+    ImGuiHelper::Shutdown();
     window->Shutdown();
     delete window;
 }

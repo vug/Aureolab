@@ -14,6 +14,7 @@ public:
 	virtual void OnAttach() = 0;
 	virtual void OnUpdate(float ts) = 0;
 	virtual void OnDetach() = 0;
+	virtual void OnImGuiRender() = 0;
 private:
 	std::string name;
 	bool isRunning = true;

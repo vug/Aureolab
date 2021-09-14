@@ -8,6 +8,8 @@
 #include "Renderer/VertexArray.h"
 #include "Renderer/GraphicsAPI.h"
 
+#include "imgui.h"
+
 #include <random>
 #include <vector>
 
@@ -20,7 +22,7 @@ public:
 
 	Layer2() : Layer("Point Sprites") { }
 
-	void OnAttach() {
+	virtual void OnAttach() override {
 		std::seed_seq seed{ 123 };
 		std::mt19937 mt(seed);
 		std::uniform_real_distribution<float> uniform1(-1.0f, 1.0f);
@@ -60,7 +62,7 @@ public:
 		ga->SetBlendingFunction(BlendingFactor::SourceAlpha, BlendingFactor::DestinationAlpha);
 	}
 
-	void OnUpdate(float ts) {
+	virtual void OnUpdate(float ts) override {
 		glm::mat4 projection = glm::perspective(glm::radians(45.f), aspect, 0.01f, 100.0f);
 		glm::vec3 eye({ 0.0, 0.0, 4.0 });
 		glm::mat4 view = glm::lookAt(eye, glm::vec3{ 0.0, 0.0, 0.0 }, glm::vec3{ 0.0, 1.0, 0.0 });
@@ -77,7 +79,7 @@ public:
 		ga->DrawArrayPoints(*vao);
 	}
 
-	void OnEvent(Event& ev) {
+	virtual void OnEvent(Event& ev) override {
 		auto dispatcher = EventDispatcher(ev);
 		dispatcher.Dispatch<WindowResizeEvent>(AL_BIND_EVENT_FN(Layer2::OnWindowResize));
 	}
@@ -87,11 +89,18 @@ public:
 		aspect = (float)e.GetWidth() / e.GetHeight();
 	}
 
-	void OnDetach() {
+	virtual void OnDetach() override {
 		delete shader;
 		delete vao;
 		delete ga;
 	}
+
+	virtual void OnImGuiRender() override {
+		ImGui::Begin("Point Sprites");
+		ImGui::Text("with out of focus blurring");
+		ImGui::End();
+	}
+
 private:
 	Shader* shader = nullptr;
 	VertexArray* vao = nullptr;
