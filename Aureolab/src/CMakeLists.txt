@@ -36,6 +36,7 @@ target_link_libraries(
 	glad
 	glfw
 	glm
+	imgui
 )
 
 target_compile_features(Aureolab PRIVATE cxx_std_17)
