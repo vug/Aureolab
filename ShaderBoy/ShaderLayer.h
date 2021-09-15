@@ -1,4 +1,5 @@
 #pragma once
+#include "FileWatcher.h"
 
 #include "Core/Layer.h"
 #include "Events/Event.h"
@@ -13,6 +14,7 @@
 
 #include <memory>
 #include <vector>
+#include <filesystem>
 
 struct Vertex {
     glm::vec2 position;
@@ -21,10 +23,12 @@ struct Vertex {
 
 class ShaderLayer : public Layer {
 public:
-    ShaderLayer() : Layer("Shader Layer") {
+    ShaderLayer(std::filesystem::path filepath) 
+        : Layer("Shader Layer"), filewatcher(filepath) {
         ga.reset(GraphicsAPI::Create());
         vao.reset(VertexArray::Create());
-        shader.reset(Shader::Create("shaders/Default.glsl"));
+        shader.reset(Shader::Create(filepath.string()));
+        filewatcher.Start();
     }
 
     virtual void OnAttach() override {
@@ -76,4 +80,5 @@ private:
     std::unique_ptr<VertexArray> vao = nullptr;
     std::unique_ptr<VertexBuffer> vbo = nullptr;
     std::unique_ptr<Shader> shader = nullptr;
+    FileWatcher filewatcher;
 };

@@ -4,12 +4,21 @@
 
 #include "ShaderLayer.h"
 
+#include <filesystem>
+
 class ShaderBoy : public Application {
 public:
 	ShaderBoy(std::vector<std::string> args) : Application("AureLab ShaderBoy") {
 		Log::Info("Hi from ShaderBoy! Called with following CLI arguments: argc: {}, argv[0]: {}", args.size(), args[0]);
 
-		PushLayer(new ShaderLayer());
+		std::string shaderFile = "shaders/Default.glsl";
+		if (args.size() >= 2) {
+			auto file = args[1];
+			if (std::filesystem::is_regular_file(std::filesystem::path(file))) {
+				shaderFile = file;
+			}
+		}
+		PushLayer(new ShaderLayer(shaderFile));
 	}
 
 private:

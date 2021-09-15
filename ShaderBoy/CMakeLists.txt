@@ -1,6 +1,6 @@
 add_executable(ShaderBoy 
-	ShaderBoy.cpp
-	ShaderLayer.h
+	ShaderLayer.h ShaderBoy.cpp
+	FileWatcher.h
 )
 
 target_link_libraries(
