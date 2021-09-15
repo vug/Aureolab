@@ -10,6 +10,8 @@ public:
 	OpenGLShader(const std::string& filepath);
 	~OpenGLShader();
 
+	virtual void Recompile() override;
+
 	virtual void Bind() const override;
 	virtual void Unbind() const override;
 
@@ -29,9 +31,11 @@ public:
 	virtual void UploadUniformFloat2s(const std::string& name, const std::vector<glm::vec2>& values) override;
 	virtual void UploadUniformFloat3s(const std::string& name, const std::vector<glm::vec3>& values) override;
 	virtual void UploadUniformFloat4s(const std::string& name, const std::vector<glm::vec4>& values) override;
+
+	static std::string ReadFile(const std::string& filepath);
 private:
-	unsigned int rendererID;
-	std::string ReadFile(const std::string& filepath);
+	int rendererID = -1;
+	std::string filepath;
 	std::unordered_map<GLenum, std::string> PreProcess(const std::string& source);
 	void Compile(std::unordered_map<GLenum, std::string>& shaderSources);
 };

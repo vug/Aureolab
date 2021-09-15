@@ -8,14 +8,19 @@
 #include <cassert>
 #include <fstream>
 
-OpenGLShader::OpenGLShader(const std::string& filepath) {
-	std::string source = ReadFile(filepath);
-	auto shaderSources = PreProcess(source);
-	Compile(shaderSources);
+OpenGLShader::OpenGLShader(const std::string& filepath) 
+	: filepath(filepath) {
+	Recompile();
 }
 
 OpenGLShader::~OpenGLShader() {
 	glDeleteProgram(rendererID);
+}
+
+void OpenGLShader::Recompile() {
+	std::string source = ReadFile(filepath);
+	auto shaderSources = PreProcess(source);
+	Compile(shaderSources);
 }
 
 void OpenGLShader::Bind() const {
@@ -132,7 +137,7 @@ std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::stri
 }
 
 void OpenGLShader::Compile(std::unordered_map<GLenum, std::string>& shaderSources) {
-	GLuint program = glCreateProgram();
+	GLuint program = rendererID == -1 ? glCreateProgram() : rendererID;
 	assert(shaderSources.size() <= 3); // We only support a geometry, a vertex and a fragment shader for now.
 	std::array<GLenum, 3> glShaderIDs;
 	int glShaderIdIndex = 0;

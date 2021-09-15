@@ -9,6 +9,8 @@ class Shader {
 public:
 	static Shader* Create(const std::string& filepath);
 
+	virtual void Recompile() = 0;
+
 	virtual void Bind() const = 0;
 	virtual void Unbind() const = 0;
 

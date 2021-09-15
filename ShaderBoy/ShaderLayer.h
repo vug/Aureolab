@@ -28,7 +28,11 @@ public:
         ga.reset(GraphicsAPI::Create());
         vao.reset(VertexArray::Create());
         shader.reset(Shader::Create(filepath.string()));
-        filewatcher.Start();
+        filewatcher.Start([&]() -> void {
+            // Note that we don't recompile the shader here because this lambda function runs in filewatcher's thread
+            // and that yhread does not have an OpenGL context, and shader compilation fails.
+            shouldRecompileShader = true;
+        });
     }
 
     virtual void OnAttach() override {
@@ -60,6 +64,10 @@ public:
     virtual void OnUpdate(float ts) override {
         ga->Clear();
 
+        if (shouldRecompileShader) {
+            shader->Recompile();
+            shouldRecompileShader = false;
+        }
         shader->Bind();
         vao->Bind();
         ga->DrawIndexedTriangles(*vao, vao->GetIndexBuffer()->GetNumIndices());
@@ -81,4 +89,5 @@ private:
     std::unique_ptr<VertexBuffer> vbo = nullptr;
     std::unique_ptr<Shader> shader = nullptr;
     FileWatcher filewatcher;
+    bool shouldRecompileShader = false;
 };
