@@ -73,7 +73,9 @@ public:
         ga->DrawIndexedTriangles(*vao, vao->GetIndexBuffer()->GetNumIndices());
     }
 
-    virtual void OnDetach() override {}
+    virtual void OnDetach() override {
+        filewatcher.Stop(); // not needed really, the thread will be terminated while quitting the app
+    }
 
     virtual void OnEvent(Event& ev) override {}
 

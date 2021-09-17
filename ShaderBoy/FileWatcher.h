@@ -36,9 +36,14 @@ public:
 		fileWatcherThread->detach();
 	}
 
+	void Stop() {
+		isRunning = false;
+	}
+
 public:
 	std::filesystem::path filepath;
 	std::function<void()> callback;
+	std::thread* fileWatcherThread = nullptr;
 	bool isRunning = true;
 	std::filesystem::file_time_type lastWriteTime;
 };
