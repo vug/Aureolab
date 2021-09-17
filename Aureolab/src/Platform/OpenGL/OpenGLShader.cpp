@@ -137,8 +137,9 @@ std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::stri
 }
 
 void OpenGLShader::Compile(std::unordered_map<GLenum, std::string>& shaderSources) {
-	GLuint program = rendererID == -1 ? glCreateProgram() : rendererID;
-	assert(shaderSources.size() <= 3); // We only support a geometry, a vertex and a fragment shader for now.
+	// Stores Shader/Program ID until shader compilation/linking succeeds and stored in rendererID
+	GLuint program = glCreateProgram();
+	assert(shaderSources.size() <= 3); // We only support a geometry, a vertex and a fragment shaders for now.
 	std::array<GLenum, 3> glShaderIDs;
 	int glShaderIdIndex = 0;
 	for (auto& kv : shaderSources) {
@@ -163,7 +164,11 @@ void OpenGLShader::Compile(std::unordered_map<GLenum, std::string>& shaderSource
 			std::vector<GLchar> infoLog(maxLength);
 			glGetShaderInfoLog(shader, maxLength, &maxLength, &infoLog[0]);
 
-			glDeleteShader(shader);
+			for (int ix = 0; ix < glShaderIdIndex; ix++) {
+				glDeleteShader(glShaderIDs[ix]); // delete compiled shaders so far
+			}
+			glDeleteShader(shader); // delete shader failed compilation
+			glDeleteProgram(program); // delete program 
 
 			Log::Error("Shader compilation failure.\n{}", infoLog.data());
 			return;
@@ -193,12 +198,16 @@ void OpenGLShader::Compile(std::unordered_map<GLenum, std::string>& shaderSource
 		return;
 	}
 
-	// Delete only existing shaders
+	// Program built successfully. Shaders are not needed anymore
 	for (int ix = 0; ix < glShaderIdIndex; ix++) {
 		int id = glShaderIDs[ix];
 		glDetachShader(program, id);
 		glDeleteShader(id);
 	}
 
+	// Delete old program associated with this Shader object.
+	if (rendererID != -1) {
+		glDeleteProgram(rendererID);
+	}
 	rendererID = program;
 }
