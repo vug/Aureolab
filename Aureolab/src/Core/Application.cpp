@@ -2,6 +2,7 @@
 #include "Events/WindowEvent.h"
 #include "Log.h"
 #include "ImGuiHelper.h"
+#include "Input.h"
 
 #include <string>
 
@@ -11,6 +12,7 @@ Application::Application(const std::string& name) : name(name) {
     context = GraphicsContext::Create(window);
 
     ImGuiHelper::Initialize(window);
+    Input::Initialize(window);
 }
 
 void Application::OnEventApplication(Event& ev) {

@@ -6,7 +6,7 @@
 	Events/Event.h Events/WindowEvent.h Events/KeyEvent.h Events/MouseEvent.h
 	Platform/Platform.h
 	Core/Window.h Core/Window.cpp
-	Platform/WindowsWindow.h  Platform/WindowsWindow.cpp
+	Platform/Windows/WindowsWindow.h Platform/Windows/WindowsWindow.cpp
 	Core/GraphicsContext.h Core/GraphicsContext.cpp
     Platform/OpenGL/OpenGLContext.h Platform/OpenGL/OpenGLContext.cpp
 	Renderer/VertexSpecification.h Platform/OpenGL/OpenGLVertexSpecification.h Platform/OpenGL/OpenGLVertexSpecification.cpp
@@ -21,6 +21,8 @@
     Renderer/GraphicsAPI.h Renderer/GraphicsAPI.cpp
 	Platform/OpenGL/OpenGLGraphicsAPI.h Platform/OpenGL/OpenGLGraphicsAPI.cpp
     Core/ImGuiHelper.h Core/ImGuiHelper.cpp
+	Core/Input.h Core/Input.cpp
+    Platform/Windows/WindowsInput.h Platform/Windows/WindowsInput.cpp
 )
 
 # If a debug build configuration define AL_DEBUG processor macro
