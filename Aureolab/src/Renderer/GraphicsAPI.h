@@ -8,6 +8,7 @@ enum class GraphicsAbility {
 	Blend, // Blend fragment color with buffer color
 	DepthTest, // Update buffer after depth comparison
 	PointSize, // Use gl_PointSize from shaders
+	FaceCulling, // Rendering front/back/both faces
 };
 
 enum class BlendingFactor {
@@ -37,5 +38,6 @@ public:
 
 	virtual void DrawIndexedTriangles(const VertexArray& vertexArray, unsigned int indexCount = 0) = 0;
 	virtual void DrawIndexedPoints(const VertexArray& vertexArray, unsigned int indexCount = 0) = 0;
+	virtual void DrawArrayTriangles(const VertexArray& vertexArray, unsigned int start = 0, unsigned int count = 0) = 0;
 	virtual void DrawArrayPoints(const VertexArray& vertexArray, unsigned int start = 0, unsigned int count = 0) = 0;
 };

@@ -10,6 +10,8 @@ GLenum AbilityAL2GL(GraphicsAbility ability) {
 		return GL_PROGRAM_POINT_SIZE;
 	case GraphicsAbility::DepthTest:
 		return GL_DEPTH_TEST;
+	case GraphicsAbility::FaceCulling:
+		return GL_CULL_FACE;
 	default:
 		assert(false); // unknown GraphicsAbility
 		return -1;
@@ -83,6 +85,12 @@ void OpenGLGraphicsAPI::DrawIndexedPoints(const VertexArray& vertexArray, unsign
 	vertexArray.Bind();
 	indexCount = indexCount == 0 ? (unsigned int)vertexArray.GetIndexBuffer()->GetNumIndices() : indexCount;
 	glDrawElements(GL_POINTS, (GLsizei)indexCount, GL_UNSIGNED_INT, 0);
+}
+
+void OpenGLGraphicsAPI::DrawArrayTriangles(const VertexArray& vertexArray, unsigned int start, unsigned int count) {
+	vertexArray.Bind();
+	count = count == 0 ? vertexArray.GetVertexBuffers()[0]->GetNumVertices() : count;
+	glDrawArrays(GL_TRIANGLES, start, count);
 }
 
 void OpenGLGraphicsAPI::DrawArrayPoints(const VertexArray& vertexArray, unsigned int start, unsigned int count) {
