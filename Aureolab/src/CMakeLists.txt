@@ -40,6 +40,7 @@ target_link_libraries(
 	glfw
 	glm
 	imgui
+	tinyobjloader
 )
 
 target_compile_features(Aureolab PRIVATE cxx_std_17)
