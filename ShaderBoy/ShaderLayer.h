@@ -3,6 +3,8 @@
 
 #include "Core/Layer.h"
 #include "Events/Event.h"
+#include "Events/WindowEvent.h"
+#include "Events/MouseEvent.h"
 #include "Renderer/GraphicsAPI.h"
 #include "Renderer/VertexBuffer.h"
 #include "Renderer/IndexBuffer.h"
@@ -37,10 +39,10 @@ public:
 
     virtual void OnAttach() override {
         std::vector<Vertex> vertices = {
-            { {-0.9, -0.9}, {0.0, 0.0} },
-            { { 0.9, -0.9}, {1.0, 0.0} },
-            { {-0.9,  0.9}, {0.0, 1.0} },
-            { { 0.9,  0.9}, {1.0, 1.0} },
+            { {-1.0, -1.0}, {0.0, 0.0} },
+            { { 1.0, -1.0}, {1.0, 0.0} },
+            { {-1.0,  1.0}, {0.0, 1.0} },
+            { { 1.0,  1.0}, {1.0, 1.0} },
         };
         vbo.reset(VertexBuffer::Create({
             VertexAttributeSpecification{ shader->GetAttribLocation("a_Position"), VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false},
@@ -69,15 +71,52 @@ public:
             shouldRecompileShader = false;
         }
         shader->Bind();
+        shader->UploadUniformFloat("iTime", time);
+        shader->UploadUniformFloat("iTimeDelta", ts);
+        shader->UploadUniformFloat3("iResolution", viewportSize);
+        shader->UploadUniformFloat4("iMouse", mouseState);
         vao->Bind();
-        ga->DrawIndexedTriangles(*vao, vao->GetIndexBuffer()->GetNumIndices());
+        ga->DrawIndexedTriangles(*vao, (unsigned int)vao->GetIndexBuffer()->GetNumIndices());
+        time += ts;
     }
 
     virtual void OnDetach() override {
         filewatcher.Stop(); // not needed really, the thread will be terminated while quitting the app
     }
 
-    virtual void OnEvent(Event& ev) override {}
+    void OnResize(FrameBufferResizeEvent ev) {
+        viewportSize.x = (float)ev.GetWidth();
+        viewportSize.y = (float)ev.GetHeight();
+    }
+
+    void OnMouseMoved(MouseMovedEvent ev) {
+        mouseState.x = ev.GetX();
+        mouseState.y = viewportSize.y - ev.GetY(); // OpenGL and GLFW vertical coordinates are opposite
+    }
+    void OnMouseButtonPressed(MouseButtonPressedEvent ev) {
+        if (ev.GetMouseButton() == 0) {
+            mouseState.z = 1;
+        }
+        else if (ev.GetMouseButton() == 1) {
+            mouseState.w = 1;
+        }
+    }
+    void OnMouseButtonReleased(MouseButtonReleasedEvent ev) {
+        if (ev.GetMouseButton() == 0) {
+            mouseState.z = 0;
+        }
+        else if (ev.GetMouseButton() == 1) {
+            mouseState.w = 0;
+        }
+    }
+
+    virtual void OnEvent(Event& ev) override {
+        auto dispatcher = EventDispatcher(ev);
+        dispatcher.Dispatch<FrameBufferResizeEvent>(AL_BIND_EVENT_FN(ShaderLayer::OnResize));
+        dispatcher.Dispatch<MouseMovedEvent>(AL_BIND_EVENT_FN(ShaderLayer::OnMouseMoved));
+        dispatcher.Dispatch<MouseButtonPressedEvent>(AL_BIND_EVENT_FN(ShaderLayer::OnMouseButtonPressed));
+        dispatcher.Dispatch<MouseButtonReleasedEvent>(AL_BIND_EVENT_FN(ShaderLayer::OnMouseButtonReleased));
+    }
 
     virtual void OnImGuiRender() override {
         ImGui::Begin("ShaderBoy");
@@ -92,4 +131,7 @@ private:
     std::unique_ptr<Shader> shader = nullptr;
     FileWatcher filewatcher;
     bool shouldRecompileShader = false;
+    float time = 0.0f;
+    glm::vec3 viewportSize = { 1000.0f, 1000.0f, 1.0f };
+    glm::vec4 mouseState = { 0.0, 0.0, 0.0, 0.0 };
 };
