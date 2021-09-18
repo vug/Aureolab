@@ -5,6 +5,7 @@
 #include "Events/Event.h"
 #include "Events/WindowEvent.h"
 #include "Events/MouseEvent.h"
+#include "Core/Input.h"
 #include "Renderer/GraphicsAPI.h"
 #include "Renderer/VertexBuffer.h"
 #include "Renderer/IndexBuffer.h"
@@ -90,16 +91,23 @@ public:
     }
 
     void OnMouseMoved(MouseMovedEvent ev) {
+        if (!Input::Get()->IsMouseButtonPressed(MouseButton::Left)) {
+            return;
+        }
         mouseState.x = ev.GetX();
         mouseState.y = viewportSize.y - ev.GetY(); // OpenGL and GLFW vertical coordinates are opposite
     }
     void OnMouseButtonPressed(MouseButtonPressedEvent ev) {
         if (ev.GetMouseButton() == 0) {
             mouseState.z = 1;
+            glm::vec2 pos = Input::Get()->GetMouseCursorPosition();
+            mouseState.x = pos.x;
+            mouseState.y = viewportSize.y - pos.y;
         }
         else if (ev.GetMouseButton() == 1) {
             mouseState.w = 1;
         }
+
     }
     void OnMouseButtonReleased(MouseButtonReleasedEvent ev) {
         if (ev.GetMouseButton() == 0) {
