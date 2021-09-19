@@ -3,6 +3,7 @@
 #include "Core/Application.h"
 #include "Layer1.h"
 #include "Layer2.h"
+#include "Layer3.h"
 
 #include "imgui.h"
 
@@ -16,6 +17,7 @@ public:
 		layers = { 
 			new Layer1(), 
 			new Layer2(),
+			new Layer3(),
 		};
 		PlaySingleLayer(activeLayerIndex);
 
@@ -57,7 +59,7 @@ private:
 
 private:
 	std::vector<Layer*> layers = {};
-	unsigned int activeLayerIndex = 1;
+	unsigned int activeLayerIndex = 2;
 };
 
 Application* CreateApplication(std::vector<std::string> args) {
