@@ -28,6 +28,7 @@ void OpenGLVertexArray::AddVertexBuffer(const VertexBuffer& vertexBuffer) {
 	auto specs = vertexBuffer.GetAttributeSpecs();
 	auto sizes = vertexBuffer.GetAttributeSizes();
 	auto stride = vertexBuffer.GetVertexSize();
+	vertexBuffer.Bind();
 	unsigned int offset = 0;
 	for (unsigned int ix = 0; ix < specs.size(); ix++) {
 		const auto& spec = specs[ix];
