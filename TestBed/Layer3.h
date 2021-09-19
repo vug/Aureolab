@@ -66,6 +66,9 @@ public:
         ga->Clear();
         shader->Bind();
         shader->UploadUniformMat4("MVP", mvp);
+        shader->UploadUniformInt("u_RenderType", renderType);
+        shader->UploadUniformFloat4("u_SolidColor", solidColor);
+        shader->UploadUniformFloat("u_MaxDepth", maxDepth);
         ga->DrawArrayTriangles(*vertexArrays[selectedVaIndex]);
     }
 
@@ -80,12 +83,22 @@ public:
     }
 
     virtual void OnImGuiRender() override {
-        std::vector<const char*> items;
-        for (int i = 0; i < objectFileNames.size(); ++i)
-            items.push_back(objectFileNames[i].c_str());
-
-        ImGui::Combo("OBJ", &selectedVaIndex, items.data(), items.size());
+        std::vector<const char*> models;
+        for (int i = 0; i < objectFileNames.size(); ++i) models.push_back(objectFileNames[i].c_str());
+        ImGui::Combo("OBJ", &selectedVaIndex, models.data(), models.size());
         ImGui::SameLine(); ImGuiHelper::InfoMarker("Choose object loaded into vertex arrays from OBJ files.");
+
+        std::vector<const char*> types;
+        for (int i = 0; i < renderTypes.size(); ++i) types.push_back(renderTypes[i].c_str());
+        ImGui::Combo("Render Type", &renderType, types.data(), types.size());
+        ImGui::SameLine(); ImGuiHelper::InfoMarker("Choose object loaded into vertex arrays from OBJ files.");
+
+        if (renderType == 0) {
+            ImGui::ColorEdit4("Solid Color", glm::value_ptr(solidColor));
+        }
+        else if (renderType == 3) {
+            ImGui::DragFloat("Max Depth", &maxDepth, 1.0, 0.0f, 100.0f);
+        }
     }
 
 private:
@@ -97,4 +110,8 @@ private:
 
     std::vector<std::string> objectFileNames = { "cone", "cube", "cylinder", "plane", "sphere_ico", "sphere_uv", "suzanne", "torus", };
     int selectedVaIndex = 6;
+    std::vector<std::string> renderTypes = { "Solid Color", "Normal", "UV", "Depth"};
+    int renderType = 1;
+    glm::vec4 solidColor = { 0.8, 0.2, 0.3, 1.0 };
+    float maxDepth = 100.0f;
 };

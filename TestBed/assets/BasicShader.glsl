@@ -25,13 +25,28 @@ void main() {
 #type fragment
 #version 460 core
 
+uniform int u_RenderType = 1; // { SolidColor, Normal, UV, Depth }
+uniform vec4 u_SolidColor = vec4(1.0, 1.0, 1.0, 1.0);
+uniform float u_MaxDepth = 100.0;
+
 varying vec4 pos;
 varying vec3 normal;
 varying vec2 uv;
 varying vec4 color;
 
 void main() {
-    //gl_FragColor = vec4(vec3(1.0) * pos.w / 100, 1.0);
-    gl_FragColor = vec4(normal * 0.5 + 0.5, 1.0);
-    //gl_FragColor = vec4(uv.x, uv.y, 0.0, 1.0);
+    switch (u_RenderType) {
+    case 0:
+        gl_FragColor = u_SolidColor;
+        break;
+    case 1:
+        gl_FragColor = vec4(normal * 0.5 + 0.5, 1.0);
+        break;
+    case 2:
+        gl_FragColor = vec4(uv.x, uv.y, 0.0, 1.0);
+        break;
+    case 3:
+        gl_FragColor = vec4(vec3(1.0) * pos.w / u_MaxDepth, 1.0);
+        break;
+    }
 }
