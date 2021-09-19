@@ -52,9 +52,14 @@ private:
 	}
 
 	virtual void OnImGuiRender() override {
+		static bool shouldShowDemo = false;
+
 		ImGui::Begin("TestBed");
 		ImGui::Text("Welcome to AureoLab TestBed.\nUse [ and ] keys to switch between layers.");
+		ImGui::Checkbox("Show Demo Window", &shouldShowDemo);
 		ImGui::End();
+
+		if (shouldShowDemo) ImGui::ShowDemoWindow();
 	}
 
 private:
