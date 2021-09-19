@@ -23,6 +23,7 @@
     Core/ImGuiHelper.h Core/ImGuiHelper.cpp
 	Core/Input.h Core/Input.cpp
     Platform/Windows/WindowsInput.h Platform/Windows/WindowsInput.cpp
+	Modeling/Modeling.h Modeling/Modeling.cpp
 )
 
 # If a debug build configuration define AL_DEBUG processor macro
