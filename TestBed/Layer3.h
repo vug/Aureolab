@@ -9,6 +9,7 @@
 #include "Renderer/VertexBuffer.h"
 #include "Renderer/GraphicsAPI.h"
 #include "Modeling/Modeling.h"
+#include "Core/ImGuiHelper.h"
 
 #include <glad/glad.h>
 //#define GLM_FORCE_CTOR_INIT /* initialize vectors and matrices */
@@ -18,32 +19,28 @@
 
 #include <array>
 #include <iostream>
+#include <vector>
 
 class Layer3 : public Layer {
 public:
     Layer3() : Layer("OBJ Loading") { }
 
     virtual void OnAttach() override {
-        std::vector<BasicVertex> vertices = LoadOBJ("assets/torus.obj");
-        Log::Info("num vertices: {}", vertices.size());
-
         shader = Shader::Create("assets/BasicShader.glsl");
-
         Log::Info("attribute locations: {} {} {} {}", shader->GetAttribLocation("a_Position"), shader->GetAttribLocation("a_Normal"),
             shader->GetAttribLocation("a_TexCoord"), shader->GetAttribLocation("a_Color"));
 
-        std::vector<VertexAttributeSpecification> specs = {
-            VertexAttributeSpecification{ shader->GetAttribLocation("a_Position"), VertexAttributeSemantic::Position, VertexAttributeType::float32, 3, false},
-            VertexAttributeSpecification{ shader->GetAttribLocation("a_Normal"), VertexAttributeSemantic::Normal, VertexAttributeType::float32, 3, false},
-            VertexAttributeSpecification{ shader->GetAttribLocation("a_TexCoord"), VertexAttributeSemantic::UV, VertexAttributeType::float32, 2, false},
-            VertexAttributeSpecification{ shader->GetAttribLocation("a_Color"), VertexAttributeSemantic::Color, VertexAttributeType::float32, 4, false},
-        };
+        for (auto& objectFileName : objectFileNames) {
+            std::vector<BasicVertex> vertices = LoadOBJ(std::string("assets/") + objectFileName + ".obj");
+            Log::Info("{} num vertices: {}", objectFileName, vertices.size());
+            VertexBuffer* vb = VertexBuffer::Create(BasicVertexAttributeSpecs);
+            vb->SetVertices(vertices);
 
-        vb = VertexBuffer::Create(specs);
-        vb->SetVertices(vertices);
+            VertexArray* va = VertexArray::Create();
+            va->AddVertexBuffer(*vb);
 
-        va = VertexArray::Create();
-        va->AddVertexBuffer(*vb);
+            vertexArrays.push_back(va);
+        }
 
         ga = GraphicsAPI::Create();
         ga->Initialize();
@@ -69,14 +66,11 @@ public:
         ga->Clear();
         shader->Bind();
         shader->UploadUniformMat4("MVP", mvp);
-        ga->DrawArrayTriangles(*va);
+        ga->DrawArrayTriangles(*vertexArrays[selectedVaIndex]);
     }
 
     virtual void OnDetach() override {
         // optional
-        delete vb;
-        delete ib;
-        delete va;
         delete shader;
         delete ga;
     }
@@ -85,15 +79,22 @@ public:
         auto dispatcher = EventDispatcher(ev);
     }
 
-    virtual void OnImGuiRender() override {}
+    virtual void OnImGuiRender() override {
+        std::vector<const char*> items;
+        for (int i = 0; i < objectFileNames.size(); ++i)
+            items.push_back(objectFileNames[i].c_str());
+
+        ImGui::Combo("OBJ", &selectedVaIndex, items.data(), items.size());
+        ImGui::SameLine(); ImGuiHelper::InfoMarker("Choose object loaded into vertex arrays from OBJ files.");
+    }
 
 private:
     GraphicsAPI* ga = nullptr;
-    VertexBuffer* vb = nullptr;
-    IndexBuffer* ib = nullptr;
-    VertexArray* va = nullptr;
-    std::vector<unsigned int> indices = {};
+    std::vector<VertexArray*> vertexArrays;
     glm::mat4 model = glm::mat4(1.0f);
     Shader* shader = nullptr;
     float angle = 0.0f;
+
+    std::vector<std::string> objectFileNames = { "cone", "cube", "cylinder", "plane", "sphere_ico", "sphere_uv", "suzanne", "torus", };
+    int selectedVaIndex = 6;
 };
