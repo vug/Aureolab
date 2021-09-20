@@ -67,12 +67,15 @@ public:
 
         ga->Clear();
         shader->Bind();
-        shader->UploadUniformMat4("u_MVP", mvp);
+        shader->UploadUniformMat4("u_ModelViewPerspective", mvp);
+        shader->UploadUniformMat4("u_ModelView", mv);
+        shader->UploadUniformMat4("u_Model", model);
         shader->UploadUniformMat4("u_NormalMatrix", mv);
         shader->UploadUniformInt("u_RenderType", renderType);
         shader->UploadUniformFloat4("u_SolidColor", solidColor);
         shader->UploadUniformFloat("u_MaxDepth", maxDepth);
         shader->UploadUniformFloat3("u_LightPosition", lightPosition);
+        shader->UploadUniformFloat3("u_LightAttenuation", lightAttenuation);
         shader->UploadUniformFloat4("u_DiffuseColor", diffuseColor);
         ga->DrawArrayTriangles(*vertexArrays[selectedVaIndex]);
     }
@@ -107,6 +110,7 @@ public:
         else if (renderType == 4) {
             ImGui::ColorEdit4("Diffuse Color", glm::value_ptr(diffuseColor));
             ImGui::InputFloat3("Light Position", glm::value_ptr(lightPosition));
+            ImGui::InputFloat3("Light Attenuatio", glm::value_ptr(lightAttenuation));
         }
     }
 
@@ -124,6 +128,7 @@ private:
     int renderType = 1;
     glm::vec4 solidColor = { 0.8, 0.2, 0.3, 1.0 };
     float maxDepth = 100.0f;
-    glm::vec3 lightPosition = { 0.0f, 10.0f, 0.0f };
+    glm::vec3 lightPosition = { 0.0f, 3.0f, -1.0f };
+    glm::vec3 lightAttenuation = { 0.0f, 1.0f, 0.0f };
     glm::vec4 diffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 };
