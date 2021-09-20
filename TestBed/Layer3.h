@@ -61,14 +61,19 @@ public:
             model = glm::rotate(model, ts, { 0, std::sin(angle), std::cos(angle) });
         }
 
-        glm::mat4 mvp = projection * view * model;
+        glm::mat4 mv = view * model;
+        glm::mat4 mvp = projection * mv;
+        glm::mat4 normalMatrix = glm::inverse(mv);
 
         ga->Clear();
         shader->Bind();
-        shader->UploadUniformMat4("MVP", mvp);
+        shader->UploadUniformMat4("u_MVP", mvp);
+        shader->UploadUniformMat4("u_NormalMatrix", mv);
         shader->UploadUniformInt("u_RenderType", renderType);
         shader->UploadUniformFloat4("u_SolidColor", solidColor);
         shader->UploadUniformFloat("u_MaxDepth", maxDepth);
+        shader->UploadUniformFloat3("u_LightPosition", lightPosition);
+        shader->UploadUniformFloat4("u_DiffuseColor", diffuseColor);
         ga->DrawArrayTriangles(*vertexArrays[selectedVaIndex]);
     }
 
@@ -99,6 +104,10 @@ public:
         else if (renderType == 3) {
             ImGui::DragFloat("Max Depth", &maxDepth, 1.0, 0.0f, 100.0f);
         }
+        else if (renderType == 4) {
+            ImGui::ColorEdit4("Diffuse Color", glm::value_ptr(diffuseColor));
+            ImGui::InputFloat3("Light Position", glm::value_ptr(lightPosition));
+        }
     }
 
 private:
@@ -108,10 +117,13 @@ private:
     Shader* shader = nullptr;
     float angle = 0.0f;
 
-    std::vector<std::string> objectFileNames = { "cone", "cube", "cylinder", "plane", "sphere_ico", "sphere_uv", "suzanne", "torus", };
+    std::vector<std::string> objectFileNames = { "cone", "cube", "cylinder", "plane", "sphere_ico", "sphere_ico_smooth", 
+        "sphere_uv", "suzanne", "suzanne_smooth", "torus", "torus_smooth"};
     int selectedVaIndex = 6;
-    std::vector<std::string> renderTypes = { "Solid Color", "Normal", "UV", "Depth"};
+    std::vector<std::string> renderTypes = { "Solid Color", "Normal", "UV", "Depth", "Point Light"};
     int renderType = 1;
     glm::vec4 solidColor = { 0.8, 0.2, 0.3, 1.0 };
     float maxDepth = 100.0f;
+    glm::vec3 lightPosition = { 0.0f, 10.0f, 0.0f };
+    glm::vec4 diffuseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 };
