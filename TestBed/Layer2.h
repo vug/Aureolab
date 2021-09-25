@@ -38,7 +38,7 @@ public:
 	}
 
 	virtual void OnAttach() override {
-		shader = Shader::Create("assets/PointSprite.glsl");
+		shader = Shader::Create("assets/shaders/PointSprite.glsl");
 		shader->Bind();
 
 		vbo = VertexBuffer::Create({

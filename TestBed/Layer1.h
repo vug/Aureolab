@@ -44,7 +44,7 @@ public:
             0, 2, 3,
         };
 
-        shader = Shader::Create("assets/VertexColor2D.glsl");
+        shader = Shader::Create("assets/shaders/VertexColor2D.glsl");
 
         std::vector<VertexAttributeSpecification> specs = {
             VertexAttributeSpecification{ shader->GetAttribLocation("vPos"), VertexAttributeSemantic::Position, VertexAttributeType::float32, 2, false},

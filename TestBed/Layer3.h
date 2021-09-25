@@ -15,7 +15,6 @@
 //#define GLM_FORCE_CTOR_INIT /* initialize vectors and matrices */
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <tiny_obj_loader.h>
 
 #include <array>
 #include <iostream>
@@ -26,12 +25,12 @@ public:
     Layer3() : Layer("OBJ Loading") { }
 
     virtual void OnAttach() override {
-        shader = Shader::Create("assets/BasicShader.glsl");
+        shader = Shader::Create("assets/shaders/BasicShader.glsl");
         Log::Info("attribute locations: {} {} {} {}", shader->GetAttribLocation("a_Position"), shader->GetAttribLocation("a_Normal"),
             shader->GetAttribLocation("a_TexCoord"), shader->GetAttribLocation("a_Color"));
 
         for (auto& objectFileName : objectFileNames) {
-            std::vector<BasicVertex> vertices = LoadOBJ(std::string("assets/") + objectFileName + ".obj");
+            std::vector<BasicVertex> vertices = LoadOBJ(std::string("assets/models/") + objectFileName + ".obj");
             Log::Info("{} num vertices: {}", objectFileName, vertices.size());
             VertexBuffer* vb = VertexBuffer::Create(BasicVertexAttributeSpecs);
             vb->SetVertices(vertices);
