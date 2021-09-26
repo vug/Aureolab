@@ -7,6 +7,7 @@
 #include <string>
 
 // An extension to Application class to keep ImGui preparation logic neatly separate
+// Uses OpenGL as Renderer backend and GLFW as Platform backend
 class ImGuiHelper {
 public:
 	static void Initialize(Window* window);
