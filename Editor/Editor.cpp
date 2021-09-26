@@ -4,8 +4,6 @@
 #include "Events/KeyEvent.h"
 #include "EditorLayer.h"
 
-#include "imgui.h"
-
 #include <vector>
 
 class Editor : public Application {
@@ -25,16 +23,7 @@ private:
 	void OnKeyPressed(KeyPressedEvent& ev) {
 	}
 
-	virtual void OnImGuiRender() override {
-		static bool shouldShowDemo = false;
-
-		ImGui::Begin("Editor");
-		ImGui::Text("Welcome to AureoLab Editor.");
-		ImGui::Checkbox("Show Demo Window", &shouldShowDemo);
-		ImGui::End();
-
-		if (shouldShowDemo) ImGui::ShowDemoWindow();
-	}
+	virtual void OnImGuiRender() override {}
 };
 
 Application* CreateApplication(std::vector<std::string> args) {
