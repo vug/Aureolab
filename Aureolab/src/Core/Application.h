@@ -9,9 +9,13 @@
 #include <memory>
 #include <string>
 
+struct ApplicationConfig {
+	std::string name;
+};
+
 class Application : public LayerList {
 public:
-	Application(const std::string& name);
+	Application(const ApplicationConfig& config);
 protected:
 	virtual void OnEvent(Event& ev) = 0;
 private:

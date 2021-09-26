@@ -6,9 +6,11 @@
 
 #include <filesystem>
 
+ApplicationConfig ShaderBoyAppConfig = { "AureoLab ShaderBoy" };
+
 class ShaderBoy : public Application {
 public:
-	ShaderBoy(std::vector<std::string> args) : Application("AureLab ShaderBoy") {
+	ShaderBoy(std::vector<std::string> args) : Application(ShaderBoyAppConfig) {
 		Log::Info("Hi from ShaderBoy! Called with following CLI arguments: argc: {}, argv[0]: {}", args.size(), args[0]);
 
 		std::string shaderFile = "shaders/Default.glsl";

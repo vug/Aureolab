@@ -9,9 +9,11 @@
 
 #include <vector>
 
+ApplicationConfig TestBedAppConfig = { "AureoLab Test Bed" };
+
 class TestBed : public Application {
 public:
-	TestBed(std::vector<std::string> args) : Application("AureLab Test Bed") {
+	TestBed(std::vector<std::string> args) : Application(TestBedAppConfig) {
 		Log::Info("Hi from TestBed! Called with following CLI arguments: argc: {}, argv[0]: {}", args.size(), args[0]);
 
 		layers = { 

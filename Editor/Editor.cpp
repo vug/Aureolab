@@ -6,9 +6,11 @@
 
 #include <vector>
 
+ApplicationConfig EditorAppConfig = { "AureoLab Editor" };
+
 class Editor : public Application {
 public:
-	Editor(std::vector<std::string> args) : Application("AureoLab Editor") {
+	Editor(std::vector<std::string> args) : Application(EditorAppConfig) {
 		Log::Info("Hi from Editor! Called with following CLI arguments: argc: {}, argv[0]: {}", args.size(), args[0]);
 
 		PushLayer(new EditorLayer());
