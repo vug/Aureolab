@@ -103,13 +103,6 @@ public:
 		shader->UploadUniformInt("u_RenderType", 1); // Normal (2: UV)
 		ga->DrawArrayTriangles(*vao);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		// Viewport ImWindow displays content of viewportFBO
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-		ImGui::Begin("Viewport", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground); // ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
-		ImGui::Image((void*)(intptr_t)texture, ImVec2(750, 750));
-		ImGui::End();
-		ImGui::PopStyleVar();
 	}
 
 	virtual void OnEvent(Event& ev) override {
@@ -135,49 +128,45 @@ public:
 		ImGui::Text("Laylay...");
 		ImGui::End();
 
+		// Viewport ImWindow displays content of viewportFBO
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+		ImGui::Begin("Viewport", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground); // ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
+		ImVec2 viewportPanelSize = ImGui::GetWindowSize();
+		ImVec2 viewportPanelPos = ImGui::GetWindowPos();
+		ImVec2 viewportPanelAvailRegion = ImGui::GetContentRegionAvail();
+		ImGui::Image((void*)(intptr_t)texture, ImVec2(750, 750));
+		ImGui::End();
+		ImGui::PopStyleVar();
+
 		static bool shouldShowDemo = false;
 
-		int glViewportData[4];
-		glGetIntegerv(GL_VIEWPORT, glViewportData);
-
 		ImGui::Begin("Right Panel"); {
-			ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-			ImVec2 viewportMinRegion = ImGui::GetWindowContentRegionMin();
-			ImVec2 viewportMaxRegion = ImGui::GetWindowContentRegionMax();
-			ImVec2 viewportOffset = ImGui::GetWindowPos();
-			ImVec2 m_ViewportBounds[2];
-			m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-			m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
-
-			ImGui::Text("Welcome to AureoLab Editor.");
-			ImGui::Checkbox("Show Demo Window", &shouldShowDemo);
+			int glViewportData[4];
+			glGetIntegerv(GL_VIEWPORT, glViewportData);
 			ImGui::Text("Stats:\n"
-				"viewportSize: (%.1f, %.1f)\n"
-				"viewportWorkSize: (%.1f, %.1f)\n"
+				"mainViewportSize: (%.1f, %.1f)\n"
+				"mainViewportWorkSize: (%.1f, %.1f)\n"
 				"GL_VIEWPORT: (%d, %d)\n"
-				"GetContentRegionAvail: (%.1f, %.1f)\n"
-				"GetWindowContentRegionMin: (%.1f, %.1f)\n"
-				"GetWindowContentRegionMax: (%.1f, %.1f)\n"
-				"GetWindowPos: (%.1f, %.1f)\n"
-				"m_ViewportBounds[0]: (%.1f, %.1f)\n"
-				"m_ViewportBounds[1]: (%.1f, %.1f)\n"
-				"m_ViewportBounds Size: (%.1f, %.1f)\n"
+				"--\n"
+				"viewportPanelPos: (%.1f, %.1f)\n"
+				"viewportPanelSize: (%.1f, %.1f)\n"
+				"viewportPanelAvailRegion: (%.1f, %.1f)\n"
 				"",
 				viewport->Size.x, viewport->Size.y,
 				viewport->WorkSize.x, viewport->WorkSize.y,
 				glViewportData[2], glViewportData[3],
+				viewportPanelPos.x, viewportPanelPos.y,
 				viewportPanelSize.x, viewportPanelSize.y,
-				viewportMinRegion.x, viewportMinRegion.y,
-				viewportMaxRegion.x, viewportMaxRegion.y,
-				viewportOffset.x, viewportOffset.y,
-				m_ViewportBounds[0].x, m_ViewportBounds[0].y,
-				m_ViewportBounds[1].x, m_ViewportBounds[1].y,
-				m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y
+				viewportPanelAvailRegion.x, viewportPanelAvailRegion.y
 			);
+
 			ImGui::Separator();
 			ImGui::PlotLines("FPS", frameRates.data(), frameRates.size());
 			const auto [minIt, maxIt] = std::minmax_element(frameRates.begin(), frameRates.end());
 			ImGui::Text("[%.1f %.1f]", *minIt, *maxIt);
+
+			ImGui::Separator();
+			ImGui::Checkbox("Show Demo Window", &shouldShowDemo);
 		} ImGui::End();
 
 		if (shouldShowDemo) ImGui::ShowDemoWindow();
