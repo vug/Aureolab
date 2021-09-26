@@ -9,9 +9,8 @@
 Application::Application(const ApplicationConfig& config) : name(config.name) {
     window = Window::Create(name, config.windowWidth, config.windowHeight);
     window->SetEventCallback(AL_BIND_EVENT_FN(Application::OnEventApplication));
-    context = GraphicsContext::Create(window);
-    //context->SetVSync(true); // TODO: Make this togglable by client apps
 
+    GraphicsContext::Initialize(window);
     ImGuiHelper::Initialize(window);
     Input::Initialize(window);
 }
@@ -35,7 +34,7 @@ void Application::OnWindowClose(WindowCloseEvent& e) {
 }
 
 void Application::OnFrameBufferResized(FrameBufferResizeEvent& ev) {
-    context->SetViewportSize(ev.GetWidth(), ev.GetHeight());
+    GraphicsContext::Get()->SetViewportSize(ev.GetWidth(), ev.GetHeight());
 }
 
 void Application::Run() {
@@ -56,7 +55,7 @@ void Application::Run() {
         }
         ImGuiHelper::RenderFrame();
         window->OnUpdate();
-        context->OnUpdate();
+        GraphicsContext::Get()->OnUpdate();
     }
 
     for (int i = 0; i < layers.size(); i++) {

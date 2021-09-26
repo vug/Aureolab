@@ -122,6 +122,10 @@ public:
 			ImGui::PlotLines("FPS", frameRates.data(), (int)frameRates.size());
 			const auto [minIt, maxIt] = std::minmax_element(frameRates.begin(), frameRates.end());
 			ImGui::Text("[%.1f %.1f]", *minIt, *maxIt);
+			static bool isVSync = false;
+			if (ImGui::Checkbox("VSync", &isVSync)) {
+				GraphicsContext::Get()->SetVSync(isVSync);
+			}
 
 			ImGui::Separator();
 			ImGui::Checkbox("Show Demo Window", &shouldShowDemo);
