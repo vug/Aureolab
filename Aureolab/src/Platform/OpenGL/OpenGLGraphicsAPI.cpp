@@ -36,9 +36,6 @@ GLenum BlendingFactorAL2GL(BlendingFactor bf) {
 	}
 }
 
-void OpenGLGraphicsAPI::Initialize() {
-}
-
 void OpenGLGraphicsAPI::SetClearColor(const glm::vec4& color) {
 	glClearColor(color.r, color.b, color.g, color.a);
 }

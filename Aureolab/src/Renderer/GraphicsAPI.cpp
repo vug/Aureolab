@@ -5,14 +5,17 @@
 
 #include <cassert>
 
-GraphicsAPI* GraphicsAPI::Create() {
-	GraphicsAPI* graphicsAPI = nullptr;
-	switch (GraphicsContext::graphicsAPI) {
-	case GraphicsContext::API::OPENGL:
-		graphicsAPI = new OpenGLGraphicsAPI();
-		break;
-	default:
-		assert(false); // Only OpenGL is implemented
+GraphicsAPI* GraphicsAPI::instance = nullptr;
+
+GraphicsAPI* GraphicsAPI::Get() {
+	if (instance == nullptr) {
+		switch (GraphicsContext::graphicsAPI) {
+		case GraphicsContext::API::OPENGL:
+			instance = new OpenGLGraphicsAPI();
+			break;
+		default:
+			assert(false); // Only implemented for OpenGL
+		}
 	}
-	return graphicsAPI;
+	return instance;
 }

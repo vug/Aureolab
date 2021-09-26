@@ -7,7 +7,6 @@ public:
 		OPENGL,
 		// DIRECTX, VULKAN
 	};
-	//static GraphicsContext* Create(Window* window);
 	static void Initialize(Window* window);
 	static GraphicsContext* Get();
 

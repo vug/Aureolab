@@ -63,18 +63,16 @@ public:
         va->AddVertexBuffer(*vb);
         va->SetIndexBuffer(*ib);
 
-        ga = GraphicsAPI::Create();
-        ga->Initialize();
-        ga->SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
+        GraphicsAPI::Get()->SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
     }
 
     virtual void OnUpdate(float ts) override {
         mvp *= glm::rotate(glm::mat4(1.0f), ts, glm::vec3(0.0f, 0.0f, 1.0f));
 
-        ga->Clear();
+        GraphicsAPI::Get()->Clear();
         shader->Bind();
         shader->UploadUniformMat4("MVP", mvp);
-        ga->DrawIndexedTriangles(*va);
+        GraphicsAPI::Get()->DrawIndexedTriangles(*va);
     }
 
     virtual void OnDetach() override {
@@ -83,7 +81,6 @@ public:
         delete ib;
         delete va;
         delete shader;
-        delete ga;
     }
 
     virtual void OnEvent(Event& ev) override {
@@ -128,7 +125,6 @@ public:
     }
 
 private:
-    GraphicsAPI* ga = nullptr;
     VertexBuffer* vb = nullptr;
     IndexBuffer* ib = nullptr;
     VertexArray* va = nullptr;

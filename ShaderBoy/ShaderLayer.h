@@ -28,7 +28,6 @@ class ShaderLayer : public Layer {
 public:
     ShaderLayer(std::filesystem::path filepath) 
         : Layer("Shader Layer"), filewatcher(filepath) {
-        ga.reset(GraphicsAPI::Create());
         vao.reset(VertexArray::Create());
         shader.reset(Shader::Create(filepath.string()));
         filewatcher.Start([&]() -> void {
@@ -61,11 +60,11 @@ public:
         vao->AddVertexBuffer(*vbo);
         vao->SetIndexBuffer(*ebo);
 
-        ga->SetClearColor({ 0.3, 0.2, 0.1, 1.0 });
+        GraphicsAPI::Get()->SetClearColor({ 0.3, 0.2, 0.1, 1.0 });
     }
 
     virtual void OnUpdate(float ts) override {
-        ga->Clear();
+        GraphicsAPI::Get()->Clear();
 
         if (shouldRecompileShader) {
             shader->Recompile();
@@ -77,7 +76,7 @@ public:
         shader->UploadUniformFloat3("iResolution", viewportSize);
         shader->UploadUniformFloat4("iMouse", mouseState);
         vao->Bind();
-        ga->DrawIndexedTriangles(*vao, (unsigned int)vao->GetIndexBuffer()->GetNumIndices());
+        GraphicsAPI::Get()->DrawIndexedTriangles(*vao, (unsigned int)vao->GetIndexBuffer()->GetNumIndices());
         time += ts;
     }
 
@@ -133,7 +132,6 @@ public:
     }
 
 private:
-    std::unique_ptr<GraphicsAPI> ga = nullptr;
     std::unique_ptr<VertexArray> vao = nullptr;
     std::unique_ptr<VertexBuffer> vbo = nullptr;
     std::unique_ptr<Shader> shader = nullptr;

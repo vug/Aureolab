@@ -21,9 +21,7 @@ enum class BlendingFactor {
 
 class GraphicsAPI {
 public:
-	static GraphicsAPI* Create();
-
-	virtual void Initialize() = 0;
+	static GraphicsAPI* Get();
 
 	virtual void SetClearColor(const glm::vec4& color) = 0;
 	virtual void Clear(bool colorBuffer = true, bool depthBuffer = true) = 0;
@@ -42,4 +40,6 @@ public:
 	virtual void DrawIndexedPoints(const VertexArray& vertexArray, unsigned int indexCount = 0) = 0;
 	virtual void DrawArrayTriangles(const VertexArray& vertexArray, unsigned int start = 0, unsigned int count = 0) = 0;
 	virtual void DrawArrayPoints(const VertexArray& vertexArray, unsigned int start = 0, unsigned int count = 0) = 0;
+protected:
+	static GraphicsAPI* instance;
 };

@@ -8,6 +8,9 @@
 
 #include <cassert>
 
+GraphicsContext* GraphicsContext::instance = nullptr;
+Window* GraphicsContext::window = nullptr;
+
 void GraphicsContext::Initialize(Window* window) {
 	GraphicsContext::window = window;
 	GraphicsContext::Get(); // To actually create a GraphicsContext before calling any GraphicsAPI functions.
@@ -28,6 +31,3 @@ GraphicsContext* GraphicsContext::Get() {
 	}
 	return instance;
 }
-
-GraphicsContext* GraphicsContext::instance = nullptr;
-Window* GraphicsContext::window = nullptr;

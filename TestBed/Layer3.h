@@ -41,8 +41,7 @@ public:
             vertexArrays.push_back(va);
         }
 
-        ga = GraphicsAPI::Create();
-        ga->Initialize();
+        GraphicsAPI* ga = GraphicsAPI::Get();
         ga->SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
         ga->Enable(GraphicsAbility::DepthTest);
         ga->Enable(GraphicsAbility::FaceCulling);
@@ -63,7 +62,7 @@ public:
         glm::mat4 mvp = projection * mv;
         glm::mat4 normalMatrix = glm::inverse(mv);
 
-        ga->Clear();
+        GraphicsAPI::Get()->Clear();
         shader->Bind();
         shader->UploadUniformMat4("u_ModelViewPerspective", mvp);
         shader->UploadUniformMat4("u_ModelView", mv);
@@ -79,13 +78,12 @@ public:
         shader->UploadUniformFloat3("u_HemisphereLightPosition", hemisphereLightPosition);
         shader->UploadUniformFloat3("u_SkyColor", skyColor);
         shader->UploadUniformFloat3("u_GroundColor", groundColor);
-        ga->DrawArrayTriangles(*vertexArrays[selectedVaIndex]);
+        GraphicsAPI::Get()->DrawArrayTriangles(*vertexArrays[selectedVaIndex]);
     }
 
     virtual void OnDetach() override {
         // optional
         delete shader;
-        delete ga;
     }
 
     virtual void OnEvent(Event& ev) override {
@@ -124,7 +122,6 @@ public:
     }
 
 private:
-    GraphicsAPI* ga = nullptr;
     std::vector<VertexArray*> vertexArrays;
     glm::mat4 model = glm::mat4(1.0f);
     Shader* shader = nullptr;

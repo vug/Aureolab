@@ -31,11 +31,9 @@ public:
 		vao->AddVertexBuffer(*vbo);
 		fbo = FrameBuffer::Create(100, 100); // argument does not matter since it's going to be resized
 
-		ga = GraphicsAPI::Create();
-		ga->Initialize();
-		ga->Enable(GraphicsAbility::DepthTest);
+		GraphicsAPI::Get()->Enable(GraphicsAbility::DepthTest);
 		auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
-		ga->SetClearColor(turquoise);
+		GraphicsAPI::Get()->SetClearColor(turquoise);
 	}
 
 	virtual void OnUpdate(float ts) override {
@@ -59,16 +57,16 @@ public:
 		glm::mat4 mvp = projection * mv;
 		glm::mat4 normalMatrix = glm::inverse(mv);
 
-		ga->Clear();
+		GraphicsAPI::Get()->Clear();
 
 		// Render into viewportFBO
 		fbo->Bind();
-		ga->SetClearColor({0, 0, 0, 1});
-		ga->Clear();
+		GraphicsAPI::Get()->SetClearColor({0, 0, 0, 1});
+		GraphicsAPI::Get()->Clear();
 		shader->Bind();
 		shader->UploadUniformMat4("u_ModelViewPerspective", mvp); // needed for gl_Position;
 		shader->UploadUniformInt("u_RenderType", 1); // Normal (2: UV)
-		ga->DrawArrayTriangles(*vao);
+		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
 		fbo->Unbind();
 	}
 
@@ -78,7 +76,6 @@ public:
 	}
 
 	virtual void OnDetach() override {
-		delete ga;
 		delete fbo;
 	}
 
@@ -137,7 +134,6 @@ public:
 	}
 
 private:
-	GraphicsAPI* ga = nullptr;
 	float aspect = 1.0f;
 
 	Shader* shader = nullptr;

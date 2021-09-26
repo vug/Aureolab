@@ -6,8 +6,6 @@ class OpenGLGraphicsAPI : public GraphicsAPI {
 public:
 	OpenGLGraphicsAPI() = default;
 
-	virtual void Initialize() override;
-
 	virtual void SetClearColor(const glm::vec4& color) override;
 	virtual void Clear(bool colorBuffer = true, bool depthBuffer = true) override;
 

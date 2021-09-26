@@ -51,8 +51,7 @@ public:
 		vao = VertexArray::Create();
 		vao->AddVertexBuffer(*vbo);
 
-		ga = GraphicsAPI::Create();
-		ga->Initialize();
+		GraphicsAPI* ga = GraphicsAPI::Get();
 		ga->SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
 
 		ga->Enable(GraphicsAbility::PointSize); // Rasterized point diameter will be determined in shaders, gl_PointSize variable.
@@ -76,7 +75,7 @@ public:
 
 		glm::mat4 mvp = projection * view * model;
 
-		ga->Clear();
+		GraphicsAPI::Get()->Clear();
 		shader->Bind();
 		shader->UploadUniformMat4("u_MVP", mvp);
 		shader->UploadUniformFloat3("u_camPos", eye);
@@ -84,7 +83,7 @@ public:
 		shader->UploadUniformFloat("u_FocalDistance", focalDistance);
 		shader->UploadUniformFloat("u_BlurRadius", blurRadius);
 		shader->UploadUniformFloat("u_DepthOfField", depthOfField);
-		ga->DrawArrayPoints(*vao);
+		GraphicsAPI::Get()->DrawArrayPoints(*vao);
 	}
 
 	virtual void OnEvent(Event& ev) override {
@@ -100,7 +99,6 @@ public:
 	virtual void OnDetach() override {
 		delete shader;
 		delete vao;
-		delete ga;
 	}
 
 	virtual void OnImGuiRender() override {
@@ -129,7 +127,6 @@ private:
 	Shader* shader = nullptr;
 	VertexArray* vao = nullptr;
 	VertexBuffer* vbo = nullptr;
-	GraphicsAPI* ga = nullptr;
 	float aspect = 1.0f;
 	glm::mat4 model = glm::mat4(1.0f);
 	float angle = 0.0f;
