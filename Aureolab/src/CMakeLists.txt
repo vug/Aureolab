@@ -16,6 +16,8 @@
 	Platform/OpenGL/OpenGLIndexBuffer.h Platform/OpenGL/OpenGLIndexBuffer.cpp
 	Renderer/VertexArray.h Renderer/VertexArray.cpp
 	Platform/OpenGL/OpenGLVertexArray.h Platform/OpenGL/OpenGLVertexArray.cpp
+	Renderer/FrameBuffer.h Renderer/FrameBuffer.cpp
+	Platform/OpenGL/OpenGLFrameBuffer.h Platform/OpenGL/OpenGLFrameBuffer.cpp
     Renderer/Shader.h Renderer/Shader.cpp
 	Platform/OpenGL/OpenGLShader.h Platform/OpenGL/OpenGLShader.cpp
     Renderer/GraphicsAPI.h Renderer/GraphicsAPI.cpp
@@ -24,7 +26,7 @@
 	Core/Input.h Core/Input.cpp
     Platform/Windows/WindowsInput.h Platform/Windows/WindowsInput.cpp
 	Modeling/Modeling.h Modeling/Modeling.cpp
-)
+ )
 
 # If a debug build configuration define AL_DEBUG processor macro
 add_compile_definitions("$<$<CONFIG:Debug>:AL_DEBUG>")

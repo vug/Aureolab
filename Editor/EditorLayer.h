@@ -5,6 +5,7 @@
 #include "Renderer/GraphicsAPI.h"
 
 #include "Renderer/Shader.h"
+#include "Renderer/FrameBuffer.h"
 #include "Modeling/Modeling.h"
 
 #include <glad/glad.h> // include until Framebuffer and Texture abstractions are completed
@@ -28,6 +29,7 @@ public:
 		Log::Debug("num vertices: {}", vertices.size());
 		vao = VertexArray::Create();
 		vao->AddVertexBuffer(*vbo);
+		fbo = FrameBuffer::Create();
 
 		ga = GraphicsAPI::Create();
 		ga->Initialize();
@@ -35,9 +37,7 @@ public:
 		auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
 		ga->SetClearColor(turquoise);
 
-		// generate framebuffer and activate
-		glGenFramebuffers(1, &fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		fbo->Bind();
 		// generate color buffer texture
 		glGenTextures(1, &texture);
 		glBindTexture(GL_TEXTURE_2D, texture);
@@ -66,7 +66,8 @@ public:
 		else {
 			Log::Warning("Framebuffer incomplete.");
 		}
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		fbo->Unbind();
+
 	}
 
 	virtual void OnUpdate(float ts) override {
@@ -93,14 +94,14 @@ public:
 		ga->Clear();
 
 		// Render into viewportFBO
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		fbo->Bind();
 		ga->SetClearColor({0, 0, 0, 1});
 		ga->Clear();
 		shader->Bind();
 		shader->UploadUniformMat4("u_ModelViewPerspective", mvp); // needed for gl_Position;
 		shader->UploadUniformInt("u_RenderType", 1); // Normal (2: UV)
 		ga->DrawArrayTriangles(*vao);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		fbo->Unbind();
 	}
 
 	virtual void OnEvent(Event& ev) override {
@@ -110,7 +111,7 @@ public:
 
 	virtual void OnDetach() override {
 		delete ga;
-		glDeleteFramebuffers(1, &fbo);
+		delete fbo;
 	}
 
 	virtual void OnImGuiRender() override {
@@ -186,7 +187,8 @@ private:
 
 	Shader* shader = nullptr;
 	VertexArray* vao = nullptr;
-	unsigned int fbo = 0;
+	FrameBuffer* fbo = nullptr;
+	unsigned int fboID = 0;
 	unsigned int texture = 0;
 	unsigned int depth_texture = 0;
 
