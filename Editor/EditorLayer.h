@@ -12,6 +12,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <algorithm>
+#include <vector>
+
 
 class EditorLayer : public Layer {
 public:
@@ -29,7 +32,8 @@ public:
 		ga = GraphicsAPI::Create();
 		ga->Initialize();
 		ga->Enable(GraphicsAbility::DepthTest);
-		ga->SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
+		auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
+		ga->SetClearColor(turquoise);
 
 		// generate framebuffer and activate
 		glGenFramebuffers(1, &fbo);
@@ -56,7 +60,7 @@ public:
 		// attach them to currently bound framebuffer object
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture, 0);
-
+		// Check FBO completion
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
 			Log::Debug("Framebuffer complete.");
 		}
@@ -70,6 +74,8 @@ public:
 		static float time = 0.0f;
 		static float angle = 0.0f;
 		static glm::mat4 model = glm::mat4(1.0f);
+		std::shift_left(frameRates.begin(), frameRates.end(), 1);
+		frameRates[frameRates.size() - 1] = 1.0f / ts;		
 
 		float red = std::sin(time);
 		time += ts;
@@ -86,10 +92,9 @@ public:
 		glm::mat4 mvp = projection * mv;
 		glm::mat4 normalMatrix = glm::inverse(mv);
 
-		auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
-		ga->SetClearColor(turquoise);
 		ga->Clear();
 
+		// Render into viewportFBO
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		ga->SetClearColor({1, 0, 0, 1});
 		ga->Clear();
@@ -99,7 +104,7 @@ public:
 		ga->DrawArrayTriangles(*vao);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		// Viewport ImWindow
+		// Viewport ImWindow displays content of viewportFBO
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 		ImGui::Begin("Viewport", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground); // ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
 		ImGui::Image((void*)(intptr_t)texture, ImVec2(750, 750));
@@ -126,24 +131,16 @@ public:
 		ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGui::DockSpaceOverViewport(viewport, ImGuiDockNodeFlags_None);
 
-		//ImGui::SetNextWindowSize({ 500.0f, 100.0f }); // ImGuiCond_Always (default), ImGuiCond_FirstUseEver, 
-		//ImGui::SetNextWindowPos({ 0.0f, 100.0f });
-		//ImGui::SetNextWindowContentSize({ 50.0f, 50.0f });
-		ImGui::Begin("Editor Layer");
+		ImGui::Begin("Left Panel");
 		ImGui::Text("Laylay...");
 		ImGui::End();
 
 		static bool shouldShowDemo = false;
 
-		//ImGuiViewport* viewport = ImGui::GetMainViewport();
-		//ImGui::DockSpaceOverViewport(viewport, ImGuiDockNodeFlags_None);
-		//ImGui::DockSpaceOverViewport(viewport, ImGuiDockNodeFlags_PassthruCentralNode);
-		//ImGui::DockSpaceOverViewport(viewport, ImGuiDockNodeFlags_NoDockingInCentralNode);
-
 		int glViewportData[4];
 		glGetIntegerv(GL_VIEWPORT, glViewportData);
 
-		ImGui::Begin("Stats"); {
+		ImGui::Begin("Right Panel"); {
 			ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 			ImVec2 viewportMinRegion = ImGui::GetWindowContentRegionMin();
 			ImVec2 viewportMaxRegion = ImGui::GetWindowContentRegionMax();
@@ -177,6 +174,10 @@ public:
 				m_ViewportBounds[1].x, m_ViewportBounds[1].y,
 				m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y
 			);
+			ImGui::Separator();
+			ImGui::PlotLines("FPS", frameRates.data(), frameRates.size());
+			const auto [minIt, maxIt] = std::minmax_element(frameRates.begin(), frameRates.end());
+			ImGui::Text("[%.1f %.1f]", *minIt, *maxIt);
 		} ImGui::End();
 
 		if (shouldShowDemo) ImGui::ShowDemoWindow();
@@ -190,4 +191,5 @@ private:
 	VertexArray* vao = nullptr;
 	unsigned int fbo = 0;
 	unsigned int texture = 0;
+	std::vector<float> frameRates = std::vector<float>(120);
 };

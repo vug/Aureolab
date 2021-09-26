@@ -10,6 +10,7 @@ Application::Application(const std::string& name) : name(name) {
     window = Window::Create(name, 1000, 1000);
     window->SetEventCallback(AL_BIND_EVENT_FN(Application::OnEventApplication));
     context = GraphicsContext::Create(window);
+    //context->SetVSync(true); // TODO: Make this togglable by client apps
 
     ImGuiHelper::Initialize(window);
     Input::Initialize(window);
