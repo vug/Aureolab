@@ -11,6 +11,8 @@
 
 struct ApplicationConfig {
 	std::string name;
+	int windowWidth = 1000;
+	int windowHeight = 1000;
 };
 
 class Application : public LayerList {

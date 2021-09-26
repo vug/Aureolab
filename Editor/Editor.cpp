@@ -6,7 +6,7 @@
 
 #include <vector>
 
-ApplicationConfig EditorAppConfig = { "AureoLab Editor" };
+ApplicationConfig EditorAppConfig = { "AureoLab Editor", 1920, 1080};
 
 class Editor : public Application {
 public:

@@ -7,7 +7,7 @@
 #include <string>
 
 Application::Application(const ApplicationConfig& config) : name(config.name) {
-    window = Window::Create(name, 1000, 1000);
+    window = Window::Create(name, config.windowWidth, config.windowHeight);
     window->SetEventCallback(AL_BIND_EVENT_FN(Application::OnEventApplication));
     context = GraphicsContext::Create(window);
     //context->SetVSync(true); // TODO: Make this togglable by client apps
