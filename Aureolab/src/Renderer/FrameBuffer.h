@@ -2,7 +2,7 @@
 
 class FrameBuffer {
 public:
-	static FrameBuffer* Create();
+	static FrameBuffer* Create(int width, int height);
 	virtual ~FrameBuffer() = default;
 
 	virtual void Bind() const = 0;

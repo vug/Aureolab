@@ -6,7 +6,7 @@
 
 class OpenGLFrameBuffer : public FrameBuffer {
 public:
-	OpenGLFrameBuffer();
+	OpenGLFrameBuffer(int width, int height);
 	virtual ~OpenGLFrameBuffer();
 
 	virtual void Bind() const override;

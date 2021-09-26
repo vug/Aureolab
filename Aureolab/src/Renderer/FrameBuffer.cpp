@@ -5,11 +5,11 @@
 
 #include <cassert>
 
-FrameBuffer* FrameBuffer::Create() {
+FrameBuffer* FrameBuffer::Create(int width, int height) {
 	FrameBuffer* fbo = nullptr;
 	switch (GraphicsContext::graphicsAPI) {
 	case GraphicsContext::API::OPENGL:
-		fbo = new OpenGLFrameBuffer();
+		fbo = new OpenGLFrameBuffer(width, height);
 		break;
 	default:
 		assert(false); // Only OpenGL is implemented

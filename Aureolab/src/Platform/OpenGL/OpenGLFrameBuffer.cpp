@@ -6,7 +6,7 @@
 
 #include <cassert>
 
-OpenGLFrameBuffer::OpenGLFrameBuffer() {
+OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height) {
 	glGenFramebuffers(1, &rendererID);
 
 	Bind();
@@ -14,7 +14,7 @@ OpenGLFrameBuffer::OpenGLFrameBuffer() {
 	unsigned int colorRendererID;
 	glGenTextures(1, &colorRendererID);
 	glBindTexture(GL_TEXTURE_2D, colorRendererID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 100, 100, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -25,7 +25,7 @@ OpenGLFrameBuffer::OpenGLFrameBuffer() {
 	// generate depth buffer texture
 	glGenTextures(1, &depthRendererID);
 	glBindTexture(GL_TEXTURE_2D, depthRendererID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 100, 100, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

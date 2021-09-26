@@ -29,7 +29,7 @@ public:
 		Log::Debug("num vertices: {}", vertices.size());
 		vao = VertexArray::Create();
 		vao->AddVertexBuffer(*vbo);
-		fbo = FrameBuffer::Create();
+		fbo = FrameBuffer::Create(100, 100); // argument does not matter since it's going to be resized
 
 		ga = GraphicsAPI::Create();
 		ga->Initialize();
