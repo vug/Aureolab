@@ -36,38 +36,6 @@ public:
 		ga->Enable(GraphicsAbility::DepthTest);
 		auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
 		ga->SetClearColor(turquoise);
-
-		fbo->Bind();
-		// generate color buffer texture
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 100, 100, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		// generate depth buffer texture
-		glGenTextures(1, &depth_texture);
-		glBindTexture(GL_TEXTURE_2D, depth_texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 100, 100, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		// attach them to currently bound framebuffer object
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture, 0);
-		// Check FBO completion
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
-			Log::Debug("Framebuffer complete.");
-		}
-		else {
-			Log::Warning("Framebuffer incomplete.");
-		}
-		fbo->Unbind();
-
 	}
 
 	virtual void OnUpdate(float ts) override {
@@ -131,15 +99,10 @@ public:
 		ImVec2 viewportPanelAvailRegion = ImGui::GetContentRegionAvail();
 		bool isViewportPanelResized = viewportPanelAvailRegion.x != viewportPanelAvailRegionPrev.x || viewportPanelAvailRegion.y != viewportPanelAvailRegionPrev.y;
 		if (isViewportPanelResized) {
-			glBindTexture(GL_TEXTURE_2D, texture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewportPanelAvailRegion.x, viewportPanelAvailRegion.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glBindTexture(GL_TEXTURE_2D, depth_texture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, viewportPanelAvailRegion.x, viewportPanelAvailRegion.y, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glViewport(0, 0, viewportPanelAvailRegion.x, viewportPanelAvailRegion.y);
+			fbo->Resize((int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
+			glViewport(0, 0, (int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
 		}
-		ImGui::Image((void*)(intptr_t)texture, ImVec2(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y));
+		ImGui::Image((void*)(intptr_t)fbo->GetColorAttachmentRendererID(0), ImVec2(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y));
 		aspect = viewportPanelAvailRegion.x / viewportPanelAvailRegion.y;
 		ImGui::End();
 		ImGui::PopStyleVar();
@@ -168,7 +131,7 @@ public:
 			);
 
 			ImGui::Separator();
-			ImGui::PlotLines("FPS", frameRates.data(), frameRates.size());
+			ImGui::PlotLines("FPS", frameRates.data(), (int)frameRates.size());
 			const auto [minIt, maxIt] = std::minmax_element(frameRates.begin(), frameRates.end());
 			ImGui::Text("[%.1f %.1f]", *minIt, *maxIt);
 
@@ -188,9 +151,6 @@ private:
 	Shader* shader = nullptr;
 	VertexArray* vao = nullptr;
 	FrameBuffer* fbo = nullptr;
-	unsigned int fboID = 0;
-	unsigned int texture = 0;
-	unsigned int depth_texture = 0;
 
 	std::vector<float> frameRates = std::vector<float>(120);
 };
