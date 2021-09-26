@@ -15,6 +15,8 @@ public:
 	virtual void Disable(GraphicsAbility ability) override;
 	virtual bool IsEnabled(GraphicsAbility ability) override;
 
+	virtual glm::ivec4 GetViewportPositionAndSize() const override;
+
 	virtual void SetDefaultPointSize(float diameter) override;
 	virtual void SetBlendingFunction(BlendingFactor src, BlendingFactor dst) override;
 

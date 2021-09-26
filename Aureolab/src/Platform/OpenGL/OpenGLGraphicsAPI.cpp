@@ -65,6 +65,12 @@ bool OpenGLGraphicsAPI::IsEnabled(GraphicsAbility ability) {
 	return glIsEnabled(glEnum);
 }
 
+glm::ivec4 OpenGLGraphicsAPI::GetViewportPositionAndSize() const {
+	int data[4];
+	glGetIntegerv(GL_VIEWPORT, data);
+	return { data[0], data[1], data[2], data[3] };
+}
+
 void OpenGLGraphicsAPI::SetDefaultPointSize(float diameter) {
 	glPointSize(diameter);
 }

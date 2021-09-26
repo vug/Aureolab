@@ -32,6 +32,8 @@ public:
 	virtual void Disable(GraphicsAbility ability) = 0;
 	virtual bool IsEnabled(GraphicsAbility ability) = 0;
 
+	virtual glm::ivec4 GetViewportPositionAndSize() const = 0;
+
 	// Default rasterized point size when PointSize GraphicsAbility is disabled.
 	virtual void SetDefaultPointSize(float diameter) = 0;
 	virtual void SetBlendingFunction(BlendingFactor src, BlendingFactor dst) = 0;

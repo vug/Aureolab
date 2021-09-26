@@ -94,8 +94,6 @@ public:
 		static ImVec2 viewportPanelAvailRegionPrev;
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 		ImGui::Begin("Viewport", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground); // ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
-		ImVec2 viewportPanelSize = ImGui::GetWindowSize();
-		ImVec2 viewportPanelPos = ImGui::GetWindowPos();
 		ImVec2 viewportPanelAvailRegion = ImGui::GetContentRegionAvail();
 		bool isViewportPanelResized = viewportPanelAvailRegion.x != viewportPanelAvailRegionPrev.x || viewportPanelAvailRegion.y != viewportPanelAvailRegionPrev.y;
 		if (isViewportPanelResized) {
@@ -111,22 +109,12 @@ public:
 
 		ImGui::Begin("Right Panel"); {
 			ImGui::Text("Components will come here");
-			int glViewportData[4];
-			glGetIntegerv(GL_VIEWPORT, glViewportData);
+
 			ImGui::Text("Stats:\n"
 				"mainViewportSize: (%.1f, %.1f)\n"
-				"mainViewportWorkSize: (%.1f, %.1f)\n"
-				"GL_VIEWPORT: (%d, %d)\n"
-				"--\n"
-				"viewportPanelPos: (%.1f, %.1f)\n"
-				"viewportPanelSize: (%.1f, %.1f)\n"
 				"viewportPanelAvailRegion: (%.1f, %.1f)\n"
 				"",
 				viewport->Size.x, viewport->Size.y,
-				viewport->WorkSize.x, viewport->WorkSize.y,
-				glViewportData[2], glViewportData[3],
-				viewportPanelPos.x, viewportPanelPos.y,
-				viewportPanelSize.x, viewportPanelSize.y,
 				viewportPanelAvailRegion.x, viewportPanelAvailRegion.y
 			);
 
