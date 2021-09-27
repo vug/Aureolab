@@ -17,7 +17,12 @@ protected:
 };
 
 
-// Taken from https://github.com/TheCherno/Hazel/commit/96c57dadf5c3616ba3613034dfb63d3918590359 and modified
+/*
+* Taken from https ://github.com/TheCherno/Hazel/commit/96c57dadf5c3616ba3613034dfb63d3918590359 and modified
+* Camera is defined by a focal point, a distance from a focal point, and two angles describing the orientation towards the focal point (yaw, pitch).
+* The position of the camera/eye is computed from these parameters.
+* Including FOV and aspect ratio camera can compute the View and Projection matrices. 
+*/ 
 class EditorCamera : public Camera {
 public:
 	EditorCamera() = default;

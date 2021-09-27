@@ -69,7 +69,6 @@ void EditorCamera::OnUpdate(float ts)
 	if (Input::Get()->IsKeyPressed(GLFW_KEY_LEFT_ALT))
 	{
 		const glm::vec2& mouse = Input::Get()->GetMouseCursorPosition();
-		//const glm::vec2& mouse{ Input::Get()->GetMouseX(), Input::Get()->GetMouseY() };
 		glm::vec2 delta = (mouse - m_InitialMousePosition) * 0.003f;
 		m_InitialMousePosition = mouse;
 
