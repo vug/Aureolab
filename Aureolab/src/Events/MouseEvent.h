@@ -29,6 +29,9 @@ public:
 
 	virtual const char* GetName() const override { return "MouseScrollEvent"; }
 
+	float GetXOffset() const { return xOffset; }
+	float GetYOffset() const { return yOffset; }
+
 	std::string ToString() const override {
 		std::stringstream ss;
 		ss << GetName() << ": " << xOffset << ", " << yOffset;

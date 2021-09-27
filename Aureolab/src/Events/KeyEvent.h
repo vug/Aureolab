@@ -1,6 +1,8 @@
 #pragma once
 #include "Event.h"
 
+#include <string>
+
 class KeyEvent : public Event {
 public:
 	int GetKeyCode() const { return keyCode; }
