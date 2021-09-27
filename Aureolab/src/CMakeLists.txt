@@ -45,6 +45,7 @@ target_link_libraries(
 	glm
 	imgui
 	tinyobjloader
+	EnTT::EnTT
 )
 
 target_compile_features(Aureolab PRIVATE cxx_std_17)
