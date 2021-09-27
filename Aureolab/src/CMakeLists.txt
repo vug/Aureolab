@@ -28,6 +28,7 @@
 	Modeling/Modeling.h Modeling/Modeling.cpp
     Renderer/EditorCamera.h Renderer/EditorCamera.cpp
 	Scene/Components.h
+	Scene/Scene.h Scene/Scene.cpp
  )
 
 # If a debug build configuration define AL_DEBUG processor macro
