@@ -18,6 +18,12 @@ int Al2GlfwMouseButton(MouseButton button) {
 	}
 }
 
+bool WindowsInput::IsKeyPressed(int key) {
+	GLFWwindow* glfwWindow = (GLFWwindow*)window->GetNativeWindow();
+	int state = glfwGetKey(glfwWindow, key);
+	return state == GLFW_PRESS;
+}
+
 bool WindowsInput::IsMouseButtonPressed(MouseButton button) {
 	GLFWwindow*  glfwWindow = (GLFWwindow*)window->GetNativeWindow();
 	int state = glfwGetMouseButton(glfwWindow, Al2GlfwMouseButton(button));

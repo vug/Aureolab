@@ -13,6 +13,7 @@ public:
     static void Initialize(Window* window);
     static Input* Get();
 
+    virtual bool IsKeyPressed(int key) = 0;
 	virtual bool IsMouseButtonPressed(MouseButton button) = 0;
     virtual glm::vec2 GetMouseCursorPosition() = 0;
 
