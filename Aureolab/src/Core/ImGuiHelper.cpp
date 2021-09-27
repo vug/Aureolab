@@ -14,6 +14,7 @@ void ImGuiHelper::Initialize(Window* window) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows. Allow ImGui windows to be moved outside of the app window.
+    io.ConfigWindowsMoveFromTitleBarOnly = true;
 
     // Platform / Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)window->GetNativeWindow(), true);
