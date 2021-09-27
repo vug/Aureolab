@@ -3,9 +3,9 @@
 #include "Core/Layer.h"
 #include "Events/Event.h"
 #include "Renderer/GraphicsAPI.h"
-
 #include "Renderer/Shader.h"
 #include "Renderer/FrameBuffer.h"
+#include "Renderer/EditorCamera.h"
 #include "Modeling/Modeling.h"
 
 #include <glad/glad.h> // include until Framebuffer and Texture abstractions are completed
@@ -23,7 +23,7 @@ public:
 
 	virtual void OnAttach() override {
 		shader = Shader::Create("assets/shaders/BasicShader.glsl");
-		std::vector<BasicVertex> vertices = LoadOBJ("assets/models/torus_smooth.obj");
+		std::vector<BasicVertex> vertices = LoadOBJ("assets/models/suzanne_smooth.obj");
 		VertexBuffer* vbo = VertexBuffer::Create(BasicVertexAttributeSpecs);
 		vbo->SetVertices(vertices);
 		Log::Debug("num vertices: {}", vertices.size());
@@ -34,22 +34,22 @@ public:
 		GraphicsAPI::Get()->Enable(GraphicsAbility::DepthTest);
 		auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
 		GraphicsAPI::Get()->SetClearColor(turquoise);
+		camera = new EditorCamera(45, aspect, 0.01, 100);
 	}
 
 	virtual void OnUpdate(float ts) override {
-		static float time = 0.0f;
 		static float angle = 0.0f;
 		static glm::mat4 model = glm::mat4(1.0f);
 		std::shift_left(frameRates.begin(), frameRates.end(), 1);
-		frameRates[frameRates.size() - 1] = 1.0f / ts;		
+		frameRates[frameRates.size() - 1] = 1.0f / ts;
+		camera->OnUpdate(ts);
 
-		float red = std::sin(time);
-		time += ts;
-
-		glm::mat4 projection = glm::perspective(glm::radians(45.f), aspect, 0.01f, 100.0f);
-		glm::vec3 eye({ 0.0, 0.0, 5.0 });
-		glm::mat4 view = glm::lookAt(eye, glm::vec3{ 0.0, 0.0, 0.0 }, glm::vec3{ 0.0, 1.0, 0.0 });
-		if (true) {
+		//glm::mat4 projection = glm::perspective(glm::radians(45.f), aspect, 0.01f, 100.0f);
+		glm::mat4 projection = camera->GetProjection();
+		//glm::vec3 eye({ 0.0, 0.0, 5.0 });
+		//glm::mat4 view = glm::lookAt(eye, glm::vec3{ 0.0, 0.0, 0.0 }, glm::vec3{ 0.0, 1.0, 0.0 });
+		glm::mat4 view = camera->GetViewMatrix();
+		if (false) {
 			angle += ts * 0.5f;
 			model = glm::rotate(model, ts, { 0, std::sin(angle), std::cos(angle) });
 		}
@@ -72,7 +72,11 @@ public:
 
 	virtual void OnEvent(Event& ev) override {
 		auto dispatcher = EventDispatcher(ev);
-		//dispatcher.Dispatch<WindowResizeEvent>(AL_BIND_EVENT_FN(EditorLayer::OnWindowResize));
+		dispatcher.Dispatch<KeyPressedEvent>(AL_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+	}
+
+	void OnKeyPressed(KeyPressedEvent& ev) {
+		//Log::Debug("KeyPressed {}", ev.GetKeyCode());
 	}
 
 	virtual void OnDetach() override {
@@ -96,6 +100,7 @@ public:
 		if (isViewportPanelResized) {
 			fbo->Resize((int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
 			glViewport(0, 0, (int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
+			camera->SetViewportSize((int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
 		}
 		ImGui::Image((void*)(intptr_t)fbo->GetColorAttachmentRendererID(0), ImVec2(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y));
 		aspect = viewportPanelAvailRegion.x / viewportPanelAvailRegion.y;
@@ -125,6 +130,10 @@ public:
 			}
 
 			ImGui::Separator();
+			ImGui::Text("Yaw: %.2f, Pitch: %.2f, Pos: (%.1f, %.1f, %.1f)", camera->GetYaw(), camera->GetPitch(),
+				camera->GetPosition().x, camera->GetPosition().y, camera->GetPosition().z);
+
+			ImGui::Separator();
 			ImGui::Checkbox("Show Demo Window", &shouldShowDemo);
 
 			viewportPanelAvailRegionPrev = viewportPanelAvailRegion;
@@ -135,6 +144,7 @@ public:
 
 private:
 	float aspect = 1.0f;
+	EditorCamera* camera = nullptr;
 
 	Shader* shader = nullptr;
 	VertexArray* vao = nullptr;

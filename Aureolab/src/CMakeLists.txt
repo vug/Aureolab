@@ -26,7 +26,8 @@
 	Core/Input.h Core/Input.cpp
     Platform/Windows/WindowsInput.h Platform/Windows/WindowsInput.cpp
 	Modeling/Modeling.h Modeling/Modeling.cpp
- )
+    Renderer/EditorCamera.h Renderer/EditorCamera.cpp
+)
 
 # If a debug build configuration define AL_DEBUG processor macro
 add_compile_definitions("$<$<CONFIG:Debug>:AL_DEBUG>")
