@@ -35,7 +35,7 @@ public:
 		GraphicsAPI::Get()->Enable(GraphicsAbility::DepthTest);
 		auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
 		GraphicsAPI::Get()->SetClearColor(turquoise);
-		camera = new EditorCamera(45, aspect, 0.01, 100);
+		camera = new EditorCamera(45, aspect, 0.01f, 100);
 	}
 
 	virtual void OnUpdate(float ts) override {
@@ -101,7 +101,7 @@ public:
 		if (isViewportPanelResized) {
 			fbo->Resize((int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
 			glViewport(0, 0, (int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
-			camera->SetViewportSize((int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
+			camera->SetViewportSize(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y);
 		}
 		ImGui::Image((void*)(intptr_t)fbo->GetColorAttachmentRendererID(0), ImVec2(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		aspect = viewportPanelAvailRegion.x / viewportPanelAvailRegion.y;
