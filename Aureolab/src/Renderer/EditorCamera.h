@@ -28,30 +28,37 @@ public:
 	EditorCamera() = default;
 	EditorCamera(float fov, float aspectRatio, float nearClip, float farClip);
 
+	// To be called by camera controllers
 	void OnUpdate(float ts);
-
-	inline float GetDistance() const { return m_Distance; }
-	inline void SetDistance(float distance) { m_Distance = distance; }
-
-	inline void SetViewportSize(float width, float height) { m_ViewportWidth = width; m_ViewportHeight = height; UpdateProjection(); }
+	void OnMouseScroll(float xOffset, float yOffset);
 
 	const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
 	glm::mat4 GetViewProjection() const { return Projection * m_ViewMatrix; }
 
+	inline void SetViewportSize(float width, float height) { m_ViewportWidth = width; m_ViewportHeight = height; UpdateProjection(); }
+
+	inline float GetDistance() const { return m_Distance; }
+	float* GetRefDistance() { return &m_Distance; }
+	inline void SetDistance(float distance) { m_Distance = distance; }
+
 	glm::vec3 GetUpDirection() const;
 	glm::vec3 GetRightDirection() const;
 	glm::vec3 GetForwardDirection() const;
+
 	const glm::vec3& GetPosition() const { return m_Position; }
 	glm::quat GetOrientation() const;
 	glm::vec3 GetFocalPoint() const { return m_FocalPoint; }
 
 	float GetPitch() const { return m_Pitch; }
 	float GetYaw() const { return m_Yaw; }
+	float GetRoll() const { return m_Roll; }
+	float* GetRefRoll() { return &m_Roll; }
+
+	float GetFOV() const { return m_FOV; }
+	void SetFOV(float fov) { m_FOV = fov; UpdateProjection(); }
 private:
 	void UpdateProjection();
 	void UpdateView();
-
-	void OnMouseScroll(float xOffset, float yOffset);
 
 	void MousePan(const glm::vec2& delta);
 	void MouseRotate(const glm::vec2& delta);
@@ -72,7 +79,7 @@ private:
 	glm::vec2 m_InitialMousePosition = { 0.0f, 0.0f };
 
 	float m_Distance = 5.0f;
-	float m_Pitch = 0.0f, m_Yaw = 0.0f;
+	float m_Pitch = 0.0f, m_Yaw = 0.0f, m_Roll = 0.0f;
 
 	float m_ViewportWidth = 1280, m_ViewportHeight = 720;
 };

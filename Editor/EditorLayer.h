@@ -119,19 +119,29 @@ public:
 				viewport->Size.x, viewport->Size.y,
 				viewportPanelAvailRegion.x, viewportPanelAvailRegion.y
 			);
-
-			ImGui::Separator();
-			ImGui::PlotLines("FPS", frameRates.data(), (int)frameRates.size());
-			const auto [minIt, maxIt] = std::minmax_element(frameRates.begin(), frameRates.end());
-			ImGui::Text("[%.1f %.1f]", *minIt, *maxIt);
-			static bool isVSync = false;
-			if (ImGui::Checkbox("VSync", &isVSync)) {
-				GraphicsContext::Get()->SetVSync(isVSync);
+			
+			if (ImGui::CollapsingHeader("FPS", ImGuiTreeNodeFlags_DefaultOpen)) {
+				ImGui::PlotLines("", frameRates.data(), (int)frameRates.size());
+				const auto [minIt, maxIt] = std::minmax_element(frameRates.begin(), frameRates.end());
+				ImGui::Text("[%.1f %.1f]", *minIt, *maxIt);
+				static bool isVSync = false;
+				if (ImGui::Checkbox("VSync", &isVSync)) {
+					GraphicsContext::Get()->SetVSync(isVSync);
+				}
 			}
 
-			ImGui::Separator();
-			ImGui::Text("Yaw: %.2f, Pitch: %.2f, Pos: (%.1f, %.1f, %.1f)", camera->GetYaw(), camera->GetPitch(),
-				camera->GetPosition().x, camera->GetPosition().y, camera->GetPosition().z);
+			if (ImGui::CollapsingHeader("Editor Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
+				ImGui::Text("Yaw, Pitch, Roll: (%.2f, %.2f, %.2f)", camera->GetYaw(), camera->GetPitch(), camera->GetRoll());
+				ImGui::Text("Pos: (%.1f, %.1f, %.1f)", camera->GetPosition().x, camera->GetPosition().y, camera->GetPosition().z);
+				ImGui::Text("Target: (%.1f, %.1f, %.1f)", camera->GetFocalPoint().x, camera->GetFocalPoint().y, camera->GetFocalPoint().z);
+				ImGui::Text("Distance: %.1f", camera->GetDistance());
+				float fov = camera->GetFOV();
+				if (ImGui::SliderFloat("FOV", &fov, 1.0f, 180.0f)) {
+					camera->SetFOV(fov);
+				}
+				ImGui::SliderFloat("Roll", camera->GetRefRoll(), 0.0f, 3.141593f);
+
+			}
 
 			ImGui::Separator();
 			ImGui::Checkbox("Show Demo Window", &shouldShowDemo);
