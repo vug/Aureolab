@@ -2,6 +2,7 @@
 
 #include "Core/Layer.h"
 #include "Events/Event.h"
+#include "Events/MouseEvent.h"
 #include "Renderer/GraphicsAPI.h"
 #include "Renderer/Shader.h"
 #include "Renderer/FrameBuffer.h"
@@ -72,11 +73,11 @@ public:
 
 	virtual void OnEvent(Event& ev) override {
 		auto dispatcher = EventDispatcher(ev);
-		dispatcher.Dispatch<KeyPressedEvent>(AL_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+		dispatcher.Dispatch<MouseScrolledEvent>(AL_BIND_EVENT_FN(EditorLayer::OnMouseScrolled));
 	}
 
-	void OnKeyPressed(KeyPressedEvent& ev) {
-		//Log::Debug("KeyPressed {}", ev.GetKeyCode());
+	void OnMouseScrolled(MouseScrolledEvent& ev) {
+		if(isViewportPanelHovered) camera->OnMouseScroll(ev.GetXOffset(), ev.GetYOffset());
 	}
 
 	virtual void OnDetach() override {
@@ -104,6 +105,7 @@ public:
 		}
 		ImGui::Image((void*)(intptr_t)fbo->GetColorAttachmentRendererID(0), ImVec2(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		aspect = viewportPanelAvailRegion.x / viewportPanelAvailRegion.y;
+		isViewportPanelHovered = ImGui::IsWindowHovered();
 		ImGui::End();
 		ImGui::PopStyleVar();
 
@@ -145,7 +147,6 @@ public:
 
 			ImGui::Separator();
 			ImGui::Checkbox("Show Demo Window", &shouldShowDemo);
-
 			viewportPanelAvailRegionPrev = viewportPanelAvailRegion;
 		} ImGui::End();
 
@@ -155,6 +156,7 @@ public:
 private:
 	float aspect = 1.0f;
 	EditorCamera* camera = nullptr;
+	bool isViewportPanelHovered = false;
 
 	Shader* shader = nullptr;
 	VertexArray* vao = nullptr;
