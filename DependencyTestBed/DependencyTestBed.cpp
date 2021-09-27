@@ -8,6 +8,7 @@
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
+#include <entt/entt.hpp>
 
 #include <memory>
 
@@ -37,6 +38,20 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 int main(int argc, char* argv[]) {
     LOGGER->info("Hi from Dependency Test Bed!");
+
+    struct Position {
+        float x;
+        float y;
+    };
+    entt::registry registery;
+    auto ent1 = registery.create();
+    auto ent2 = registery.create();
+    registery.emplace<Position>(ent1, 1.0f, 2.0f);
+    registery.emplace<Position>(ent2, 3.0f, 4.0f);
+    auto view = registery.view<Position>();
+    for (auto [entity, pos] : view.each()) {
+        LOGGER->info("Entity [{}], Position: ({}, {})", entity, pos.x, pos.y);
+    }
 
     static const struct
     {
