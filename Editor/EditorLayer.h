@@ -102,7 +102,7 @@ public:
 			glViewport(0, 0, (int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
 			camera->SetViewportSize((int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
 		}
-		ImGui::Image((void*)(intptr_t)fbo->GetColorAttachmentRendererID(0), ImVec2(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y));
+		ImGui::Image((void*)(intptr_t)fbo->GetColorAttachmentRendererID(0), ImVec2(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		aspect = viewportPanelAvailRegion.x / viewportPanelAvailRegion.y;
 		ImGui::End();
 		ImGui::PopStyleVar();
