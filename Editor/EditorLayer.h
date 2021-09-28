@@ -117,12 +117,16 @@ public:
 		ImGui::DockSpaceOverViewport(viewport, ImGuiDockNodeFlags_None);
 
 		ImGui::Begin("Hierarchy");
+		// List object names
 		auto query = scene.View<TagComponent>();
 		for (const auto& [ent, tag] : query.each()) {
 			if (ImGui::Selectable(tag.Tag.c_str(), selectedObject == ent)) {
 				selectedObject = scene.GetHandle(ent);
 			}
 		}
+
+		// Deselect when clicking on an empty area
+		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) selectedObject = {};
 		ImGui::End();
 
 		// Viewport ImWindow displays content of viewportFBO
