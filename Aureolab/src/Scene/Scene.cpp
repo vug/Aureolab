@@ -9,3 +9,11 @@ EntityHandle Scene::CreateEntity(const std::string& name) {
 	handle.emplace<TagComponent>(name);
 	return handle;
 }
+
+void Scene::Visit(EntityHandle ent, std::function<void(const entt::type_info)> func) {
+	registry.visit(ent, func);
+}
+
+EntityHandle Scene::GetHandle(entt::entity ent) {
+	return EntityHandle{ registry, ent };
+}

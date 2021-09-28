@@ -16,6 +16,10 @@ public:
 		return view;
 	}
 
+	void Visit(EntityHandle ent, std::function<void(const entt::type_info)> func);
+
+	EntityHandle GetHandle(entt::entity ent);
+
 private:
 	entt::registry registry;
 };
