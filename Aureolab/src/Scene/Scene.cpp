@@ -10,6 +10,10 @@ EntityHandle Scene::CreateEntity(const std::string& name) {
 	return handle;
 }
 
+void Scene::DestroyEntity(EntityHandle ent) {
+	registry.destroy(ent);
+}
+
 void Scene::Visit(EntityHandle ent, std::function<void(const entt::type_info)> func) {
 	registry.visit(ent, func);
 }

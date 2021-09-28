@@ -9,6 +9,7 @@ using EntityHandle = entt::basic_handle<entt::entity>;
 class Scene {
 public:
 	EntityHandle CreateEntity(const std::string& name);
+	void DestroyEntity(EntityHandle ent);
 
 	template<typename... Comps>
 	auto View() {
