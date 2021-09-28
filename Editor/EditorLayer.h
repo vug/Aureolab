@@ -19,6 +19,7 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 glm::mat4 GetTransformMatrix(TransformComponent tc) {
@@ -49,11 +50,18 @@ public:
 		GraphicsAPI::Get()->SetClearColor(turquoise);
 		camera = new EditorCamera(45, aspect, 0.01f, 100);
 
-		for (glm::vec3 pos : std::vector<glm::vec3>{ { 0.75, 0.5, 0.0 }, { -0.5, -0.1, 0.0 }, { 0.1, -0.4, 0.7 } }) {
-			auto ent = scene.CreateEntity();
+		// Hard-coded example scene
+		using ObjectData = struct { std::string name; glm::vec3 pos; };
+		std::vector<ObjectData> sceneData = {
+			{"monkey1", { 0.75, 0.5, 0.0 }},
+			{ "monkey2", { -0.5, -0.1, 0.0 } },
+			{ "monkey3", { 0.1, -0.4, 0.7 } },
+		};
+		for (ObjectData& obj : sceneData) {
+			auto ent = scene.CreateEntity(obj.name);
 			auto& transform = ent.get<TransformComponent>();
-			transform.Translation = pos;
-			transform.Rotation = pos;
+			transform.Translation = obj.pos;
+			transform.Rotation = obj.pos;
 			transform.Scale = { 0.4, 0.4, 0.4 };
 		}
 	}
@@ -78,7 +86,7 @@ public:
 		shader->UploadUniformInt("u_RenderType", 1); // Normal (2: UV)
 
 		auto query = scene.View<TransformComponent>();
-		for (auto [ent, transform] : query.each()) {
+		for (const auto& [ent, transform] : query.each()) {
 			glm::vec3& translation = transform.Translation;
 			//Log::Debug("Ent [{}], Pos: ({}, {}, {})", ent, translation.x, translation.y, translation.z);
 			glm::mat4 model = GetTransformMatrix(transform);
@@ -108,8 +116,11 @@ public:
 		ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGui::DockSpaceOverViewport(viewport, ImGuiDockNodeFlags_None);
 
-		ImGui::Begin("Left Panel");
-		ImGui::Text("Scene Hierarchy will come here...");
+		ImGui::Begin("Hierarchy");
+		auto query = scene.View<TagComponent>();
+		for (const auto& [ent, tag] : query.each()) {
+			ImGui::Text("[%d] %s", ent, tag.Tag.c_str());
+		}
 		ImGui::End();
 
 		// Viewport ImWindow displays content of viewportFBO
