@@ -8,15 +8,25 @@
 #include "Renderer/FrameBuffer.h"
 #include "Renderer/EditorCamera.h"
 #include "Modeling/Modeling.h"
+#include "Scene/Scene.h"
+#include "Scene/Components.h"
 
 #include <glad/glad.h> // include until Framebuffer and Texture abstractions are completed
 #include <imgui.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 
 #include <algorithm>
 #include <vector>
 
+glm::mat4 GetTransformMatrix(TransformComponent tc) {
+	glm::mat4 rotation = glm::toMat4(glm::quat(tc.Rotation));
+	return glm::translate(glm::mat4(1.0f), tc.Translation)
+		* rotation
+		* glm::scale(glm::mat4(1.0f), tc.Scale);
+}
 
 class EditorLayer : public Layer {
 public:
@@ -24,18 +34,28 @@ public:
 
 	virtual void OnAttach() override {
 		shader = Shader::Create("assets/shaders/BasicShader.glsl");
+
 		std::vector<BasicVertex> vertices = LoadOBJ("assets/models/suzanne_smooth.obj");
 		VertexBuffer* vbo = VertexBuffer::Create(BasicVertexAttributeSpecs);
 		vbo->SetVertices(vertices);
 		Log::Debug("num vertices: {}", vertices.size());
 		vao = VertexArray::Create();
 		vao->AddVertexBuffer(*vbo);
-		fbo = FrameBuffer::Create(100, 100); // argument does not matter since it's going to be resized
+
+		fbo = FrameBuffer::Create(100, 100); // arguments does not matter since FBO's going to be resized
 
 		GraphicsAPI::Get()->Enable(GraphicsAbility::DepthTest);
 		auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
 		GraphicsAPI::Get()->SetClearColor(turquoise);
 		camera = new EditorCamera(45, aspect, 0.01f, 100);
+
+		for (glm::vec3 pos : std::vector<glm::vec3>{ { 0.75, 0.5, 0.0 }, { -0.5, -0.1, 0.0 }, { 0.1, -0.4, 0.7 } }) {
+			auto ent = scene.CreateEntity();
+			auto& transform = ent.get<TransformComponent>();
+			transform.Translation = pos;
+			transform.Rotation = pos;
+			transform.Scale = { 0.4, 0.4, 0.4 };
+		}
 	}
 
 	virtual void OnUpdate(float ts) override {
@@ -45,18 +65,8 @@ public:
 		frameRates[frameRates.size() - 1] = 1.0f / ts;
 		camera->OnUpdate(ts);
 
-		//glm::mat4 projection = glm::perspective(glm::radians(45.f), aspect, 0.01f, 100.0f);
 		glm::mat4 projection = camera->GetProjection();
-		//glm::vec3 eye({ 0.0, 0.0, 5.0 });
-		//glm::mat4 view = glm::lookAt(eye, glm::vec3{ 0.0, 0.0, 0.0 }, glm::vec3{ 0.0, 1.0, 0.0 });
 		glm::mat4 view = camera->GetViewMatrix();
-		if (false) {
-			angle += ts * 0.5f;
-			model = glm::rotate(model, ts, { 0, std::sin(angle), std::cos(angle) });
-		}
-		glm::mat4 mv = view * model;
-		glm::mat4 mvp = projection * mv;
-		glm::mat4 normalMatrix = glm::inverse(mv);
 
 		GraphicsAPI::Get()->Clear();
 
@@ -65,9 +75,19 @@ public:
 		GraphicsAPI::Get()->SetClearColor({0, 0, 0, 1});
 		GraphicsAPI::Get()->Clear();
 		shader->Bind();
-		shader->UploadUniformMat4("u_ModelViewPerspective", mvp); // needed for gl_Position;
 		shader->UploadUniformInt("u_RenderType", 1); // Normal (2: UV)
-		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
+
+		auto query = scene.View<TransformComponent>();
+		for (auto [ent, transform] : query.each()) {
+			glm::vec3& translation = transform.Translation;
+			//Log::Debug("Ent [{}], Pos: ({}, {}, {})", ent, translation.x, translation.y, translation.z);
+			glm::mat4 model = GetTransformMatrix(transform);
+			glm::mat4 modelView = view * model;
+			glm::mat4 modelViewProjection = projection * modelView;
+			glm::mat4 normalMatrix = glm::inverse(modelView);
+			shader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
+			GraphicsAPI::Get()->DrawArrayTriangles(*vao);
+		}
 		fbo->Unbind();
 	}
 
@@ -154,13 +174,14 @@ public:
 	}
 
 private:
-	float aspect = 1.0f;
-	EditorCamera* camera = nullptr;
-	bool isViewportPanelHovered = false;
-
 	Shader* shader = nullptr;
 	VertexArray* vao = nullptr;
 	FrameBuffer* fbo = nullptr;
 
+	float aspect = 1.0f;
+	EditorCamera* camera = nullptr;
+	bool isViewportPanelHovered = false;
 	std::vector<float> frameRates = std::vector<float>(120);
+
+	Scene scene;
 };
