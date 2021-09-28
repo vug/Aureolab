@@ -119,7 +119,9 @@ public:
 		ImGui::Begin("Hierarchy");
 		auto query = scene.View<TagComponent>();
 		for (const auto& [ent, tag] : query.each()) {
-			ImGui::Text("[%d] %s", ent, tag.Tag.c_str());
+			if (ImGui::Selectable(tag.Tag.c_str(), selectedObject == ent)) {
+				selectedObject = scene.GetHandle(ent);
+			}
 		}
 		ImGui::End();
 
@@ -142,9 +144,21 @@ public:
 
 		static bool shouldShowDemo = false;
 
-		ImGui::Begin("Right Panel"); {
-			ImGui::Text("Components will come here");
+		ImGui::Begin("Inspector"); {
+			ImGui::Text("Components");
+			if (selectedObject) {
+				scene.Visit(selectedObject, [&](const entt::type_info info) {
+					if (info == entt::type_id<TransformComponent>()) {
+						const auto& transform = selectedObject.get<TransformComponent>();
+						ImGui::Text("TransformComponent: (%.1f, %.1f, %.1f)", transform.Translation.x, transform.Translation.y, transform.Translation.z);
+					}
+					else if (info == entt::type_id<TagComponent>()) {
+						ImGui::Text("TagComponent: %s", selectedObject.get<TagComponent>().Tag.c_str());
+					}
+				});
+			}
 
+			ImGui::Separator();
 			ImGui::Text("Stats:\n"
 				"mainViewportSize: (%.1f, %.1f)\n"
 				"viewportPanelAvailRegion: (%.1f, %.1f)\n"
@@ -195,4 +209,5 @@ private:
 	std::vector<float> frameRates = std::vector<float>(120);
 
 	Scene scene;
+	EntityHandle selectedObject = {};
 };
