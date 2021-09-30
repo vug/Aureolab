@@ -48,6 +48,7 @@ target_link_libraries(
 	imgui
 	tinyobjloader
 	EnTT::EnTT
+	cereal
 )
 
 target_compile_features(Aureolab PRIVATE cxx_std_17)
