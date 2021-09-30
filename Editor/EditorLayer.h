@@ -17,6 +17,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
+#include <cereal/cereal.hpp>
 
 #include <algorithm>
 #include <string>
@@ -153,11 +154,14 @@ public:
 			if (selectedObject) {
 				scene.Visit(selectedObject, [&](const entt::type_info info) {
 					if (info == entt::type_id<TransformComponent>()) {
-						const auto& transform = selectedObject.get<TransformComponent>();
-						ImGui::Text("TransformComponent: (%.1f, %.1f, %.1f)", transform.Translation.x, transform.Translation.y, transform.Translation.z);
+						auto& transform = selectedObject.get<TransformComponent>();
+						ImGui::InputFloat3("Translation", glm::value_ptr(transform.Translation));
+						ImGui::InputFloat3("Rotation", glm::value_ptr(transform.Rotation));
+						ImGui::InputFloat3("Scale", glm::value_ptr(transform.Scale));
 					}
 					else if (info == entt::type_id<TagComponent>()) {
-						ImGui::Text("TagComponent: %s", selectedObject.get<TagComponent>().Tag.c_str());
+						std::string& tag = selectedObject.get<TagComponent>().Tag;
+						ImGui::InputText("TagComponent", (char*)tag.c_str(), tag.capacity() + 1);
 					}
 				});
 			}
