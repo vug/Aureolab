@@ -126,6 +126,14 @@ public:
 			}
 		}
 
+		if (ImGui::Button("Save")) {
+			scene.Save();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Load")) {
+			scene.Load();
+		}
+
 		// Deselect when clicking on an empty area
 		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) selectedObject = {};
 		ImGui::End();
