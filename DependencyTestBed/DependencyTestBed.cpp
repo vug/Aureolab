@@ -9,8 +9,11 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
 #include <entt/entt.hpp>
+#include <cereal/cereal.hpp>
+#include <cereal/archives/json.hpp>
 
 #include <memory>
+#include <sstream>
 
 std::shared_ptr<spdlog::logger> CreateLogger() {
 	std::vector<spdlog::sink_ptr> sinks = {
@@ -36,21 +39,74 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
+struct Position {
+    float x;
+    float y;
+
+    template <class Archive>
+    void serialize(Archive& ar) {
+        ar(CEREAL_NVP(x), CEREAL_NVP(y)); // CEREAL_NVP let's the serialization name to be the same as variable name. otherwise name becomes valueN.
+        //ar(CEREAL_NVP(x));
+        //ar(CEREAL_NVP(y));
+    }
+};
+
+struct Tag {
+    std::string tag;
+
+    template <class Archive>
+    void serialize(Archive& ar) {
+        ar(CEREAL_NVP(tag));
+    }
+};
+
+// this crashes :-/
+//void prologue(cereal::JSONOutputArchive& ar, const Position& p) {
+//    LOGGER->debug("Hi from prologue");
+//}
+
 int main(int argc, char* argv[]) {
     LOGGER->info("Hi from Dependency Test Bed!");
+    entt::registry registry;
+    auto ent1 = registry.create();
+    auto ent2 = registry.create();
+    registry.emplace<Position>(ent1, 1.0f, 2.0f);
+    registry.emplace<Tag>(ent1, "object-1");
+    registry.emplace<Position>(ent2, 3.0f, 4.0f);
+    registry.emplace<Tag>(ent2, "object-2");
+    auto view = registry.view<Tag, Position>();
 
-    struct Position {
-        float x;
-        float y;
-    };
-    entt::registry registery;
-    auto ent1 = registery.create();
-    auto ent2 = registery.create();
-    registery.emplace<Position>(ent1, 1.0f, 2.0f);
-    registery.emplace<Position>(ent2, 3.0f, 4.0f);
-    auto view = registery.view<Position>();
-    for (auto [entity, pos] : view.each()) {
-        LOGGER->info("Entity [{}], Position: ({}, {})", entity, pos.x, pos.y);
+    for (auto [entity, tag, pos] : view.each()) {
+        LOGGER->info("Entity {} [{}], Position: ({}, {})", tag.tag, entity, pos.x, pos.y);
+    //    std::stringstream ss;
+    //    {
+    //        cereal::JSONOutputArchive oarchive(ss);
+    //        oarchive(CEREAL_NVP(pos));
+    //        LOGGER->info("Comp Serialized: {}", ss.str());
+    //    }
+
+    //    {
+    //        cereal::JSONInputArchive iarchive(ss);
+    //        Position posDeser;
+    //        iarchive(posDeser);
+    //        LOGGER->info("Comp Deserialized: ({}, {})", posDeser.x, posDeser.y);
+    //    }
+    }
+
+    std::stringstream ss;
+    {
+        cereal::JSONOutputArchive oarchive(ss);
+        auto snapshot = entt::snapshot{ registry };
+        snapshot.entities(oarchive).component<Tag, Position>(oarchive);
+    }
+    LOGGER->info("Reg Serialized: {}", ss.str());
+
+    entt::registry registry2;
+    cereal::JSONInputArchive iarchive{ ss };
+    entt::snapshot_loader{ registry2 }.entities(iarchive).component<Tag, Position>(iarchive);
+    auto view2 = registry2.view<Tag, Position>();
+    for (auto [entity, tag, pos] : view2.each()) {
+        LOGGER->info("Entity {} [{}], Position: ({}, {})", tag.tag, entity, pos.x, pos.y);
     }
 
     static const struct
