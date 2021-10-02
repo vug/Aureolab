@@ -35,28 +35,22 @@ public:
 	EditorLayer() : Layer("Editor Layer") { }
 
 	virtual void OnAttach() override {
-		shader = Shader::Create("assets/shaders/BasicShader.glsl");
-
-		std::vector<BasicVertex> vertices = LoadOBJ("assets/models/suzanne_smooth.obj");
-		VertexBuffer* vbo = VertexBuffer::Create(BasicVertexAttributeSpecs);
-		vbo->SetVertices(vertices);
-		Log::Debug("num vertices: {}", vertices.size());
-		vao = VertexArray::Create();
-		vao->AddVertexBuffer(*vbo);
-
-		fbo = FrameBuffer::Create(100, 100); // arguments does not matter since FBO's going to be resized
-
+		// in case we'll see an area not behind any ImWindow
 		GraphicsAPI::Get()->Enable(GraphicsAbility::DepthTest);
 		auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
 		GraphicsAPI::Get()->SetClearColor(turquoise);
+
+		shader = Shader::Create("assets/shaders/BasicShader.glsl");
+		fbo = FrameBuffer::Create(100, 100); // arguments does not matter since FBO's going to be resized
+
 		camera = new EditorCamera(45, aspect, 0.01f, 100);
 
 		// Hard-coded example scene
-		using ObjectData = struct { std::string name; glm::vec3 pos; };
+		using ObjectData = struct { std::string name; glm::vec3 pos; std::string meshFilePath; };
 		std::vector<ObjectData> sceneData = {
-			{"monkey1", { 0.75, 0.5, 0.0 }},
-			{ "monkey2", { -0.5, -0.1, 0.0 } },
-			{ "monkey3", { 0.1, -0.4, 0.7 } },
+			{ "monkey1", { 0.75, 0.5, 0.0 }, "assets/models/suzanne_smooth.obj", },
+			{ "monkey2", { -0.5, -0.1, 0.0 }, "assets/models/suzanne.obj", },
+			{ "monkey3", { 0.1, -0.4, 0.7 }, "assets/models/torus_smooth.obj", },
 		};
 		for (ObjectData& obj : sceneData) {
 			auto ent = scene.CreateEntity(obj.name);
@@ -64,37 +58,36 @@ public:
 			transform.Translation = obj.pos;
 			transform.Rotation = obj.pos;
 			transform.Scale = { 0.4, 0.4, 0.4 };
+			ent.emplace<MeshComponent>(obj.meshFilePath);
 		}
 	}
 
 	virtual void OnUpdate(float ts) override {
-		static float angle = 0.0f;
-		static glm::mat4 model = glm::mat4(1.0f);
 		std::shift_left(frameRates.begin(), frameRates.end(), 1);
 		frameRates[frameRates.size() - 1] = 1.0f / ts;
-		camera->OnUpdate(ts);
 
+		camera->OnUpdate(ts);
 		glm::mat4 projection = camera->GetProjection();
 		glm::mat4 view = camera->GetViewMatrix();
 
 		GraphicsAPI::Get()->Clear();
 
-		// Render into viewportFBO
-		fbo->Bind();
+		fbo->Bind(); // Render into viewportFBO
 		GraphicsAPI::Get()->SetClearColor({0, 0, 0, 1});
 		GraphicsAPI::Get()->Clear();
 		shader->Bind();
 		shader->UploadUniformInt("u_RenderType", 1); // Normal (2: UV)
 
-		auto query = scene.View<TransformComponent>();
-		for (const auto& [ent, transform] : query.each()) {
+		auto query = scene.View<TransformComponent, MeshComponent>();
+		for (const auto& [ent, transform, mesh] : query.each()) {
 			glm::vec3& translation = transform.Translation;
-			//Log::Debug("Ent [{}], Pos: ({}, {}, {})", ent, translation.x, translation.y, translation.z);
 			glm::mat4 model = GetTransformMatrix(transform);
 			glm::mat4 modelView = view * model;
 			glm::mat4 modelViewProjection = projection * modelView;
 			glm::mat4 normalMatrix = glm::inverse(modelView);
 			shader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
+			VertexArray* vao = mesh.vao;
+			if (vao == nullptr) { continue; }
 			GraphicsAPI::Get()->DrawArrayTriangles(*vao);
 		}
 		fbo->Unbind();
