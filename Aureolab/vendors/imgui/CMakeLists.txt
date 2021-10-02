@@ -26,6 +26,7 @@ add_library(
     ${imgui_SOURCE_DIR}/imgui_demo.cpp # for ImGui::ShowDemoWindow()
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+    ${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
 )
 
 target_compile_options(
@@ -43,6 +44,7 @@ target_include_directories(
     PUBLIC
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
+    ${imgui_SOURCE_DIR}/misc/cpp
     PRIVATE
     ${glad_BINARY_DIR}/include # so imgui can find glad
     ${glfw_SOURCE_DIR}/include # so imgui can find GLFW
