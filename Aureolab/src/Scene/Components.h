@@ -63,6 +63,7 @@ struct MeshComponent {
 	MeshComponent() = default;
 	MeshComponent(const MeshComponent&);
 	MeshComponent(const std::string& filepath);
+	~MeshComponent() { delete vao; }
 
 	void LoadOBJ();
 
