@@ -14,6 +14,8 @@ public:
 	virtual void Bind() const override;
 	virtual void Unbind() const override;
 
+	virtual unsigned int GetRendererID() const { return rendererID; }
+
 	virtual void AddVertexBuffer(const VertexBuffer& vertexBuffer) override;
 	virtual void SetIndexBuffer(const IndexBuffer& indexBuffer) override;
 	virtual const std::vector<const VertexBuffer*>& GetVertexBuffers() const override { return vertexBuffers; };
