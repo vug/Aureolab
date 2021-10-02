@@ -13,6 +13,7 @@
 
 #include <glad/glad.h> // include until Framebuffer and Texture abstractions are completed
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -153,8 +154,7 @@ public:
 		ImGui::Begin("Inspector"); {
 			ImGui::Text("Components");
 			if (selectedObject) {
-				std::string& tag = selectedObject.get<TagComponent>().Tag;
-				ImGui::InputText("Tag", (char*)tag.c_str(), tag.capacity() + 1);
+				ImGui::InputText("Tag", &selectedObject.get<TagComponent>().Tag);
 				scene.Visit(selectedObject, [&](const entt::type_info info) {
 					if (info == entt::type_id<TransformComponent>()) {
 						if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
