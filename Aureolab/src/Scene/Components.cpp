@@ -14,10 +14,14 @@ VertexArray* VertexArrayFromOBJ(const std::string& filepath) {
 	return vao;
 }
 
-MeshComponent::MeshComponent(const MeshComponent& other) {
-	vao = VertexArrayFromOBJ(other.filepath);
+MeshComponent::MeshComponent(const MeshComponent& other) : filepath(other.filepath) {
+	LoadOBJ();
 }
 
-MeshComponent::MeshComponent(const std::string& filepath) {
-	vao = VertexArrayFromOBJ(filepath);
+MeshComponent::MeshComponent(const std::string& filepath) : filepath(filepath) {
+	LoadOBJ();
+}
+
+void MeshComponent::LoadOBJ() {
+	vao = filepath.empty() ? nullptr : VertexArrayFromOBJ(filepath);
 }

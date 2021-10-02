@@ -50,7 +50,7 @@ public:
 		std::vector<ObjectData> sceneData = {
 			{ "monkey1", { 0.75, 0.5, 0.0 }, "assets/models/suzanne_smooth.obj", },
 			{ "monkey2", { -0.5, -0.1, 0.0 }, "assets/models/suzanne.obj", },
-			{ "monkey3", { 0.1, -0.4, 0.7 }, "assets/models/torus_smooth.obj", },
+			{ "torus", { 0.1, -0.4, 0.7 }, "assets/models/torus_smooth.obj", },
 		};
 		for (ObjectData& obj : sceneData) {
 			auto ent = scene.CreateEntity(obj.name);
@@ -153,16 +153,29 @@ public:
 		ImGui::Begin("Inspector"); {
 			ImGui::Text("Components");
 			if (selectedObject) {
+				std::string& tag = selectedObject.get<TagComponent>().Tag;
+				ImGui::InputText("Tag", (char*)tag.c_str(), tag.capacity() + 1);
 				scene.Visit(selectedObject, [&](const entt::type_info info) {
 					if (info == entt::type_id<TransformComponent>()) {
-						auto& transform = selectedObject.get<TransformComponent>();
-						ImGui::InputFloat3("Translation", glm::value_ptr(transform.Translation));
-						ImGui::InputFloat3("Rotation", glm::value_ptr(transform.Rotation));
-						ImGui::InputFloat3("Scale", glm::value_ptr(transform.Scale));
+						if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+							auto& transform = selectedObject.get<TransformComponent>();
+							ImGui::InputFloat3("Translation", glm::value_ptr(transform.Translation));
+							ImGui::InputFloat3("Rotation", glm::value_ptr(transform.Rotation));
+							ImGui::InputFloat3("Scale", glm::value_ptr(transform.Scale));
+						}					
 					}
-					else if (info == entt::type_id<TagComponent>()) {
-						std::string& tag = selectedObject.get<TagComponent>().Tag;
-						ImGui::InputText("TagComponent", (char*)tag.c_str(), tag.capacity() + 1);
+					else if (info == entt::type_id<MeshComponent>()) {
+						if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
+							auto& mesh = selectedObject.get<MeshComponent>();
+							std::string& filepath = selectedObject.get<MeshComponent>().filepath;
+							
+							char buffer[256] = { 0 };
+							strcpy_s(buffer, sizeof(buffer), filepath.c_str());
+							if (ImGui::InputText("OBJ File", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
+								mesh.filepath = std::string(buffer);
+								mesh.LoadOBJ();
+							}
+						}
 					}
 				});
 			}

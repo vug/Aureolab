@@ -64,6 +64,8 @@ struct MeshComponent {
 	MeshComponent(const MeshComponent&);
 	MeshComponent(const std::string& filepath);
 
+	void LoadOBJ();
+
 	template <class Archive>
 	void serialize(Archive& ar) { ar(filepath); }
 };
