@@ -1,4 +1,5 @@
 #pragma once
+#include "Renderer/VertexArray.h"
 
 #include <glm/glm.hpp>
 #include<glm/gtc/quaternion.hpp>
@@ -52,4 +53,17 @@ struct TransformComponent {
 
 	template <class Archive>
 	void serialize(Archive& ar) { ar(Translation, Rotation, Scale); }
+};
+
+struct MeshComponent {
+	std::string filepath;
+	// not to serialize
+	VertexArray* vao = nullptr;
+
+	MeshComponent() = default;
+	MeshComponent(const MeshComponent&);
+	MeshComponent(const std::string& filepath);
+
+	template <class Archive>
+	void serialize(Archive& ar) { ar(filepath); }
 };
