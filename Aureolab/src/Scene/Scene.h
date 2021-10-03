@@ -27,8 +27,10 @@ public:
 
 	EntityHandle GetHandle(entt::entity ent);
 
-	void Save();
-	void Load();
+	void SaveToFile(const std::string& filepath);
+	void LoadFromFile(const std::string& filepath);
+	void SaveToMemory();
+	void LoadFromMemory();
 
 private:
 	entt::registry registry;
