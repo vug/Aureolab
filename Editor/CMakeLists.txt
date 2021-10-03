@@ -1,6 +1,7 @@
 add_executable(Editor 
 	Editor.cpp
 	EditorLayer.h EditorLayer.cpp
+    Panels/SceneHierarchyPanel.h Panels/SceneHierarchyPanel.cpp
 )
 
 target_link_libraries(

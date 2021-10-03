@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Panels/SceneHierarchyPanel.h"
+
 #include "Core/Layer.h"
 #include "Core/Math.h"
 #include "Core/Input.h"
@@ -14,7 +16,6 @@
 #include "Modeling/Modeling.h"
 #include "Scene/Scene.h"
 #include "Scene/Components.h"
-#include "Platform/Platform.h"
 
 #include <glad/glad.h> // include until Framebuffer and Texture abstractions are completed
 #include <imgui.h>
@@ -61,4 +62,6 @@ private:
 
 	Scene scene;
 	EntityHandle selectedObject = {};
+
+	SceneHierarchyPanel hierarchyPanel{ &scene, &selectedObject };
 };
