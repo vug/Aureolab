@@ -25,10 +25,10 @@
 #include <vector>
 
 glm::mat4 GetTransformMatrix(TransformComponent tc) {
-	glm::mat4 rotation = glm::toMat4(glm::quat(tc.Rotation));
-	return glm::translate(glm::mat4(1.0f), tc.Translation)
+	glm::mat4 rotation = glm::toMat4(glm::quat(tc.rotation));
+	return glm::translate(glm::mat4(1.0f), tc.translation)
 		* rotation
-		* glm::scale(glm::mat4(1.0f), tc.Scale);
+		* glm::scale(glm::mat4(1.0f), tc.scale);
 }
 
 class EditorLayer : public Layer {
@@ -61,9 +61,9 @@ public:
 		for (ObjectData& obj : sceneData) {
 			auto ent = scene.CreateEntity(obj.name);
 			auto& transform = ent.get<TransformComponent>();
-			transform.Translation = obj.pos;
-			transform.Rotation = obj.pos;
-			transform.Scale = { 0.4, 0.4, 0.4 };
+			transform.translation = obj.pos;
+			transform.rotation = obj.pos;
+			transform.scale = { 0.4, 0.4, 0.4 };
 			ent.emplace<MeshComponent>(obj.meshFilePath);
 			ent.emplace<MeshRendererComponent>(obj.viz);
 		}
@@ -85,7 +85,7 @@ public:
 		shader->Bind();
 		auto query = scene.View<TransformComponent, MeshComponent, MeshRendererComponent>();
 		for (const auto& [ent, transform, mesh, meshRenderer] : query.each()) {
-			glm::vec3& translation = transform.Translation;
+			glm::vec3& translation = transform.translation;
 			glm::mat4 model = GetTransformMatrix(transform);
 			glm::mat4 modelView = view * model;
 			glm::mat4 modelViewProjection = projection * modelView;
@@ -123,7 +123,7 @@ public:
 		// List object names for selection
 		auto query = scene.View<TagComponent>();
 		for (const auto& [ent, tag] : query.each()) {
-			if (ImGui::Selectable(tag.Tag.c_str(), selectedObject == ent)) {
+			if (ImGui::Selectable(tag.tag.c_str(), selectedObject == ent)) {
 				selectedObject = scene.GetHandle(ent);
 			}
 		}
@@ -156,14 +156,14 @@ public:
 		ImGui::Begin("Inspector"); 
 		ImGui::Text("Components");
 		if (selectedObject) {
-			ImGui::InputText("Tag", &selectedObject.get<TagComponent>().Tag);
+			ImGui::InputText("Tag", &selectedObject.get<TagComponent>().tag);
 			scene.Visit(selectedObject, [&](const entt::type_info info) {
 				if (info == entt::type_id<TransformComponent>()) {
 					if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
 						auto& transform = selectedObject.get<TransformComponent>();
-						ImGui::InputFloat3("Translation", glm::value_ptr(transform.Translation));
-						ImGui::InputFloat3("Rotation", glm::value_ptr(transform.Rotation));
-						ImGui::InputFloat3("Scale", glm::value_ptr(transform.Scale));
+						ImGui::InputFloat3("Translation", glm::value_ptr(transform.translation));
+						ImGui::InputFloat3("Rotation", glm::value_ptr(transform.rotation));
+						ImGui::InputFloat3("Scale", glm::value_ptr(transform.scale));
 					}					
 				}
 				else if (info == entt::type_id<MeshComponent>()) {
