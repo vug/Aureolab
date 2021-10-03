@@ -93,6 +93,8 @@ public:
 			shader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
 
 			shader->UploadUniformInt("u_RenderType", (int)meshRenderer.visualization);
+			shader->UploadUniformFloat("u_DepthMax", debugShaderDepthMax);
+			shader->UploadUniformFloat("u_DepthPow", debugShaderDepthPow);
 
 			VertexArray* vao = mesh.vao;
 			if (vao == nullptr) { continue; }
@@ -194,6 +196,14 @@ public:
 							}
 							ImGui::EndCombo();
 						}
+						switch (meshRenderer.visualization) {
+						case MeshRendererComponent::Visualization::Depth:
+							ImGui::SliderFloat("MaxDepth", &debugShaderDepthMax, 0.01f, 100.0f);
+							ImGui::SliderFloat("Pow (Contrast)", &debugShaderDepthPow, 0.25f, 4.0f);
+							break;
+						case MeshRendererComponent::Visualization::SolidColor:
+							break;
+						}
 					}
 				}
 			});
@@ -236,6 +246,8 @@ public:
 
 private:
 	Shader* shader = nullptr;
+	float debugShaderDepthMax = 5.0f;
+	float debugShaderDepthPow = 2.0f;
 	FrameBuffer* fbo = nullptr;
 
 	float aspect = 1.0f;

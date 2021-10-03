@@ -38,7 +38,8 @@ void main() {
 uniform mat4 u_View;
 uniform int u_RenderType = 1; // { SolidColor, Normal, UV, Depth }
 uniform vec4 u_SolidColor = vec4(1.0, 1.0, 1.0, 1.0);
-uniform float u_MaxDepth = 100.0;
+uniform float u_DepthMax = 5.0;
+uniform float u_DepthPow = 2.0;
 uniform vec3 u_LightPosition = vec3(0.0, 10.0, 0.0);
 uniform vec3 u_LightColor = vec3(1.0, 1.0, 1.0);
 uniform vec3 u_LightAttenuation = vec3(0.0, 0.0, 1.0);
@@ -66,7 +67,7 @@ void main() {
         gl_FragColor = vec4(uv.x, uv.y, 0.0, 1.0);
         break;
     case 3: // Depth
-        gl_FragColor = vec4(vec3(1.0) * position.z / u_MaxDepth, 1.0);
+        gl_FragColor = vec4(vec3(1.0) * pow(position.z / u_DepthMax, u_DepthPow), 1.0);
         break;
     case 4: // Point Light
         vec3 nNormal = normalize(normal);
