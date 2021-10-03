@@ -49,7 +49,7 @@ private:
 	Scene scene;
 	EntityHandle selectedObject = {};
 
-	SceneHierarchyPanel hierarchyPanel{ &scene, &selectedObject };
-	InspectorPanel inspectorPanel{ &scene, &selectedObject };
+	SceneHierarchyPanel hierarchyPanel{ scene, selectedObject };
+	InspectorPanel inspectorPanel{ scene, selectedObject };
 	ViewportPanel viewportPanel{ fbo, camera, selectedObject };
 };

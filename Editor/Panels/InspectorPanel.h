@@ -5,13 +5,13 @@
 class InspectorPanel {
 public:
 	InspectorPanel() = default;
-	InspectorPanel(Scene* scene, EntityHandle* selectedObject)
+	InspectorPanel(Scene& scene, EntityHandle& selectedObject)
 		: scene(scene), selectedObject(selectedObject) {}
 
 	void OnImGuiRender();
 
 private:
 	// references to EditorLayer's members
-	Scene* scene;
-	EntityHandle* selectedObject;
+	Scene& scene;
+	EntityHandle& selectedObject;
 };

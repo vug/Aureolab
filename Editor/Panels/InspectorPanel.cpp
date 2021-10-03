@@ -10,12 +10,12 @@
 void InspectorPanel::OnImGuiRender() {
 	ImGui::Begin("Inspector");
 	ImGui::Text("Components");
-	if (*selectedObject) {
-		ImGui::InputText("Tag", &selectedObject->get<TagComponent>().tag);
-		scene->Visit(*selectedObject, [&](const entt::type_info info) {
+	if (selectedObject) {
+		ImGui::InputText("Tag", &selectedObject.get<TagComponent>().tag);
+		scene.Visit(selectedObject, [&](const entt::type_info info) {
 			if (info == entt::type_id<TransformComponent>()) {
 				if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-					auto& transform = selectedObject->get<TransformComponent>();
+					auto& transform = selectedObject.get<TransformComponent>();
 					ImGui::InputFloat3("Translation", glm::value_ptr(transform.translation));
 					ImGui::InputFloat3("Rotation", glm::value_ptr(transform.rotation));
 					ImGui::InputFloat3("Scale", glm::value_ptr(transform.scale));
@@ -23,8 +23,8 @@ void InspectorPanel::OnImGuiRender() {
 			}
 			else if (info == entt::type_id<MeshComponent>()) {
 				if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
-					auto& mesh = selectedObject->get<MeshComponent>();
-					std::string& filepath = selectedObject->get<MeshComponent>().filepath;
+					auto& mesh = selectedObject.get<MeshComponent>();
+					std::string& filepath = selectedObject.get<MeshComponent>().filepath;
 
 					char buffer[256] = { 0 };
 					strcpy_s(buffer, sizeof(buffer), filepath.c_str());
@@ -36,7 +36,7 @@ void InspectorPanel::OnImGuiRender() {
 			}
 			else if (info == entt::type_id<MeshRendererComponent>()) {
 				if (ImGui::CollapsingHeader("MeshRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
-					auto& meshRenderer = selectedObject->get<MeshRendererComponent>();
+					auto& meshRenderer = selectedObject.get<MeshRendererComponent>();
 					int chosen_index = (int)meshRenderer.visualization;
 					if (ImGui::BeginCombo("Visualizations", MeshRendererComponent::visNames[chosen_index], ImGuiComboFlags_None)) {
 						for (int ix = 0; ix < IM_ARRAYSIZE(MeshRendererComponent::visNames); ix++) {
