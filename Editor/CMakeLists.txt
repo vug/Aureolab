@@ -1,6 +1,6 @@
 add_executable(Editor 
 	Editor.cpp
-	EditorLayer.h
+	EditorLayer.h EditorLayer.cpp
 )
 
 target_link_libraries(

@@ -2,6 +2,7 @@
 #include "Event.h"
 
 #include <string>
+#include <sstream>
 
 class KeyEvent : public Event {
 public:
