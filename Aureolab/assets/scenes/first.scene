@@ -1,0 +1,131 @@
+{
+    "value0": 4,
+    "value1": 4294967295,
+    "value2": 0,
+    "value3": 1,
+    "value4": 2,
+    "value5": 3,
+    "value6": 0,
+    "value7": {
+        "tag": "monkey1"
+    },
+    "value8": 1,
+    "value9": {
+        "tag": "monkey2"
+    },
+    "value10": 2,
+    "value11": {
+        "tag": "torus"
+    },
+    "value12": 3,
+    "value13": 0,
+    "value14": {
+        "translation": {
+            "x": 0.75,
+            "y": 0.5,
+            "z": 0.0
+        },
+        "rotation": {
+            "x": 0.75,
+            "y": 0.5,
+            "z": 0.0
+        },
+        "scale": {
+            "x": 0.4000000059604645,
+            "y": 0.4000000059604645,
+            "z": 0.4000000059604645
+        }
+    },
+    "value15": 1,
+    "value16": {
+        "translation": {
+            "x": -0.8721874356269836,
+            "y": -0.10000000149011612,
+            "z": -0.03734302893280983
+        },
+        "rotation": {
+            "x": -0.5000000596046448,
+            "y": -0.09999999403953552,
+            "z": 0.0
+        },
+        "scale": {
+            "x": 0.4000000059604645,
+            "y": 0.40000009536743166,
+            "z": 0.4000000059604645
+        }
+    },
+    "value17": 2,
+    "value18": {
+        "translation": {
+            "x": 0.10000000149011612,
+            "y": -0.4000000059604645,
+            "z": 0.699999988079071
+        },
+        "rotation": {
+            "x": 0.10000000149011612,
+            "y": -0.4000000059604645,
+            "z": 0.699999988079071
+        },
+        "scale": {
+            "x": 0.4000000059604645,
+            "y": 0.4000000059604645,
+            "z": 0.4000000059604645
+        }
+    },
+    "value19": 3,
+    "value20": 0,
+    "value21": {
+        "filepath": "assets/models/suzanne_smooth.obj"
+    },
+    "value22": 1,
+    "value23": {
+        "filepath": "assets/models/suzanne.obj"
+    },
+    "value24": 2,
+    "value25": {
+        "filepath": "assets/models/torus_smooth.obj"
+    },
+    "value26": 3,
+    "value27": 0,
+    "value28": {
+        "visualization": 1,
+        "depthParams": {
+            "max": 5.0,
+            "pow": 2.0
+        },
+        "solidColor": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0,
+            "w": 1.0
+        }
+    },
+    "value29": 1,
+    "value30": {
+        "visualization": 2,
+        "depthParams": {
+            "max": 5.0,
+            "pow": 2.0
+        },
+        "solidColor": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0,
+            "w": 1.0
+        }
+    },
+    "value31": 2,
+    "value32": {
+        "visualization": 3,
+        "depthParams": {
+            "max": 5.0,
+            "pow": 2.0
+        },
+        "solidColor": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0,
+            "w": 1.0
+        }
+    }
+}
