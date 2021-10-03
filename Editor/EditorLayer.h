@@ -94,6 +94,7 @@ public:
 			shader->UploadUniformMat4("u_View", view);
 
 			shader->UploadUniformInt("u_RenderType", (int)meshRenderer.visualization);
+			shader->UploadUniformFloat4("u_SolidColor", meshRenderer.solidColor);
 			shader->UploadUniformFloat("u_DepthMax", meshRenderer.depthParams.max);
 			shader->UploadUniformFloat("u_DepthPow", meshRenderer.depthParams.pow);
 
@@ -203,6 +204,7 @@ public:
 							ImGui::SliderFloat("Pow (Contrast)", &meshRenderer.depthParams.pow, 0.25f, 4.0f);
 							break;
 						case MeshRendererComponent::Visualization::SolidColor:
+							ImGui::ColorEdit4("Solid Color", glm::value_ptr(meshRenderer.solidColor));
 							break;
 						}
 					}
