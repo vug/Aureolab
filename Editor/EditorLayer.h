@@ -111,28 +111,23 @@ public:
 		ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGui::DockSpaceOverViewport(viewport, ImGuiDockNodeFlags_None);
 
+		// LEFT COLUMN: Scene Hierarchy Panel
 		ImGui::Begin("Hierarchy");
-		// List object names
+		// List object names for selection
 		auto query = scene.View<TagComponent>();
 		for (const auto& [ent, tag] : query.each()) {
 			if (ImGui::Selectable(tag.Tag.c_str(), selectedObject == ent)) {
 				selectedObject = scene.GetHandle(ent);
 			}
 		}
-
-		if (ImGui::Button("Save")) {
-			scene.Save();
-		}
+		if (ImGui::Button("Save")) { scene.Save(); }
 		ImGui::SameLine();
-		if (ImGui::Button("Load")) {
-			scene.Load();
-		}
-
+		if (ImGui::Button("Load")) { scene.Load(); }
 		// Deselect when clicking on an empty area
 		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) selectedObject = {};
 		ImGui::End();
 
-		// Viewport ImWindow displays content of viewportFBO
+		// MIDDLE COLUMN: Viewport Panel displays content of viewportFBO
 		static ImVec2 viewportPanelAvailRegionPrev;
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 		ImGui::Begin("Viewport", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground); // ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
@@ -149,80 +144,74 @@ public:
 		ImGui::End();
 		ImGui::PopStyleVar();
 
+		// RIGHT COLUMN: Inspector Panel
 		static bool shouldShowDemo = false;
-
-		ImGui::Begin("Inspector"); {
-			ImGui::Text("Components");
-			if (selectedObject) {
-				ImGui::InputText("Tag", &selectedObject.get<TagComponent>().Tag);
-				scene.Visit(selectedObject, [&](const entt::type_info info) {
-					if (info == entt::type_id<TransformComponent>()) {
-						if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-							auto& transform = selectedObject.get<TransformComponent>();
-							ImGui::InputFloat3("Translation", glm::value_ptr(transform.Translation));
-							ImGui::InputFloat3("Rotation", glm::value_ptr(transform.Rotation));
-							ImGui::InputFloat3("Scale", glm::value_ptr(transform.Scale));
-						}					
-					}
-					else if (info == entt::type_id<MeshComponent>()) {
-						if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
-							auto& mesh = selectedObject.get<MeshComponent>();
-							std::string& filepath = selectedObject.get<MeshComponent>().filepath;
+		ImGui::Begin("Inspector"); 
+		ImGui::Text("Components");
+		if (selectedObject) {
+			ImGui::InputText("Tag", &selectedObject.get<TagComponent>().Tag);
+			scene.Visit(selectedObject, [&](const entt::type_info info) {
+				if (info == entt::type_id<TransformComponent>()) {
+					if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+						auto& transform = selectedObject.get<TransformComponent>();
+						ImGui::InputFloat3("Translation", glm::value_ptr(transform.Translation));
+						ImGui::InputFloat3("Rotation", glm::value_ptr(transform.Rotation));
+						ImGui::InputFloat3("Scale", glm::value_ptr(transform.Scale));
+					}					
+				}
+				else if (info == entt::type_id<MeshComponent>()) {
+					if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
+						auto& mesh = selectedObject.get<MeshComponent>();
+						std::string& filepath = selectedObject.get<MeshComponent>().filepath;
 							
-							char buffer[256] = { 0 };
-							strcpy_s(buffer, sizeof(buffer), filepath.c_str());
-							if (ImGui::InputText("OBJ File", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
-								mesh.filepath = std::string(buffer);
-								mesh.LoadOBJ();
-							}
+						char buffer[256] = { 0 };
+						strcpy_s(buffer, sizeof(buffer), filepath.c_str());
+						if (ImGui::InputText("OBJ File", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
+							mesh.filepath = std::string(buffer);
+							mesh.LoadOBJ();
 						}
 					}
-				});
-			}
+				}
+			});
+		}
 
-			ImGui::Separator();
-			ImGui::Text("Stats:\n"
-				"mainViewportSize: (%.1f, %.1f)\n"
-				"viewportPanelAvailRegion: (%.1f, %.1f)\n"
-				"",
-				viewport->Size.x, viewport->Size.y,
-				viewportPanelAvailRegion.x, viewportPanelAvailRegion.y
-			);
+		ImGui::Separator();
+		ImGui::Text("Stats:\n"
+			"mainViewportSize: (%.1f, %.1f)\n"
+			"viewportPanelAvailRegion: (%.1f, %.1f)\n"
+			"",
+			viewport->Size.x, viewport->Size.y,
+			viewportPanelAvailRegion.x, viewportPanelAvailRegion.y
+		);
 			
-			if (ImGui::CollapsingHeader("FPS", ImGuiTreeNodeFlags_DefaultOpen)) {
-				ImGui::PlotLines("", frameRates.data(), (int)frameRates.size());
-				const auto [minIt, maxIt] = std::minmax_element(frameRates.begin(), frameRates.end());
-				ImGui::Text("[%.1f %.1f]", *minIt, *maxIt);
-				static bool isVSync = false;
-				if (ImGui::Checkbox("VSync", &isVSync)) {
-					GraphicsContext::Get()->SetVSync(isVSync);
-				}
-			}
+		if (ImGui::CollapsingHeader("FPS", ImGuiTreeNodeFlags_DefaultOpen)) {
+			ImGui::PlotLines("", frameRates.data(), (int)frameRates.size());
+			const auto [minIt, maxIt] = std::minmax_element(frameRates.begin(), frameRates.end());
+			ImGui::Text("[%.1f %.1f]", *minIt, *maxIt);
+			static bool isVSync = false;
+			if (ImGui::Checkbox("VSync", &isVSync)) { GraphicsContext::Get()->SetVSync(isVSync); }
+		}
 
-			if (ImGui::CollapsingHeader("Editor Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
-				ImGui::Text("Yaw, Pitch, Roll: (%.2f, %.2f, %.2f)", camera->GetYaw(), camera->GetPitch(), camera->GetRoll());
-				ImGui::Text("Pos: (%.1f, %.1f, %.1f)", camera->GetPosition().x, camera->GetPosition().y, camera->GetPosition().z);
-				ImGui::Text("Target: (%.1f, %.1f, %.1f)", camera->GetFocalPoint().x, camera->GetFocalPoint().y, camera->GetFocalPoint().z);
-				ImGui::Text("Distance: %.1f", camera->GetDistance());
-				float fov = camera->GetFOV();
-				if (ImGui::SliderFloat("FOV", &fov, 1.0f, 180.0f)) {
-					camera->SetFOV(fov);
-				}
-				ImGui::SliderFloat("Roll", camera->GetRefRoll(), 0.0f, 3.141593f);
+		if (ImGui::CollapsingHeader("Editor Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
+			ImGui::Text("Yaw, Pitch, Roll: (%.2f, %.2f, %.2f)", camera->GetYaw(), camera->GetPitch(), camera->GetRoll());
+			ImGui::Text("Pos: (%.1f, %.1f, %.1f)", camera->GetPosition().x, camera->GetPosition().y, camera->GetPosition().z);
+			ImGui::Text("Target: (%.1f, %.1f, %.1f)", camera->GetFocalPoint().x, camera->GetFocalPoint().y, camera->GetFocalPoint().z);
+			ImGui::Text("Distance: %.1f", camera->GetDistance());
+			float fov = camera->GetFOV();
+			if (ImGui::SliderFloat("FOV", &fov, 1.0f, 180.0f)) { camera->SetFOV(fov); }
+			ImGui::SliderFloat("Roll", camera->GetRefRoll(), 0.0f, 3.141593f);
+		}
 
-			}
-
-			ImGui::Separator();
-			ImGui::Checkbox("Show Demo Window", &shouldShowDemo);
-			viewportPanelAvailRegionPrev = viewportPanelAvailRegion;
-		} ImGui::End();
+		ImGui::Separator();
+		ImGui::Checkbox("Show Demo Window", &shouldShowDemo);
+		viewportPanelAvailRegionPrev = viewportPanelAvailRegion;
+		ImGui::End();
 
 		if (shouldShowDemo) ImGui::ShowDemoWindow();
 	}
 
 private:
 	Shader* shader = nullptr;
-	VertexArray* vao = nullptr;
 	FrameBuffer* fbo = nullptr;
 
 	float aspect = 1.0f;
