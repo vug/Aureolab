@@ -23,6 +23,7 @@
     Renderer/GraphicsAPI.h Renderer/GraphicsAPI.cpp
 	Platform/OpenGL/OpenGLGraphicsAPI.h Platform/OpenGL/OpenGLGraphicsAPI.cpp
     Core/ImGuiHelper.h Core/ImGuiHelper.cpp
+	Core/Math.h Core/Math.cpp
 	Core/Input.h Core/Input.cpp
     Platform/Windows/WindowsInput.h Platform/Windows/WindowsInput.cpp
 	Modeling/Modeling.h Modeling/Modeling.cpp
