@@ -91,6 +91,7 @@ public:
 			glm::mat4 modelViewProjection = projection * modelView;
 			glm::mat4 normalMatrix = glm::inverse(modelView);
 			shader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
+			shader->UploadUniformMat4("u_NormalMatrix", normalMatrix);
 			shader->UploadUniformMat4("u_View", view);
 
 			shader->UploadUniformInt("u_RenderType", (int)meshRenderer.visualization);
