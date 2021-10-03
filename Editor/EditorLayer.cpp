@@ -217,8 +217,9 @@ void EditorLayer::OnImGuiRender() {
 			}
 			});
 	}
+	ImGui::End();
 
-	ImGui::Separator();
+	ImGui::Begin("Stats");
 	ImGui::Text("Stats:\n"
 		"mainViewportSize: (%.1f, %.1f)\n"
 		"viewportPanelAvailRegion: (%.1f, %.1f)\n"
