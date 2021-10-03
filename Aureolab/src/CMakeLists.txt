@@ -30,6 +30,7 @@
     Renderer/EditorCamera.h Renderer/EditorCamera.cpp
 	Scene/Components.h Scene/Components.cpp
 	Scene/Scene.h Scene/Scene.cpp
+    Platform/Windows/WindowsPlatformUtils.h Platform/Windows/WindowsPlatformUtils.cpp
 )
 
 # If a debug build configuration define AL_DEBUG processor macro

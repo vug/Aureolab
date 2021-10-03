@@ -1,4 +1,8 @@
 #pragma once
+#include "Platform/Windows/WindowsPlatformUtils.h"
+
+#include <cassert>
+#include <string>
 
 /*
 * Platform detection definition logic taken from TheCherno's engine series.
@@ -41,6 +45,28 @@ enum class Platform {
 class PlatformUtils {
 public:
 	static Platform GetPlatform() { return platform; }
+	static std::string OpenFile(const char* filter) {
+		std::string filepath;
+		switch (GetPlatform()) {
+		case Platform::WINDOWS:
+			filepath = WindowsPlatformUtils::OpenFile(filter);
+			break;
+		default:
+			assert(false); // platform not implemented
+		}
+		return filepath;
+	}
+	static std::string SaveFile(const char* filter) {
+		std::string filepath;
+		switch (GetPlatform()) {
+		case Platform::WINDOWS:
+			filepath = WindowsPlatformUtils::SaveFile(filter);
+			break;
+		default:
+			assert(false); // platform not implemented
+		}
+		return filepath;
+	}
 private:
 #ifdef AL_PLATFORM_WINDOWS
 	static const Platform platform = Platform::WINDOWS;
