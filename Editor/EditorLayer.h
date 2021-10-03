@@ -47,11 +47,16 @@ public:
 		camera = new EditorCamera(45, aspect, 0.01f, 100);
 
 		// Hard-coded example scene
-		using ObjectData = struct { std::string name; glm::vec3 pos; std::string meshFilePath; };
+		using ObjectData = struct { 
+			std::string name; 
+			glm::vec3 pos; 
+			std::string meshFilePath; 
+			MeshRendererComponent::Visualization viz;
+		};
 		std::vector<ObjectData> sceneData = {
-			{ "monkey1", { 0.75, 0.5, 0.0 }, "assets/models/suzanne_smooth.obj", },
-			{ "monkey2", { -0.5, -0.1, 0.0 }, "assets/models/suzanne.obj", },
-			{ "torus", { 0.1, -0.4, 0.7 }, "assets/models/torus_smooth.obj", },
+			{ "monkey1", { 0.75, 0.5, 0.0 }, "assets/models/suzanne_smooth.obj", MeshRendererComponent::Visualization::Normal, },
+			{ "monkey2", { -0.5, -0.1, 0.0 }, "assets/models/suzanne.obj", MeshRendererComponent::Visualization::UV, },
+			{ "torus", { 0.1, -0.4, 0.7 }, "assets/models/torus_smooth.obj", MeshRendererComponent::Visualization::Depth, },
 		};
 		for (ObjectData& obj : sceneData) {
 			auto ent = scene.CreateEntity(obj.name);
@@ -60,6 +65,7 @@ public:
 			transform.Rotation = obj.pos;
 			transform.Scale = { 0.4, 0.4, 0.4 };
 			ent.emplace<MeshComponent>(obj.meshFilePath);
+			ent.emplace<MeshRendererComponent>(obj.viz);
 		}
 	}
 
@@ -77,16 +83,17 @@ public:
 		GraphicsAPI::Get()->SetClearColor({0, 0, 0, 1});
 		GraphicsAPI::Get()->Clear();
 		shader->Bind();
-		shader->UploadUniformInt("u_RenderType", 1); // Normal (2: UV)
-
-		auto query = scene.View<TransformComponent, MeshComponent>();
-		for (const auto& [ent, transform, mesh] : query.each()) {
+		auto query = scene.View<TransformComponent, MeshComponent, MeshRendererComponent>();
+		for (const auto& [ent, transform, mesh, meshRenderer] : query.each()) {
 			glm::vec3& translation = transform.Translation;
 			glm::mat4 model = GetTransformMatrix(transform);
 			glm::mat4 modelView = view * model;
 			glm::mat4 modelViewProjection = projection * modelView;
 			glm::mat4 normalMatrix = glm::inverse(modelView);
 			shader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
+
+			shader->UploadUniformInt("u_RenderType", (int)meshRenderer.visualization);
+
 			VertexArray* vao = mesh.vao;
 			if (vao == nullptr) { continue; }
 			GraphicsAPI::Get()->DrawArrayTriangles(*vao);

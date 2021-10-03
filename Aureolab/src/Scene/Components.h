@@ -70,3 +70,18 @@ struct MeshComponent {
 	template <class Archive>
 	void serialize(Archive& ar) { ar(filepath); }
 };
+
+struct MeshRendererComponent {
+	enum class Visualization {
+		SolidColor, Normal, UV, Depth, PointLight, HemisphericalLight,
+	};
+	Visualization visualization = Visualization::Normal;
+
+	MeshRendererComponent() = default;
+	MeshRendererComponent(const MeshRendererComponent&) = default;
+	MeshRendererComponent(const Visualization& visualization) 
+		: visualization(visualization) {}
+
+	template <class Archive>
+	void serialize(Archive& ar) { ar(visualization); }
+};

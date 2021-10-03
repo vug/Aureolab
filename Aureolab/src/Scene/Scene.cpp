@@ -28,13 +28,13 @@ void Scene::Save() {
 	storage.clear();
 
 	cereal::JSONOutputArchive output{ storage };
-	entt::snapshot{ registry }.entities(output).component<TagComponent, TransformComponent, MeshComponent>(output);
+	entt::snapshot{ registry }.entities(output).component<TagComponent, TransformComponent, MeshComponent, MeshRendererComponent>(output);
 }
 
 void Scene::Load() {
 	cereal::JSONInputArchive input{ storage };
 	registry.clear();
-	entt::snapshot_loader{ registry }.entities(input).component<TagComponent, TransformComponent, MeshComponent>(input).orphans();
+	entt::snapshot_loader{ registry }.entities(input).component<TagComponent, TransformComponent, MeshComponent, MeshRendererComponent>(input).orphans();
 
 	// rewind storage
 	storage.clear();
