@@ -50,6 +50,7 @@ target_link_libraries(
 	tinyobjloader
 	EnTT::EnTT
 	cereal
+	imguizmo
 )
 
 target_compile_features(Aureolab PRIVATE cxx_std_17)
