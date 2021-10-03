@@ -72,9 +72,8 @@ struct MeshComponent {
 };
 
 struct MeshRendererComponent {
-	enum class Visualization {
-		SolidColor, Normal, UV, Depth, PointLight, HemisphericalLight,
-	};
+	enum class Visualization { SolidColor, Normal, UV, Depth, PointLight, HemisphericalLight, };
+	static inline const char* visNames[6] = { "SolidColor", "Normal", "UV", "Depth", "PointLight", "HemisphericalLight" }; // for GUI
 	Visualization visualization = Visualization::Normal;
 
 	MeshRendererComponent() = default;

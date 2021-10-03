@@ -179,6 +179,23 @@ public:
 						}
 					}
 				}
+				else if (info == entt::type_id<MeshRendererComponent>()) {
+					if (ImGui::CollapsingHeader("MeshRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+						auto& meshRenderer = selectedObject.get<MeshRendererComponent>();
+						int chosen_index = (int)meshRenderer.visualization;
+						if (ImGui::BeginCombo("Visualizations", MeshRendererComponent::visNames[chosen_index], ImGuiComboFlags_None)) {
+							for (int ix = 0; ix < IM_ARRAYSIZE(MeshRendererComponent::visNames); ix++) {
+								const bool is_selected = (chosen_index == ix);
+								if (ImGui::Selectable(MeshRendererComponent::visNames[ix], is_selected)) {
+									meshRenderer.visualization = (MeshRendererComponent::Visualization)ix;
+								}
+								// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+								if (is_selected) ImGui::SetItemDefaultFocus();
+							}
+							ImGui::EndCombo();
+						}
+					}
+				}
 			});
 		}
 
