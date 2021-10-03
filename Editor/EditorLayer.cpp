@@ -1,6 +1,14 @@
 #include "EditorLayer.h"
 
+#include "Core/GraphicsContext.h"
+#include "Renderer/GraphicsAPI.h"
 #include "Core/Math.h"
+#include "Scene/Components.h"
+
+#include <imgui.h>
+#include <glm/glm.hpp>
+
+#include <string>
 
 void EditorLayer::OnAttach() {
 	// in case we'll see an area not behind any ImWindow
