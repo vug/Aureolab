@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Core/Layer.h"
+#include "Core/Math.h"
+#include "Core/Input.h"
 #include "Events/Event.h"
+#include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
 #include "Renderer/GraphicsAPI.h"
 #include "Renderer/Shader.h"
@@ -14,6 +17,7 @@
 #include <glad/glad.h> // include until Framebuffer and Texture abstractions are completed
 #include <imgui.h>
 #include <imgui_stdlib.h>
+#include <ImGuizmo.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -23,13 +27,6 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-
-glm::mat4 GetTransformMatrix(TransformComponent tc) {
-	glm::mat4 rotation = glm::toMat4(glm::quat(tc.rotation));
-	return glm::translate(glm::mat4(1.0f), tc.translation)
-		* rotation
-		* glm::scale(glm::mat4(1.0f), tc.scale);
-}
 
 class EditorLayer : public Layer {
 public:
@@ -74,8 +71,8 @@ public:
 		frameRates[frameRates.size() - 1] = 1.0f / ts;
 
 		camera->OnUpdate(ts);
-		glm::mat4 projection = camera->GetProjection();
-		glm::mat4 view = camera->GetViewMatrix();
+		projection = camera->GetProjection();
+		view = camera->GetViewMatrix();
 
 		GraphicsAPI::Get()->Clear();
 
@@ -86,7 +83,7 @@ public:
 		auto query = scene.View<TransformComponent, MeshComponent, MeshRendererComponent>();
 		for (const auto& [ent, transform, mesh, meshRenderer] : query.each()) {
 			glm::vec3& translation = transform.translation;
-			glm::mat4 model = GetTransformMatrix(transform);
+			glm::mat4 model = Math::ComposeTransform(transform.translation, transform.rotation, transform.scale);
 			glm::mat4 modelView = view * model;
 			glm::mat4 modelViewProjection = projection * modelView;
 			glm::mat4 normalMatrix = glm::inverse(modelView);
@@ -109,10 +106,32 @@ public:
 	virtual void OnEvent(Event& ev) override {
 		auto dispatcher = EventDispatcher(ev);
 		dispatcher.Dispatch<MouseScrolledEvent>(AL_BIND_EVENT_FN(EditorLayer::OnMouseScrolled));
+		dispatcher.Dispatch<KeyPressedEvent>(AL_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
 	}
 
 	void OnMouseScrolled(MouseScrolledEvent& ev) {
 		if(isViewportPanelHovered) camera->OnMouseScroll(ev.GetXOffset(), ev.GetYOffset());
+	}
+
+	void OnKeyPressed(KeyPressedEvent& ev) {
+		switch (ev.GetKeyCode()) {
+		// Transform Gizmos
+		case 90: // Z
+			gizmoShouldShow = true;
+			gizmoType = ImGuizmo::OPERATION::TRANSLATE;
+			break;
+		case 88: // X
+			gizmoShouldShow = true;
+			gizmoType = ImGuizmo::OPERATION::ROTATE;
+			break;
+		case 67: // C
+			gizmoShouldShow = true;
+			gizmoType = ImGuizmo::OPERATION::SCALE;
+			break;
+		case 86: // V
+			gizmoShouldShow = false;
+			break;
+		}
 	}
 
 	virtual void OnDetach() override {
@@ -153,6 +172,35 @@ public:
 		ImGui::Image((void*)(intptr_t)fbo->GetColorAttachmentRendererID(0), ImVec2(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		aspect = viewportPanelAvailRegion.x / viewportPanelAvailRegion.y;
 		isViewportPanelHovered = ImGui::IsWindowHovered();
+
+		if (selectedObject && gizmoShouldShow) {
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist();
+			ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, viewportPanelAvailRegion.x, viewportPanelAvailRegion.y);
+
+			auto& tc = selectedObject.get<TransformComponent>();
+			auto transformMatrix = Math::ComposeTransform(tc.translation, tc.rotation, tc.scale);
+
+			// Snapping
+			const bool shouldSnap = Input::Get()->IsKeyPressed(340);
+			// 45 degrees for rotation, 0.5m for translate and scale
+			float snapValue = gizmoType == ImGuizmo::OPERATION::ROTATE ? 45.0f : 0.5f;
+			float snapValues[3] = { snapValue, snapValue, snapValue };
+
+			ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection),
+				gizmoType, ImGuizmo::LOCAL, glm::value_ptr(transformMatrix), nullptr, shouldSnap ? snapValues : nullptr);
+
+			if (ImGuizmo::IsUsing()) {
+				glm::vec3 translation, rotation, scale;
+				Math::DecomposeTransform(transformMatrix, translation, rotation, scale);
+				tc.translation = translation;
+				// To prevent gimble-lock
+				glm::vec3 deltaRotation = rotation - tc.rotation;
+				tc.rotation += deltaRotation;
+				tc.scale = scale;
+			}
+		}
+
 		ImGui::End();
 		ImGui::PopStyleVar();
 
@@ -252,9 +300,15 @@ private:
 	Shader* shader = nullptr;
 	FrameBuffer* fbo = nullptr;
 
-	float aspect = 1.0f;
 	EditorCamera* camera = nullptr;
+	float aspect = 1.0f;
+	glm::mat4 projection;
+	glm::mat4 view;
 	bool isViewportPanelHovered = false;
+
+	bool gizmoShouldShow = false;
+	ImGuizmo::OPERATION gizmoType = ImGuizmo::OPERATION::TRANSLATE;
+
 	std::vector<float> frameRates = std::vector<float>(120);
 
 	Scene scene;
