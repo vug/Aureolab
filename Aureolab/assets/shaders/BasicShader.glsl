@@ -55,19 +55,21 @@ in vec4 color;
 in vec3 positionView;
 in vec3 modelNormal;
 
+layout (location = 0) out vec4 outColor;
+
 void main() {
     switch (u_RenderType) {
     case 0: // Solid Color
-        gl_FragColor = u_SolidColor;
+        outColor = u_SolidColor;
         break;
     case 1: // Normal
-        gl_FragColor = vec4(modelNormal * 0.5 + 0.5, 1.0);
+        outColor = vec4(modelNormal * 0.5 + 0.5, 1.0);
         break;
     case 2: // UV
-        gl_FragColor = vec4(uv.x, uv.y, 0.0, 1.0);
+        outColor = vec4(uv.x, uv.y, 0.0, 1.0);
         break;
     case 3: // Depth
-        gl_FragColor = vec4(vec3(1.0) * pow(position.z / u_DepthMax, u_DepthPow), 1.0);
+        outColor = vec4(vec3(1.0) * pow(position.z / u_DepthMax, u_DepthPow), 1.0);
         break;
     case 4: // Point Light
         vec3 nNormal = normalize(normal);
@@ -79,7 +81,7 @@ void main() {
         float diffuseValue = max(0.0, dot(lightDirection, nNormal));
         vec3 lightScattered = u_LightColor * diffuseValue * attenuation;
         vec3 rgb = u_DiffuseColor.rgb * lightScattered;
-        gl_FragColor = vec4(rgb, u_DiffuseColor.a);
+        outColor = vec4(rgb, u_DiffuseColor.a);
         break;
     case 5: // Hemispherical Light
         vec3 nNormal2 = normalize(normal);
@@ -87,7 +89,7 @@ void main() {
         vec3 lightVec = normalize(lightPositionView2 - positionView);
         float costheta = dot(nNormal2, lightVec);
         float a = costheta * 0.5 + 0.5;
-        gl_FragColor = vec4(mix(u_GroundColor, u_SkyColor, a), 1.0);
+        outColor = vec4(mix(u_GroundColor, u_SkyColor, a), 1.0);
         break;
     }
 }
