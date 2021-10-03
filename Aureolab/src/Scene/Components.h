@@ -76,7 +76,14 @@ struct MeshComponent {
 struct MeshRendererComponent {
 	enum class Visualization { SolidColor, Normal, UV, Depth, PointLight, HemisphericalLight, };
 	static inline const char* visNames[6] = { "SolidColor", "Normal", "UV", "Depth", "PointLight", "HemisphericalLight" }; // for GUI
+	struct Depth { 
+		float max = 5.0f; 
+		float pow = 2.0f; 
+		template <class Archive> void serialize(Archive& ar) { ar(CEREAL_NVP(max), CEREAL_NVP(pow)); }
+	};
+
 	Visualization visualization = Visualization::Normal;
+	Depth depthParams;
 
 	MeshRendererComponent() = default;
 	MeshRendererComponent(const MeshRendererComponent&) = default;
@@ -84,5 +91,5 @@ struct MeshRendererComponent {
 		: visualization(visualization) {}
 
 	template <class Archive>
-	void serialize(Archive& ar) { ar(CEREAL_NVP(visualization)); }
+	void serialize(Archive& ar) { ar(CEREAL_NVP(visualization), CEREAL_NVP(depthParams)); }
 };

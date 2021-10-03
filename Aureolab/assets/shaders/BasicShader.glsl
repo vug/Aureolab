@@ -69,7 +69,7 @@ void main() {
         outColor = vec4(uv.x, uv.y, 0.0, 1.0);
         break;
     case 3: // Depth
-        outColor = vec4(vec3(1.0) * pow(position.z / u_DepthMax, u_DepthPow), 1.0);
+        outColor = vec4(vec3(1.0) - pow(position.z / u_DepthMax, u_DepthPow), 1.0);
         break;
     case 4: // Point Light
         vec3 nNormal = normalize(normal);

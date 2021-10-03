@@ -91,10 +91,11 @@ public:
 			glm::mat4 modelViewProjection = projection * modelView;
 			glm::mat4 normalMatrix = glm::inverse(modelView);
 			shader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
+			shader->UploadUniformMat4("u_View", view);
 
 			shader->UploadUniformInt("u_RenderType", (int)meshRenderer.visualization);
-			shader->UploadUniformFloat("u_DepthMax", debugShaderDepthMax);
-			shader->UploadUniformFloat("u_DepthPow", debugShaderDepthPow);
+			shader->UploadUniformFloat("u_DepthMax", meshRenderer.depthParams.max);
+			shader->UploadUniformFloat("u_DepthPow", meshRenderer.depthParams.pow);
 
 			VertexArray* vao = mesh.vao;
 			if (vao == nullptr) { continue; }
@@ -198,8 +199,8 @@ public:
 						}
 						switch (meshRenderer.visualization) {
 						case MeshRendererComponent::Visualization::Depth:
-							ImGui::SliderFloat("MaxDepth", &debugShaderDepthMax, 0.01f, 100.0f);
-							ImGui::SliderFloat("Pow (Contrast)", &debugShaderDepthPow, 0.25f, 4.0f);
+							ImGui::SliderFloat("MaxDepth", &meshRenderer.depthParams.max, 0.01f, 100.0f);
+							ImGui::SliderFloat("Pow (Contrast)", &meshRenderer.depthParams.pow, 0.25f, 4.0f);
 							break;
 						case MeshRendererComponent::Visualization::SolidColor:
 							break;
@@ -246,8 +247,6 @@ public:
 
 private:
 	Shader* shader = nullptr;
-	float debugShaderDepthMax = 5.0f;
-	float debugShaderDepthPow = 2.0f;
 	FrameBuffer* fbo = nullptr;
 
 	float aspect = 1.0f;
