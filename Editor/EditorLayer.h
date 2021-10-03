@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Panels/SceneHierarchyPanel.h"
+#include "Panels/InspectorPanel.h"
 
 #include "Core/Layer.h"
 #include "Core/Math.h"
@@ -19,7 +20,6 @@
 
 #include <glad/glad.h> // include until Framebuffer and Texture abstractions are completed
 #include <imgui.h>
-#include <imgui_stdlib.h>
 #include <ImGuizmo.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -64,4 +64,5 @@ private:
 	EntityHandle selectedObject = {};
 
 	SceneHierarchyPanel hierarchyPanel{ &scene, &selectedObject };
+	InspectorPanel inspectorPanel{ &scene, &selectedObject };
 };
