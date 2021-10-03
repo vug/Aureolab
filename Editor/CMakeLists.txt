@@ -3,6 +3,7 @@ add_executable(Editor
 	EditorLayer.h EditorLayer.cpp
     Panels/SceneHierarchyPanel.h Panels/SceneHierarchyPanel.cpp
     Panels/InspectorPanel.h Panels/InspectorPanel.cpp
+    Panels/ViewportPanel.h Panels/ViewportPanel.cpp
 )
 
 target_link_libraries(
