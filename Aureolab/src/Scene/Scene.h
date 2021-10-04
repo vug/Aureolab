@@ -16,6 +16,7 @@ class Scene {
 public:
 	EntityHandle CreateEntity(const std::string& name);
 	void DestroyEntity(EntityHandle ent);
+	void DuplicateEntity(const EntityHandle& entity);
 
 	template<typename... Comps>
 	auto View() {

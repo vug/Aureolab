@@ -2,7 +2,10 @@
 
 #include "Components.h"
 
+#include <entt/entt.hpp>
+
 #include <fstream>
+
 
 EntityHandle Scene::CreateEntity(const std::string& name) {
 	entt::entity ent = registry.create();
@@ -14,6 +17,11 @@ EntityHandle Scene::CreateEntity(const std::string& name) {
 
 void Scene::DestroyEntity(EntityHandle ent) {
 	registry.destroy(ent);
+}
+
+void Scene::DuplicateEntity(const EntityHandle& entity) {
+	entt::entity oldEnt = entity.entity();
+	Log::Warning("Object duplication not implemented yet."); // TODO: implement duplication of arbitrary entities.
 }
 
 void Scene::Visit(EntityHandle ent, std::function<void(const entt::type_info)> func) {

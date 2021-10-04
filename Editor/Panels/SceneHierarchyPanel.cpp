@@ -15,6 +15,10 @@ void SceneHierarchyPanel::OnImGuiRender() {
 		}
 
 		if (ImGui::BeginPopupContextItem()) {
+			if (ImGui::MenuItem("Duplicate Object")) {
+				scene.DuplicateEntity(entHandle);
+			}
+			ImGui::Separator();
 			if (ImGui::MenuItem("Delete Object")) {
 				if (selectedObject == entHandle) { selectedObject = {}; }
 				scene.DestroyEntity(entHandle);
