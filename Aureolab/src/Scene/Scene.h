@@ -27,6 +27,7 @@ public:
 
 	EntityHandle GetHandle(entt::entity ent);
 
+	void New();
 	void SaveToFile(const std::string& filepath);
 	void LoadFromFile(const std::string& filepath);
 	void SaveToMemory();

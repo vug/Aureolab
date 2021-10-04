@@ -24,6 +24,10 @@ EntityHandle Scene::GetHandle(entt::entity ent) {
 	return EntityHandle{ registry, ent };
 }
 
+void Scene::New() {
+	registry.clear();
+}
+
 void Scene::SaveToFile(const std::string& filepath) {
 	std::ofstream file(filepath);
 	cereal::JSONOutputArchive output{ file };

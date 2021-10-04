@@ -94,6 +94,7 @@ void EditorLayer::OnImGuiRender() {
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::DockSpaceOverViewport(viewport, ImGuiDockNodeFlags_None);
 
+	mainMenuBar.OnImGuiRender();
 	hierarchyPanel.OnImGuiRender(); // Left column
 	viewportPanel.OnImGuiRender(); // Middle column
 	inspectorPanel.OnImGuiRender(); // Right column

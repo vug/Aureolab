@@ -15,9 +15,7 @@ class ViewportPanel {
 public:
 	ViewportPanel() = default;
 	ViewportPanel(FrameBuffer*& fbo, EditorCamera*& camera, EntityHandle& selectedObject)
-		: fbo(fbo), camera(camera), selectedObject(selectedObject) {
-	
-	}
+		: fbo(fbo), camera(camera), selectedObject(selectedObject) {}
 
 	void OnImGuiRender();
 	void OnEvent(Event& ev);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Panels/MainMenuBar.h"
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/InspectorPanel.h"
 #include "Panels/ViewportPanel.h"
@@ -32,6 +33,7 @@ private:
 	Scene scene;
 	EntityHandle selectedObject = {};
 
+	MainMenuBar mainMenuBar{ scene };
 	SceneHierarchyPanel hierarchyPanel{ scene, selectedObject };
 	InspectorPanel inspectorPanel{ scene, selectedObject };
 	ViewportPanel viewportPanel{ fbo, camera, selectedObject };
