@@ -32,4 +32,5 @@ private:
 	float aspect = 1.0f;
 	bool gizmoShouldShow = false;
 	ImGuizmo::OPERATION gizmoType = ImGuizmo::OPERATION::TRANSLATE;
+	ImGuizmo::MODE gizmoMode = ImGuizmo::LOCAL;
 };

@@ -39,7 +39,7 @@ void ViewportPanel::OnImGuiRender() {
 		const glm::mat4& view = camera->GetViewMatrix();
 		const glm::mat4& projection = camera->GetProjection();
 		ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection),
-			gizmoType, ImGuizmo::LOCAL, glm::value_ptr(transformMatrix), nullptr, shouldSnap ? snapValues : nullptr);
+			gizmoType, gizmoMode, glm::value_ptr(transformMatrix), nullptr, shouldSnap ? snapValues : nullptr);
 
 		if (ImGuizmo::IsUsing()) {
 			glm::vec3 translation, rotation, scale;
@@ -67,6 +67,7 @@ void ViewportPanel::OnMouseScrolled(MouseScrolledEvent& ev) {
 }
 
 void ViewportPanel::OnKeyPressed(KeyPressedEvent& ev) {
+	Log::Debug("Key: {}", ev.GetKeyCode());
 	switch (ev.GetKeyCode()) {
 		// Transform Gizmos
 	case 90: // Z
@@ -83,6 +84,9 @@ void ViewportPanel::OnKeyPressed(KeyPressedEvent& ev) {
 		break;
 	case 86: // V
 		gizmoShouldShow = false;
+		break;
+	case 77: // M
+		gizmoMode = (ImGuizmo::MODE)( (gizmoMode + 1) % 2 );
 		break;
 	}
 }
