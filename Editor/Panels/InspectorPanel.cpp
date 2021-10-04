@@ -12,6 +12,8 @@ void InspectorPanel::OnImGuiRender() {
 	ImGui::Text("Components");
 	if (selectedObject) {
 		ImGui::InputText("Tag", &selectedObject.get<TagComponent>().tag);
+
+		// List the components of the selected object
 		scene.Visit(selectedObject, [&](const entt::type_info info) {
 			if (info == entt::type_id<TransformComponent>()) {
 				if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -60,7 +62,19 @@ void InspectorPanel::OnImGuiRender() {
 					}
 				}
 			}
-			});
+		});
+
+		if (ImGui::Button("Add Component")) { ImGui::OpenPopup("AddComponent"); }
+		if (ImGui::BeginPopup("AddComponent")) {
+			if (!selectedObject.any_of<MeshComponent>() && ImGui::MenuItem("Mesh Component")) {
+				selectedObject.emplace<MeshComponent>();
+			}
+			if (!selectedObject.any_of<MeshRendererComponent>() &&  ImGui::MenuItem("Mesh Renderer Component")) {
+				selectedObject.emplace<MeshRendererComponent>();
+			}
+			ImGui::EndPopup();
+		}
 	}
+
 	ImGui::End();
 }
