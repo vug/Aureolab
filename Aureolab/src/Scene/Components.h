@@ -65,7 +65,7 @@ struct MeshComponent {
 	MeshComponent() = default;
 	MeshComponent(const MeshComponent&);
 	MeshComponent(const std::string& filepath);
-	~MeshComponent() { delete vao; }
+	~MeshComponent() { /*delete vao;*/ } // TODO: fix component clean up of renderer resources
 
 	void LoadOBJ();
 
