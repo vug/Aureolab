@@ -86,6 +86,7 @@ void ViewportPanel::OnMouseClicked(MouseButtonPressedEvent& ev) {
 }
 
 void ViewportPanel::OnKeyPressed(KeyPressedEvent& ev) {
+	if (!isViewportPanelHovered) { return; } // below keyboard shortcuts only works when Viewport Panel is hovered
 	switch (ev.GetKeyCode()) {
 		// Transform Gizmos
 	case 90: // Z
