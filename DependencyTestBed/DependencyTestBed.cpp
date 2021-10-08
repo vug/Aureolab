@@ -46,8 +46,6 @@ struct Position {
     template <class Archive>
     void serialize(Archive& ar) {
         ar(CEREAL_NVP(x), CEREAL_NVP(y)); // CEREAL_NVP let's the serialization name to be the same as variable name. otherwise name becomes valueN.
-        //ar(CEREAL_NVP(x));
-        //ar(CEREAL_NVP(y));
     }
 };
 
@@ -60,10 +58,123 @@ struct Tag {
     }
 };
 
-// this crashes :-/
-//void prologue(cereal::JSONOutputArchive& ar, const Position& p) {
-//    LOGGER->debug("Hi from prologue");
-//}
+GLuint mainShader() {
+    GLuint vertex_shader, fragment_shader, program;
+
+    static const char* vertex_shader_text =
+        "#version 460 core\n"
+        "uniform mat4 MVP;\n"
+        "layout (location = 0) in vec2 vPos;\n"
+        "layout (location = 1) in vec3 vCol;\n"
+        "varying vec3 color;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = MVP * vec4(vPos, 0.0, 1.0);\n"
+        "    color = vCol;\n"
+        "}\n";
+
+    static const char* fragment_shader_text =
+        "#version 460 core\n"
+        "varying vec3 color;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_FragColor = vec4(color, 1.0);\n"
+        "}\n";
+
+    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
+    glCompileShader(vertex_shader);
+
+    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
+    glCompileShader(fragment_shader);
+
+    program = glCreateProgram();
+    glAttachShader(program, vertex_shader);
+    glAttachShader(program, fragment_shader);
+    glLinkProgram(program);
+    return program;
+}
+
+
+GLuint selectionShader() {
+    GLuint vertex_shader, fragment_shader, program;
+
+    static const char* vertex_shader_text =
+        "#version 460 core\n"
+        "uniform mat4 MVP;\n"
+        "layout (location = 0) in vec2 vPos;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = MVP * vec4(vPos, 0.0, 1.0);\n"
+        "}\n";
+
+    static const char* fragment_shader_text =
+        "#version 460 core\n"
+        "uniform int u_SelectionID;\n"
+        "out int selectionID;"
+        "void main()\n"
+        "{\n"
+        "    selectionID = u_SelectionID;\n"
+        "}\n";
+
+    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
+    glCompileShader(vertex_shader);
+
+    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
+    glCompileShader(fragment_shader);
+
+    program = glCreateProgram();
+    glAttachShader(program, vertex_shader);
+    glAttachShader(program, fragment_shader);
+    glLinkProgram(program);
+    return program;
+}
+
+GLuint selectionFBO(int width, int height) {
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    // generate color buffer texture
+    GLuint colorRendererID;
+    glGenTextures(1, &colorRendererID);
+    glBindTexture(GL_TEXTURE_2D, colorRendererID);
+    LOGGER->info("texture renderer ID: {}", colorRendererID);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16I, width, height, 0, GL_RED_INTEGER, GL_INT, 0);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // generate depth buffer texture
+    GLuint depthRendererID;
+    glGenTextures(1, &depthRendererID);
+    glBindTexture(GL_TEXTURE_2D, depthRendererID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // attach them to currently bound framebuffer object
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorRendererID, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthRendererID, 0);
+
+    // Check FBO completion
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) { LOGGER->debug("Framebuffer complete."); }
+    else { LOGGER->warn("Framebuffer incomplete."); }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return fbo;
+}
+
 
 int main(int argc, char* argv[]) {
     LOGGER->info("Hi from Dependency Test Bed!");
@@ -78,19 +189,6 @@ int main(int argc, char* argv[]) {
 
     for (auto [entity, tag, pos] : view.each()) {
         LOGGER->info("Entity {} [{}], Position: ({}, {})", tag.tag, entity, pos.x, pos.y);
-    //    std::stringstream ss;
-    //    {
-    //        cereal::JSONOutputArchive oarchive(ss);
-    //        oarchive(CEREAL_NVP(pos));
-    //        LOGGER->info("Comp Serialized: {}", ss.str());
-    //    }
-
-    //    {
-    //        cereal::JSONInputArchive iarchive(ss);
-    //        Position posDeser;
-    //        iarchive(posDeser);
-    //        LOGGER->info("Comp Deserialized: ({}, {})", posDeser.x, posDeser.y);
-    //    }
     }
 
     std::stringstream ss;
@@ -124,26 +222,6 @@ int main(int argc, char* argv[]) {
         0, 1, 2,
         0, 2, 3,
     };
-
-    static const char* vertex_shader_text =
-        "#version 460 core\n"
-        "uniform mat4 MVP;\n"
-        "layout (location = 0) in vec2 vPos;\n"
-        "layout (location = 1) in vec3 vCol;\n"
-        "varying vec3 color;\n"
-        "void main()\n"
-        "{\n"
-        "    gl_Position = MVP * vec4(vPos, 0.0, 1.0);\n"
-        "    color = vCol;\n"
-        "}\n";
-
-    static const char* fragment_shader_text =
-        "#version 460 core\n"
-        "varying vec3 color;\n"
-        "void main()\n"
-        "{\n"
-        "    gl_FragColor = vec4(color, 1.0);\n"
-        "}\n";
 
     glfwSetErrorCallback(error_callback);
     if (!glfwInit()) {
@@ -187,28 +265,14 @@ int main(int argc, char* argv[]) {
 
     // NOTE: OpenGL error checks have been omitted for brevity
 
-    GLuint vertex_shader, fragment_shader, program;
-
-    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
-    glCompileShader(vertex_shader);
-
-    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
-    glCompileShader(fragment_shader);
-
-    program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
-
-
+    GLuint program = mainShader();
     GLint mvp_location, vpos_location, vcol_location;
-
     mvp_location = glGetUniformLocation(program, "MVP");
     vpos_location = glGetAttribLocation(program, "vPos");
     vcol_location = glGetAttribLocation(program, "vCol");
 
+    GLuint selectionProgram = selectionShader();
+    GLint selection_id_location = glGetUniformLocation(selectionProgram, "u_SelectionID");
 
     GLuint vbo, vao, ebo;
 
@@ -228,6 +292,8 @@ int main(int argc, char* argv[]) {
 
     glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)(sizeof(float) * 2));
     glEnableVertexAttribArray(vcol_location);
+
+    GLuint selectionFbo = selectionFBO(1024, 778);
 
     LOGGER->info("OpenGL Info:");
     LOGGER->info("Renderer: {}", glGetString(GL_RENDERER));
@@ -262,6 +328,24 @@ int main(int argc, char* argv[]) {
         glUseProgram(program);
         glUniformMatrix4fv(mvp_location, 1, GL_FALSE, glm::value_ptr(mvp));
         glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(unsigned int), GL_UNSIGNED_INT, 0);
+
+        glUseProgram(selectionProgram);
+        glBindFramebuffer(GL_FRAMEBUFFER, selectionFbo);
+        const int clearValue = -1;
+        glClearTexImage(1, 0, GL_RED_INTEGER, GL_INT, &clearValue);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, glm::value_ptr(mvp));
+        glUniform1i(selection_id_location, 1234);
+        glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(unsigned int), GL_UNSIGNED_INT, 0); // draw the same object
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+        int mouseX = (int)xpos; 
+        int mouseY = 768 - (int)ypos;
+        int hoveredEntityId = -2; // value when not hovering (I guess ReadPixel is not triggered when mouse coordinates are outside of the fbo)
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glReadPixels(mouseX, mouseY, 1, 1, GL_RED_INTEGER, GL_INT, &hoveredEntityId);
+        ImGui::Text("Hovered ID at (%d, %d): %d", mouseX, mouseY, hoveredEntityId);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // ImGUI End
         ImGui::Render();
