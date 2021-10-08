@@ -16,8 +16,10 @@ void EditorLayer::OnAttach() {
 	auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
 	GraphicsAPI::Get()->SetClearColor(turquoise);
 
+	selectionShader = Shader::Create("assets/shaders/SelectionShader.glsl");
 	shader = Shader::Create("assets/shaders/BasicShader.glsl");
-	fbo = FrameBuffer::Create(100, 100); // arguments does not matter since FBO's going to be resized
+	viewportFbo = FrameBuffer::Create(100, 100, FrameBuffer::TextureFormat::RGBA8); // arguments does not matter since FBO's going to be resized
+	selectionFbo = FrameBuffer::Create(100, 100, FrameBuffer::TextureFormat::RED_INTEGER);
 	camera = new EditorCamera(45, 1.0f, 0.01f, 100); // aspect = 1.0f will be recomputed
 
 	// Hard-coded example scene
@@ -55,7 +57,8 @@ void EditorLayer::OnUpdate(float ts) {
 
 	GraphicsAPI::Get()->Clear();
 
-	fbo->Bind(); // Render into viewportFBO
+	// Render pass 1: render scene into viewportFBO
+	viewportFbo->Bind();
 	GraphicsAPI::Get()->SetClearColor({ 0, 0, 0, 1 });
 	GraphicsAPI::Get()->Clear();
 	shader->Bind();
@@ -79,11 +82,35 @@ void EditorLayer::OnUpdate(float ts) {
 		if (vao == nullptr) { continue; }
 		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
 	}
-	fbo->Unbind();
+	shader->Unbind();
+	viewportFbo->Unbind();
+
+	// Render pass 2: render entityID of each object into an integer buffer
+	selectionFbo->Bind();
+	selectionFbo->Clear(-1); // value when not hovering on any object
+	selectionShader->Bind();
+	for (const auto& [ent, transform, mesh, meshRenderer] : query.each()) {
+		glm::vec3& translation = transform.translation;
+		glm::mat4 model = Math::ComposeTransform(transform.translation, transform.rotation, transform.scale);
+		glm::mat4 modelView = view * model;
+		glm::mat4 modelViewProjection = projection * modelView;
+		glm::mat4 normalMatrix = glm::inverse(modelView);
+		selectionShader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
+		selectionShader->UploadUniformInt("u_EntityID", (int)ent);
+		VertexArray* vao = mesh.vao;
+		if (vao == nullptr) { continue; }
+		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
+	}
+	hoveredEntityId = -3; // value when queried coordinates are not inside the selectionFbo
+	selectionFbo->ReadPixel(hoveredEntityId, mouseX, mouseY);
+	hoveredObject = scene.GetHandle((entt::entity)hoveredEntityId);
+	selectionShader->Unbind();
+	selectionFbo->Unbind();
 }
 
 void EditorLayer::OnDetach() {
-	delete fbo;
+	delete viewportFbo;
+	delete selectionFbo;
 }
 
 void EditorLayer::OnEvent(Event& ev) {

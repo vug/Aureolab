@@ -14,11 +14,12 @@ void ViewportPanel::OnImGuiRender() {
 	ImVec2 viewportPanelAvailRegion = ImGui::GetContentRegionAvail();
 	bool isViewportPanelResized = viewportPanelAvailRegion.x != viewportPanelAvailRegionPrev.x || viewportPanelAvailRegion.y != viewportPanelAvailRegionPrev.y;
 	if (isViewportPanelResized) {
-		fbo->Resize((int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
+		viewportFbo->Resize((int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
+		selectionFbo->Resize((int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
 		glViewport(0, 0, (int)viewportPanelAvailRegion.x, (int)viewportPanelAvailRegion.y);
 		camera->SetViewportSize(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y);
 	}
-	ImGui::Image((void*)(intptr_t)fbo->GetColorAttachmentRendererID(0), ImVec2(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+	ImGui::Image((void*)(intptr_t)viewportFbo->GetColorAttachmentRendererID(0), ImVec2(viewportPanelAvailRegion.x, viewportPanelAvailRegion.y), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 	aspect = viewportPanelAvailRegion.x / viewportPanelAvailRegion.y;
 	isViewportPanelHovered = ImGui::IsWindowHovered();
 
@@ -52,6 +53,14 @@ void ViewportPanel::OnImGuiRender() {
 		}
 	}
 	viewportPanelAvailRegionPrev = viewportPanelAvailRegion;
+
+	// Mouse coordinates wrt bottom left of viewport panel.
+	ImVec2 mouseScreenPos = ImGui::GetMousePos();
+	ImVec2 viewportPanelScreenPos = ImGui::GetWindowPos();
+	mouseX = (int)(mouseScreenPos.x - viewportPanelScreenPos.x);
+	mouseY = (int)(mouseScreenPos.y - viewportPanelScreenPos.y);
+	mouseY = ImGui::GetWindowSize().y - mouseY;
+
 	ImGui::End();
 	ImGui::PopStyleVar();
 }
@@ -60,14 +69,23 @@ void ViewportPanel::OnEvent(Event& ev) {
 	auto dispatcher = EventDispatcher(ev);
 	dispatcher.Dispatch<MouseScrolledEvent>(AL_BIND_EVENT_FN(ViewportPanel::OnMouseScrolled));
 	dispatcher.Dispatch<KeyPressedEvent>(AL_BIND_EVENT_FN(ViewportPanel::OnKeyPressed));
+	dispatcher.Dispatch<MouseButtonPressedEvent>(AL_BIND_EVENT_FN(ViewportPanel::OnMouseClicked));
 }
 
 void ViewportPanel::OnMouseScrolled(MouseScrolledEvent& ev) {
 	if (isViewportPanelHovered) camera->OnMouseScroll(ev.GetXOffset(), ev.GetYOffset());
 }
 
+void ViewportPanel::OnMouseClicked(MouseButtonPressedEvent& ev) {
+	if (isViewportPanelHovered // don't unselect when interacting with UI on other panels
+		&& !ImGuizmo::IsOver() // don't unselect when transforming objects via Gizmos
+		&& ((MouseButton)ev.GetMouseButton() == MouseButton::Left) // select with left click
+	) { 
+		selectedObject = hoveredObject; // (just unselects if hovering over nothing)
+	}
+}
+
 void ViewportPanel::OnKeyPressed(KeyPressedEvent& ev) {
-	Log::Debug("Key: {}", ev.GetKeyCode());
 	switch (ev.GetKeyCode()) {
 		// Transform Gizmos
 	case 90: // Z

@@ -27,16 +27,21 @@ public:
 
 private:
 	Shader* shader = nullptr;
-	FrameBuffer* fbo = nullptr;
+	Shader* selectionShader = nullptr;
+	FrameBuffer* viewportFbo = nullptr;
+	FrameBuffer* selectionFbo = nullptr;
+	int mouseX, mouseY;
 	EditorCamera* camera = nullptr;
 
 	Scene scene;
 	EntityHandle selectedObject = {};
+	EntityHandle hoveredObject = {};
+	int hoveredEntityId = -3;
 
 	MainMenuBar mainMenuBar{ scene };
 	SceneHierarchyPanel hierarchyPanel{ scene, selectedObject };
-	InspectorPanel inspectorPanel{ scene, selectedObject };
-	ViewportPanel viewportPanel{ fbo, camera, selectedObject };
+	InspectorPanel inspectorPanel{ scene, selectedObject, hoveredObject };
+	ViewportPanel viewportPanel{ viewportFbo, selectionFbo, hoveredEntityId, camera, selectedObject, hoveredObject, mouseX, mouseY };
 
 	std::vector<float> frameRates = std::vector<float>(120);
 };

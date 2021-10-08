@@ -3,10 +3,12 @@
 #include "Core/Log.h"
 
 #include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <cassert>
 
-OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height) {
+OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height, TextureFormat textureFormat) 
+		: textureFormat(textureFormat) {
 	glGenFramebuffers(1, &rendererID);
 
 	Bind();
@@ -14,7 +16,16 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height) {
 	unsigned int colorRendererID;
 	glGenTextures(1, &colorRendererID);
 	glBindTexture(GL_TEXTURE_2D, colorRendererID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	switch (textureFormat) {
+	case TextureFormat::RGBA8:
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		break;
+	case TextureFormat::RED_INTEGER:
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_INT, 0);
+		break;
+	default:
+		assert(false); // unknown TextureFormat
+	}
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -67,11 +78,39 @@ void OpenGLFrameBuffer::Resize(int width, int height) {
 	Bind();
 	for (unsigned int id : colorRendererIDs) {
 		glBindTexture(GL_TEXTURE_2D, id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		switch (textureFormat) {
+		case TextureFormat::RGBA8:
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+			break;
+		case TextureFormat::RED_INTEGER:
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, width, height, 0, GL_RED_INTEGER, GL_INT, 0);
+			break;
+		}
+		
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	glBindTexture(GL_TEXTURE_2D, depthRendererID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	Unbind();
+}
+
+void OpenGLFrameBuffer::Clear(int clearValue, unsigned int index) {
+	glClearTexImage(GetColorAttachmentRendererID(index), 0, GL_RED_INTEGER, GL_INT, &clearValue);
+	glClear(GL_DEPTH_BUFFER_BIT);
+}
+
+void OpenGLFrameBuffer::Clear(glm::vec4 clearColor, unsigned int index) {
+	glClearTexImage(GetColorAttachmentRendererID(index), 0, GL_RGBA, GL_UNSIGNED_BYTE, glm::value_ptr(clearColor));
+	glClear(GL_DEPTH_BUFFER_BIT);
+}
+
+void OpenGLFrameBuffer::ReadPixel(int& pixel, int x, int y, unsigned int index) {
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
+	glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixel);
+}
+
+void OpenGLFrameBuffer::ReadPixel(glm::vec4& pixel, int x, int y, unsigned int index) {
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
+	glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
 }

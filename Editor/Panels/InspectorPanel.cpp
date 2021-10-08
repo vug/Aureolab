@@ -63,6 +63,8 @@ static void DrawVec3Control(const std::string& label, glm::vec3& values, float r
 
 void InspectorPanel::OnImGuiRender() {
 	ImGui::Begin("Inspector");
+	ImGui::Text("Hovering: %s", hoveredObject ? hoveredObject.get<TagComponent>().tag.c_str() : "");
+	ImGui::Separator();
 	ImGui::Text("Components");
 	if (selectedObject) {
 		ImGui::InputText("Tag", &selectedObject.get<TagComponent>().tag);
