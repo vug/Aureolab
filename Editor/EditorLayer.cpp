@@ -4,6 +4,7 @@
 #include "Renderer/GraphicsAPI.h"
 #include "Core/Math.h"
 #include "Scene/Components.h"
+#include "Renderer/Renderer.h"
 
 #include <imgui.h>
 #include <glm/glm.hpp>
@@ -64,44 +65,11 @@ void EditorLayer::OnUpdate(float ts) {
 	shader->Bind();
 	auto query = scene.View<TransformComponent, MeshComponent, MeshRendererComponent>();
 	for (const auto& [ent, transform, mesh, meshRenderer] : query.each()) {
-		glm::vec3& translation = transform.translation;
-		glm::mat4 model = Math::ComposeTransform(transform.translation, transform.rotation, transform.scale);
-		glm::mat4 modelView = view * model;
-		glm::mat4 modelViewProjection = projection * modelView;
-		glm::mat4 normalMatrix = glm::inverse(modelView);
-		shader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
-		shader->UploadUniformMat4("u_NormalMatrix", normalMatrix);
-		shader->UploadUniformMat4("u_View", view);
-
-		shader->UploadUniformInt("u_RenderType", (int)meshRenderer.visualization);
-		shader->UploadUniformFloat4("u_SolidColor", meshRenderer.solidColor);
-		shader->UploadUniformFloat("u_DepthMax", meshRenderer.depthParams.max);
-		shader->UploadUniformFloat("u_DepthPow", meshRenderer.depthParams.pow);
-
-		VertexArray* vao = mesh.vao;
-		if (vao == nullptr) { continue; }
-		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
+		Renderer::RenderMesh(shader, view, projection, transform, mesh, meshRenderer);
 	}
-	// TODO: don't duplicate code
 	auto query2 = scene.View<TransformComponent, ProceduralMeshComponent, MeshRendererComponent>();
 	for (const auto& [ent, transform, pMesh, meshRenderer] : query2.each()) {
-		glm::vec3& translation = transform.translation;
-		glm::mat4 model = Math::ComposeTransform(transform.translation, transform.rotation, transform.scale);
-		glm::mat4 modelView = view * model;
-		glm::mat4 modelViewProjection = projection * modelView;
-		glm::mat4 normalMatrix = glm::inverse(modelView);
-		shader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
-		shader->UploadUniformMat4("u_NormalMatrix", normalMatrix);
-		shader->UploadUniformMat4("u_View", view);
-
-		shader->UploadUniformInt("u_RenderType", (int)meshRenderer.visualization);
-		shader->UploadUniformFloat4("u_SolidColor", meshRenderer.solidColor);
-		shader->UploadUniformFloat("u_DepthMax", meshRenderer.depthParams.max);
-		shader->UploadUniformFloat("u_DepthPow", meshRenderer.depthParams.pow);
-
-		VertexArray* vao = pMesh.vao;
-		if (vao == nullptr) { continue; }
-		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
+		Renderer::RenderProceduralMesh(shader, view, projection, transform, pMesh, meshRenderer);
 	}
 	shader->Unbind();
 	viewportFbo->Unbind();
@@ -111,29 +79,10 @@ void EditorLayer::OnUpdate(float ts) {
 	selectionFbo->Clear(-1); // value when not hovering on any object
 	selectionShader->Bind();
 	for (const auto& [ent, transform, mesh, meshRenderer] : query.each()) {
-		glm::vec3& translation = transform.translation;
-		glm::mat4 model = Math::ComposeTransform(transform.translation, transform.rotation, transform.scale);
-		glm::mat4 modelView = view * model;
-		glm::mat4 modelViewProjection = projection * modelView;
-		glm::mat4 normalMatrix = glm::inverse(modelView);
-		selectionShader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
-		selectionShader->UploadUniformInt("u_EntityID", (int)ent);
-		VertexArray* vao = mesh.vao;
-		if (vao == nullptr) { continue; }
-		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
+		Renderer::RenderVertexArrayEntityID(ent, selectionShader, view, projection, transform, mesh.vao, meshRenderer);
 	}
-	// TODO: don't duplicate code
 	for (const auto& [ent, transform, pMesh, meshRenderer] : query2.each()) {
-		glm::vec3& translation = transform.translation;
-		glm::mat4 model = Math::ComposeTransform(transform.translation, transform.rotation, transform.scale);
-		glm::mat4 modelView = view * model;
-		glm::mat4 modelViewProjection = projection * modelView;
-		glm::mat4 normalMatrix = glm::inverse(modelView);
-		selectionShader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
-		selectionShader->UploadUniformInt("u_EntityID", (int)ent);
-		VertexArray* vao = pMesh.vao;
-		if (vao == nullptr) { continue; }
-		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
+		Renderer::RenderVertexArrayEntityID(ent, selectionShader, view, projection, transform, pMesh.vao, meshRenderer);
 	}
 	hoveredEntityId = -3; // value when queried coordinates are not inside the selectionFbo
 	selectionFbo->ReadPixel(hoveredEntityId, mouseX, mouseY);

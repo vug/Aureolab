@@ -22,6 +22,7 @@
 	Platform/OpenGL/OpenGLShader.h Platform/OpenGL/OpenGLShader.cpp
     Renderer/GraphicsAPI.h Renderer/GraphicsAPI.cpp
 	Platform/OpenGL/OpenGLGraphicsAPI.h Platform/OpenGL/OpenGLGraphicsAPI.cpp
+	Renderer/Renderer.h Renderer/Renderer.cpp
     Core/ImGuiHelper.h Core/ImGuiHelper.cpp
 	Core/Math.h Core/Math.cpp
 	Core/Input.h Core/Input.cpp
