@@ -22,7 +22,7 @@ void OpenGLVertexArray::Unbind() const {
     glBindVertexArray(0);
 }
 
-void OpenGLVertexArray::AddVertexBuffer(const VertexBuffer& vertexBuffer) {
+void OpenGLVertexArray::AddVertexBuffer(VertexBuffer& vertexBuffer) {
     Bind();
 
 	auto specs = vertexBuffer.GetAttributeSpecs();

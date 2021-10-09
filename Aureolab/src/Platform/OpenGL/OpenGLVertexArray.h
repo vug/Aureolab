@@ -16,12 +16,12 @@ public:
 
 	virtual unsigned int GetRendererID() const { return rendererID; }
 
-	virtual void AddVertexBuffer(const VertexBuffer& vertexBuffer) override;
+	virtual void AddVertexBuffer(VertexBuffer& vertexBuffer) override;
 	virtual void SetIndexBuffer(const IndexBuffer& indexBuffer) override;
-	virtual const std::vector<const VertexBuffer*>& GetVertexBuffers() const override { return vertexBuffers; };
+	virtual const std::vector<VertexBuffer*>& GetVertexBuffers() const override { return vertexBuffers; };
 	virtual const IndexBuffer* GetIndexBuffer() const override { return indexBuffer; }
 private:
 	unsigned int rendererID = -1;
-	std::vector<const VertexBuffer*> vertexBuffers = {};
+	std::vector<VertexBuffer*> vertexBuffers = {};
 	const IndexBuffer* indexBuffer = nullptr;
 };
