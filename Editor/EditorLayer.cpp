@@ -82,6 +82,27 @@ void EditorLayer::OnUpdate(float ts) {
 		if (vao == nullptr) { continue; }
 		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
 	}
+	// TODO: don't duplicate code
+	auto query2 = scene.View<TransformComponent, ProceduralMeshComponent, MeshRendererComponent>();
+	for (const auto& [ent, transform, pMesh, meshRenderer] : query2.each()) {
+		glm::vec3& translation = transform.translation;
+		glm::mat4 model = Math::ComposeTransform(transform.translation, transform.rotation, transform.scale);
+		glm::mat4 modelView = view * model;
+		glm::mat4 modelViewProjection = projection * modelView;
+		glm::mat4 normalMatrix = glm::inverse(modelView);
+		shader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
+		shader->UploadUniformMat4("u_NormalMatrix", normalMatrix);
+		shader->UploadUniformMat4("u_View", view);
+
+		shader->UploadUniformInt("u_RenderType", (int)meshRenderer.visualization);
+		shader->UploadUniformFloat4("u_SolidColor", meshRenderer.solidColor);
+		shader->UploadUniformFloat("u_DepthMax", meshRenderer.depthParams.max);
+		shader->UploadUniformFloat("u_DepthPow", meshRenderer.depthParams.pow);
+
+		VertexArray* vao = pMesh.vao;
+		if (vao == nullptr) { continue; }
+		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
+	}
 	shader->Unbind();
 	viewportFbo->Unbind();
 
@@ -98,6 +119,19 @@ void EditorLayer::OnUpdate(float ts) {
 		selectionShader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
 		selectionShader->UploadUniformInt("u_EntityID", (int)ent);
 		VertexArray* vao = mesh.vao;
+		if (vao == nullptr) { continue; }
+		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
+	}
+	// TODO: don't duplicate code
+	for (const auto& [ent, transform, pMesh, meshRenderer] : query2.each()) {
+		glm::vec3& translation = transform.translation;
+		glm::mat4 model = Math::ComposeTransform(transform.translation, transform.rotation, transform.scale);
+		glm::mat4 modelView = view * model;
+		glm::mat4 modelViewProjection = projection * modelView;
+		glm::mat4 normalMatrix = glm::inverse(modelView);
+		selectionShader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
+		selectionShader->UploadUniformInt("u_EntityID", (int)ent);
+		VertexArray* vao = pMesh.vao;
 		if (vao == nullptr) { continue; }
 		GraphicsAPI::Get()->DrawArrayTriangles(*vao);
 	}
