@@ -118,6 +118,9 @@ void InspectorPanel::OnImGuiRender() {
 					}
 				}
 			}
+			else if (info != entt::type_id<TagComponent>()) { // default
+				ImGui::Text("Component '%s' has no UI yet", info.name().data());
+			}
 		});
 
 		if (ImGui::Button("Add Component")) { ImGui::OpenPopup("AddComponent"); }
