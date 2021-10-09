@@ -67,10 +67,52 @@ struct MeshComponent {
 	MeshComponent(const std::string& filepath);
 	~MeshComponent() { /*delete vao;*/ } // TODO: fix component clean up of renderer resources
 
+	// Call after changing filepath
 	void LoadOBJ();
 
 	template <class Archive>
 	void serialize(Archive& ar) { ar(CEREAL_NVP(filepath)); }
+};
+
+struct ProceduralMeshComponent {
+	enum class Shape {
+		Box, Torus,
+	};
+	static inline const char* shapeNames[2] = { "Box", "Torus", }; // for GUI
+	struct Box {
+		glm::vec3 dimensions = { 1.0f, 1.0f, 1.0f }; // (width, height, depth);
+
+		template <class Archive> void serialize(Archive& ar) { ar(CEREAL_NVP(dimensions)); }
+	};
+	struct Torus {
+		float outerRadius = 2.0f;
+		int outerSegments = 12;
+		float innerRadius = 0.5f;
+		int innerSegments = 8;
+
+		template <class Archive> void serialize(Archive& ar) { ar(CEREAL_NVP(outerRadius), CEREAL_NVP(outerSegments), CEREAL_NVP(innerRadius), CEREAL_NVP(innerSegments)); }
+	};
+	struct Parameters {
+		Shape shape = Shape::Box;
+		Box box;
+		Torus torus;
+
+		template <class Archive> void serialize(Archive& ar) { ar(CEREAL_NVP(shape), CEREAL_NVP(box), CEREAL_NVP(torus)); }
+	};
+	Parameters parameters;
+	// not to serialize
+	VertexArray* vao = nullptr;
+
+	ProceduralMeshComponent();
+	ProceduralMeshComponent(const ProceduralMeshComponent&);
+	ProceduralMeshComponent(const Parameters& parameters);
+	~ProceduralMeshComponent() = default;
+
+	// Call after changing parameters.
+	void GenerateMesh();
+
+	template <class Archive>
+	void serialize(Archive& ar) { ar(CEREAL_NVP(parameters)); }
 };
 
 struct MeshRendererComponent {
