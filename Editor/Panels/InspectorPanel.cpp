@@ -96,7 +96,7 @@ void InspectorPanel::OnImGuiRender() {
 				}
 			}
 			else if (info == entt::type_id<MeshRendererComponent>()) {
-				if (ImGui::CollapsingHeader("MeshRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (ImGui::CollapsingHeader("Mesh Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
 					auto& meshRenderer = selectedObject.get<MeshRendererComponent>();
 					int chosen_index = (int)meshRenderer.visualization;
 					if (ImGui::BeginCombo("Visualizations", MeshRendererComponent::visNames[chosen_index], ImGuiComboFlags_None)) {
@@ -121,6 +121,36 @@ void InspectorPanel::OnImGuiRender() {
 					}
 				}
 			}
+			else if (info == entt::type_id<ProceduralMeshComponent>()) {
+				if (ImGui::CollapsingHeader("Procedural Mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
+					auto& pMesh = selectedObject.get<ProceduralMeshComponent>();
+					int chosen_index = (int)pMesh.parameters.shape;
+					if (ImGui::BeginCombo("Shapes", ProceduralMeshComponent::shapeNames[chosen_index], ImGuiComboFlags_None)) {
+						for (int ix = 0; ix < IM_ARRAYSIZE(ProceduralMeshComponent::shapeNames); ix++) {
+							const bool is_selected = (chosen_index == ix);
+							if (ImGui::Selectable(ProceduralMeshComponent::shapeNames[ix], is_selected)) {
+								pMesh.parameters.shape = (ProceduralMeshComponent::Shape)ix;
+							}
+							// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+							if (is_selected) ImGui::SetItemDefaultFocus();
+						}
+						ImGui::EndCombo();
+					}
+
+					switch (pMesh.parameters.shape) {
+					case ProceduralMeshComponent::Shape::Box:
+						if (DrawVec3Control("Dimensions", pMesh.parameters.box.dimensions, 1.0f)) {
+							pMesh.GenerateMesh();
+						}
+						break;
+					case ProceduralMeshComponent::Shape::Torus:
+						if (DrawVec3Control("Dimensions", pMesh.parameters.box.dimensions)) {
+							pMesh.GenerateMesh();
+						}
+						break;
+					}
+				}
+			}
 			else if (info != entt::type_id<TagComponent>()) { // default
 				ImGui::Text("Component '%s' has no UI yet", info.name().data());
 			}
@@ -130,6 +160,9 @@ void InspectorPanel::OnImGuiRender() {
 		if (ImGui::BeginPopup("AddComponent")) {
 			if (!selectedObject.any_of<MeshComponent>() && ImGui::MenuItem("Mesh Component")) {
 				selectedObject.emplace<MeshComponent>();
+			}
+			if (!selectedObject.any_of<ProceduralMeshComponent>() && ImGui::MenuItem("Procedural Mesh Component")) {
+				selectedObject.emplace<ProceduralMeshComponent>();
 			}
 			if (!selectedObject.any_of<MeshRendererComponent>() &&  ImGui::MenuItem("Mesh Renderer Component")) {
 				selectedObject.emplace<MeshRendererComponent>();
