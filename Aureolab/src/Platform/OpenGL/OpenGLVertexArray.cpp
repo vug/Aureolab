@@ -35,7 +35,7 @@ void OpenGLVertexArray::AddVertexBuffer(VertexBuffer& vertexBuffer) {
 		if (spec.index == -1) continue; // skip attributes that are not used in the shader
 		glVertexAttribPointer(spec.index, spec.numComponents, ALTypeToGLType(spec.type), spec.normalized, stride, (void*)(std::uintptr_t)offset);
 		glEnableVertexAttribArray(spec.index);
-		offset = sizes[ix];
+		offset += sizes[ix];
 	}
 	vertexBuffers.push_back(&vertexBuffer);
 }
