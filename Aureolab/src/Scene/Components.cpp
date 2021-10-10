@@ -64,10 +64,10 @@ std::vector<BasicVertex> GenerateBox(glm::vec3 dimensions) {
 
 	// faces (four corners in CCW, 1 normal)
 	struct Face { std::array<glm::vec3, 4> corners; glm::vec3 normal; };
-	Face fBack = { { p000, p100, p110, p010, }, nBack };
-	Face fFront = { { p011, p111, p101, p001, }, nFront };
-	Face fLeft = { { p100, p101, p111, p110 }, nLeft };
-	Face fRight = { { p010, p011, p001, p000 }, nRight };
+	Face fBack = { { p010, p110, p100, p000, }, nBack };
+	Face fFront = { { p001, p101, p111, p011, }, nFront };
+	Face fLeft = { { p110, p111, p101, p100, }, nLeft };
+	Face fRight = { { p000, p001, p011, p010, }, nRight };
 	Face fUp = { { p010, p011, p111, p110 }, nUp };
 	Face fDown = { { p100, p101, p001, p000 }, nDown };
 
