@@ -55,8 +55,7 @@ void ProceduralMeshComponent::GenerateMesh() {
 			vertices = GenerateBox(parameters.box.dimensions);
 			break;
 		case Shape::Torus:
-			// TODO:: implement Torus generation instead
-			vertices = GenerateBox(parameters.box.dimensions);
+			vertices = GenerateTorus(parameters.torus.outerRadius, parameters.torus.outerSegments, parameters.torus.innerRadius, parameters.torus.innerSegments);
 			break;
 	}
 	vbo->SetVertices(vertices);

@@ -1,10 +1,12 @@
 #include "Modeling.h"
 
 #include "Core/Log.h"
+#include "Core/Math.h"
 
 #include <tiny_obj_loader.h>
 
 #include <array>
+
 
 // OBJ file is a compressed format. For each attribute it has indices. for example only one color value is stored if all vertices has the same color etc.
 // However, vertices sent to the GPU have unique combination of attributes. Therefore it's better to JOIN all attributes for each individual vertex.
@@ -139,4 +141,48 @@ std::vector<BasicVertex> GenerateBox(glm::vec3 dimensions) {
         }
     }
     return vertices;
-};
+}
+
+std::vector<BasicVertex> GenerateTorus(float outerRadius, int outerSegments, float innerRadius, int innerSegments) {
+    std::vector<BasicVertex> points;
+    for (int i = 0; i < outerSegments; i++) {
+        float u = (float)i / (outerSegments - 1);
+        float outerAngle = Math::TAU * u;
+        glm::vec3 innerCenter = glm::vec3 { cosf(outerAngle), sinf(outerAngle), 0.0f } * outerRadius;
+        for (int j = 0; j < innerSegments; j++) {
+            float v = (float)j / (innerSegments - 1);
+            float innerAngle = Math::TAU * v;
+            glm::vec3 innerPos = glm::vec3{ cosf(innerAngle) * cosf(outerAngle),  cosf(innerAngle) * sinf(outerAngle), sinf(innerAngle) } * innerRadius;
+
+            glm::vec3 pos = innerCenter + innerPos;
+            glm::vec3 norm = glm::normalize(innerPos);
+            glm::vec2 uv = { u, v };
+            float checker = (i % 2) ^ (j % 2);
+            glm::vec4 col = glm::vec4 { 1.0, 1.0, 0.0, 1.0 } * checker + glm::vec4{ 0.0, 1.0, 1.0, 1.0 } * (1.0f - checker);
+
+            points.emplace_back(BasicVertex { pos, norm, uv, col });
+        }
+    }
+
+    std::vector<BasicVertex> vertices;
+    for (size_t i = 0; i < outerSegments; i++) {
+        for (size_t j = 0; j < innerSegments; j++) {
+            size_t i1 = (i + 1) % outerSegments;
+            size_t j1 = (j + 1) % innerSegments;
+            const BasicVertex& p1 = points[i * innerSegments + j];
+            const BasicVertex& p2 = points[i * innerSegments + j1];
+            const BasicVertex& p3 = points[i1 * innerSegments + j];
+            const BasicVertex& p4 = points[i1 * innerSegments + j1];
+            vertices.push_back(p3); // triangle-1
+            vertices.push_back(p2);
+            vertices.push_back(p1);
+
+            vertices.push_back(p2); // triangle-2
+            vertices.push_back(p3);
+            vertices.push_back(p4);
+        }
+    }
+    
+    return vertices;
+}
+;

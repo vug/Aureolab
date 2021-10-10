@@ -25,3 +25,4 @@ static std::vector<VertexAttributeSpecification> BasicVertexAttributeSpecs = {
 std::vector<BasicVertex> LoadOBJ(const std::string& filepath);
 
 std::vector<BasicVertex> GenerateBox(glm::vec3 dimensions);
+std::vector<BasicVertex> GenerateTorus(float outerRadius, int outerSegments, float innerRadius, int innerSegments);

@@ -85,9 +85,9 @@ struct ProceduralMeshComponent {
 		template <class Archive> void serialize(Archive& ar) { ar(CEREAL_NVP(dimensions)); }
 	};
 	struct Torus {
-		float outerRadius = 2.0f;
+		float outerRadius = 0.5f;
 		int outerSegments = 12;
-		float innerRadius = 0.5f;
+		float innerRadius = 0.125f;
 		int innerSegments = 8;
 
 		template <class Archive> void serialize(Archive& ar) { ar(CEREAL_NVP(outerRadius), CEREAL_NVP(outerSegments), CEREAL_NVP(innerRadius), CEREAL_NVP(innerSegments)); }
