@@ -30,13 +30,23 @@ public:
 			ent.emplace<MeshRendererComponent>(obj.viz);
 		}
 
-		auto procedural = scene.CreateEntity("procedural1");
-		TransformComponent& transform = procedural.get<TransformComponent>();
+		auto procedural1 = scene.CreateEntity("procedural1");
+		TransformComponent& transform = procedural1.get<TransformComponent>();
 		transform.translation.y = 0.75;
 		transform.rotation = { +0.93, -0.82, -0.77 };
-		auto& pmComp = procedural.emplace<ProceduralMeshComponent>();
-		pmComp.parameters.box.dimensions = { 0.4f, 0.6f, 0.2f };
-		pmComp.GenerateMesh();
-		procedural.emplace<MeshRendererComponent>(MeshRendererComponent::Visualization::VertexColor);
+		auto& pmComp1 = procedural1.emplace<ProceduralMeshComponent>();
+		pmComp1.parameters.box.dimensions = { 0.4f, 0.6f, 0.2f };
+		pmComp1.GenerateMesh();
+		procedural1.emplace<MeshRendererComponent>(MeshRendererComponent::Visualization::VertexColor);
+
+		auto procedural2 = scene.CreateEntity("procedural2");
+		TransformComponent& tTransform = procedural2.get<TransformComponent>();
+		tTransform.translation = { 0.24, 0.03, -0.43 };
+		tTransform.rotation = { -0.25, -0.33, 0.30 };
+		auto& pmComp2 = procedural2.emplace<ProceduralMeshComponent>();
+		pmComp2.parameters.shape = ProceduralMeshComponent::Shape::Torus;
+		pmComp2.parameters.torus = { 0.333, 12, 0.166, 8 };
+		pmComp2.GenerateMesh();
+		procedural2.emplace<MeshRendererComponent>(MeshRendererComponent::Visualization::Checkers);
 	}
 };
