@@ -15,9 +15,11 @@
 
 void EditorLayer::OnAttach() {
 	// in case we'll see an area not behind any ImWindow
-	GraphicsAPI::Get()->Enable(GraphicsAbility::DepthTest);
 	auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
 	GraphicsAPI::Get()->SetClearColor(turquoise);
+	GraphicsAPI::Get()->Enable(GraphicsAbility::DepthTest);
+	GraphicsAPI::Get()->Enable(GraphicsAbility::FaceCulling);
+
 
 	selectionShader = Shader::Create("assets/shaders/SelectionShader.glsl");
 	shader = Shader::Create("assets/shaders/BasicShader.glsl");
