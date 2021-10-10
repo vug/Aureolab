@@ -72,12 +72,13 @@ std::vector<BasicVertex> GenerateBox(glm::vec3 dimensions) {
 	Face fDown = { { p100, p101, p001, p000 }, nDown };
 
 	std::vector<BasicVertex> vertices;
+	int indices[] = { 0, 1, 2,    // triangle 1 of quad
+					  0, 2, 3, }; // triangle 2 of quad
+	glm::vec2 uvs[] = { {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
 	for (auto& face : { fBack, fFront, fLeft, fRight, fUp, fDown }) {
-		int indices[] = { 0, 1, 2,    // triangle 1 of quad
-						  0, 2, 3, }; // triangle 2 of quad
 		for (int ix : indices) {
-			vertices.emplace_back(
-				BasicVertex{ face.corners[ix], face.normal, {}, {}, }
+			vertices.emplace_back<BasicVertex>(
+				{ face.corners[ix], face.normal, uvs[ix], {},}
 			);
 		}
 	}
