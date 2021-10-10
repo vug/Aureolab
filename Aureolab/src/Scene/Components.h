@@ -116,8 +116,8 @@ struct ProceduralMeshComponent {
 };
 
 struct MeshRendererComponent {
-	enum class Visualization { SolidColor, Normal, UV, Depth, VertexColor, PointLight, HemisphericalLight, };
-	static inline const char* visNames[] = { "SolidColor", "Normal", "UV", "Depth", "VertexColor", "PointLight", "HemisphericalLight"}; // for GUI
+	enum class Visualization { SolidColor, Normal, UV, Depth, VertexColor, Checkers, PointLight, HemisphericalLight, };
+	static inline const char* visNames[] = { "SolidColor", "Normal", "UV", "Depth", "VertexColor", "Checkers", "PointLight", "HemisphericalLight"}; // for GUI
 	struct Depth { 
 		float max = 5.0f; 
 		float pow = 2.0f; 

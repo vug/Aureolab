@@ -74,7 +74,11 @@ void main() {
     case 4: // Vertex Color
         outColor = color;
         break;
-    case 5: // Point Light
+    case 5: // Checkers
+        vec2 p = uv * 10.0;
+        outColor = vec4(vec3(int(p.x) % 2 ^ int(p.y) % 2), 1.0); // bitwise XOR for checkers pattern
+        break;
+    case 6: // Point Light
         vec3 nNormal = normalize(normal);
         vec3 lightPositionView = (u_View * vec4(u_LightPosition, 1.0)).xyz;
         vec3 relativeLightPosition = lightPositionView - positionView;
@@ -86,7 +90,7 @@ void main() {
         vec3 rgb = u_DiffuseColor.rgb * lightScattered;
         outColor = vec4(rgb, u_DiffuseColor.a);
         break;
-    case 6: // Hemispherical Light
+    case 7: // Hemispherical Light
         vec3 nNormal2 = normalize(normal);
         vec3 lightPositionView2 = (u_View * vec4(u_HemisphereLightPosition, 1.0)).xyz;
         vec3 lightVec = normalize(lightPositionView2 - positionView);
