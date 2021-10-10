@@ -71,7 +71,10 @@ void main() {
     case 3: // Depth
         outColor = vec4(vec3(1.0) - pow(position.z / u_DepthMax, u_DepthPow), 1.0);
         break;
-    case 4: // Point Light
+    case 4: // Vertex Color
+        outColor = color;
+        break;
+    case 5: // Point Light
         vec3 nNormal = normalize(normal);
         vec3 lightPositionView = (u_View * vec4(u_LightPosition, 1.0)).xyz;
         vec3 relativeLightPosition = lightPositionView - positionView;
@@ -83,7 +86,7 @@ void main() {
         vec3 rgb = u_DiffuseColor.rgb * lightScattered;
         outColor = vec4(rgb, u_DiffuseColor.a);
         break;
-    case 5: // Hemispherical Light
+    case 6: // Hemispherical Light
         vec3 nNormal2 = normalize(normal);
         vec3 lightPositionView2 = (u_View * vec4(u_HemisphereLightPosition, 1.0)).xyz;
         vec3 lightVec = normalize(lightPositionView2 - positionView);
