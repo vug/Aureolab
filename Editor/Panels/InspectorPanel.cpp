@@ -130,6 +130,7 @@ void InspectorPanel::OnImGuiRender() {
 							const bool is_selected = (chosen_index == ix);
 							if (ImGui::Selectable(ProceduralMeshComponent::shapeNames[ix], is_selected)) {
 								pMesh.parameters.shape = (ProceduralMeshComponent::Shape)ix;
+								pMesh.GenerateMesh();
 							}
 							// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
 							if (is_selected) ImGui::SetItemDefaultFocus();
@@ -139,14 +140,13 @@ void InspectorPanel::OnImGuiRender() {
 
 					switch (pMesh.parameters.shape) {
 					case ProceduralMeshComponent::Shape::Box:
-						if (DrawVec3Control("Dimensions", pMesh.parameters.box.dimensions, 1.0f)) {
-							pMesh.GenerateMesh();
-						}
+						if (DrawVec3Control("Dimensions", pMesh.parameters.box.dimensions, 1.0f)) { pMesh.GenerateMesh(); }
 						break;
 					case ProceduralMeshComponent::Shape::Torus:
-						if (DrawVec3Control("Dimensions", pMesh.parameters.box.dimensions)) {
-							pMesh.GenerateMesh();
-						}
+						if (ImGui::DragFloat("Outer Radius", &pMesh.parameters.torus.outerRadius)) { pMesh.GenerateMesh(); }
+						if (ImGui::DragInt("Outer Segments", &pMesh.parameters.torus.outerSegments)) { pMesh.GenerateMesh(); }
+						if (ImGui::DragFloat("Inner Radius", &pMesh.parameters.torus.innerRadius)) { pMesh.GenerateMesh(); }
+						if (ImGui::DragInt("Inner Segments", &pMesh.parameters.torus.innerSegments)) { pMesh.GenerateMesh(); }
 						break;
 					}
 				}
