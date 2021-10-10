@@ -45,27 +45,32 @@ WindowsWindow::WindowsWindow(const std::string& name, int width, int height)
     // GLFW Callbacks
     glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int width, int height) {
         UserPointer& ptr = *(UserPointer*)glfwGetWindowUserPointer(window);
-        ptr.Dispatch(WindowResizeEvent(width, height));
+        auto ev = WindowResizeEvent(width, height);
+        ptr.Dispatch(ev);
     });
 
     glfwSetWindowCloseCallback(window, [](GLFWwindow* window) {
         UserPointer& ptr = *(UserPointer*)glfwGetWindowUserPointer(window);
-        ptr.Dispatch(WindowCloseEvent());
+        auto ev = WindowCloseEvent();
+        ptr.Dispatch(ev);
     });
 
     glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
         UserPointer& ptr = *(UserPointer*)glfwGetWindowUserPointer(window);
         switch (action) {
         case GLFW_PRESS: {
-            ptr.Dispatch(KeyPressedEvent(key, false));
+            auto ev = KeyPressedEvent(key, false);
+            ptr.Dispatch(ev);
             break;
         }
         case GLFW_RELEASE:{
-            ptr.Dispatch(KeyReleasedEvent(key));
+            auto ev = KeyReleasedEvent(key);
+            ptr.Dispatch(ev);
             break;
         }
         case GLFW_REPEAT: {
-            ptr.Dispatch(KeyPressedEvent(key, true));
+            auto ev = KeyPressedEvent(key, true);
+            ptr.Dispatch(ev);
             break;
         }
         }
@@ -75,11 +80,13 @@ WindowsWindow::WindowsWindow(const std::string& name, int width, int height)
         UserPointer& ptr = *(UserPointer*)glfwGetWindowUserPointer(window);
         switch (action) {
         case GLFW_PRESS: {
-            ptr.Dispatch(MouseButtonPressedEvent(button));
+            auto ev = MouseButtonPressedEvent(button);
+            ptr.Dispatch(ev);
             break;
         }
         case GLFW_RELEASE: {
-            ptr.Dispatch(MouseButtonReleasedEvent(button));
+            auto ev = MouseButtonReleasedEvent(button);
+            ptr.Dispatch(ev);
             break;
         }
         }
@@ -87,18 +94,21 @@ WindowsWindow::WindowsWindow(const std::string& name, int width, int height)
 
     glfwSetScrollCallback(window, [](GLFWwindow* window, double xOffset, double yOffset) {
         UserPointer& ptr = *(UserPointer*)glfwGetWindowUserPointer(window);
-        ptr.Dispatch(MouseScrolledEvent((float)xOffset, (float)yOffset));
+        auto ev = MouseScrolledEvent((float)xOffset, (float)yOffset);
+        ptr.Dispatch(ev);
     });
 
     glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xPos, double yPos) {
         UserPointer& ptr = *(UserPointer*)glfwGetWindowUserPointer(window);
-        ptr.Dispatch(MouseMovedEvent((float)xPos, (float)yPos));
+        auto ev = MouseMovedEvent((float)xPos, (float)yPos);
+        ptr.Dispatch(ev);
     });
 
 
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow * window, int width, int height) {
         UserPointer& ptr = *(UserPointer*)glfwGetWindowUserPointer(window);
-        ptr.Dispatch(FrameBufferResizeEvent((unsigned int)width, (unsigned int)height));
+        auto ev = FrameBufferResizeEvent((unsigned int)width, (unsigned int)height);
+        ptr.Dispatch(ev);
     });
 
     Log::Info("GLFW Window has been initialized");

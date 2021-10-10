@@ -4,7 +4,6 @@
 
 #include "Core/GraphicsContext.h"
 #include "Renderer/GraphicsAPI.h"
-#include "Core/Math.h"
 #include "Scene/Components.h"
 #include "Renderer/Renderer.h"
 

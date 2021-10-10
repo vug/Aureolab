@@ -55,4 +55,4 @@ target_link_libraries(
 	imguizmo
 )
 
-target_compile_features(Aureolab PRIVATE cxx_std_17)
+target_compile_features(Aureolab PRIVATE cxx_std_20)
