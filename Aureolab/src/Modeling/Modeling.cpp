@@ -4,6 +4,8 @@
 
 #include <tiny_obj_loader.h>
 
+#include <array>
+
 // OBJ file is a compressed format. For each attribute it has indices. for example only one color value is stored if all vertices has the same color etc.
 // However, vertices sent to the GPU have unique combination of attributes. Therefore it's better to JOIN all attributes for each individual vertex.
 // LoadOBJ decompress OBJ into a vector of Vertex.
@@ -90,3 +92,51 @@ std::vector<BasicVertex> LoadOBJ(const std::string& filepath) { // taken from ht
     }
     return vertices; // apparently this is move semantics, i.e. locally created vector will be moved to the scope of the caller.
 }
+
+
+std::vector<BasicVertex> GenerateBox(glm::vec3 dimensions) {
+    glm::vec3 halfDim = dimensions * 0.5f;
+    float width = halfDim.x, height = halfDim.y, depth = halfDim.z;
+
+    // corners
+    struct Vertex { glm::vec3 position; glm::vec4 color; };
+    Vertex p000 = { { -width, -height, -depth }, {0.0, 0.0, 0.0, 1.0} };
+    Vertex p001 = { { -width, -height, +depth }, {0.0, 0.0, 1.0, 1.0} };
+    Vertex p010 = { { -width, +height, -depth }, {0.0, 1.0, 0.0, 1.0} };
+    Vertex p011 = { { -width, +height, +depth }, {0.0, 1.0, 1.0, 1.0} };
+    Vertex p100 = { { +width, -height, -depth }, {1.0, 0.0, 0.0, 1.0} };
+    Vertex p101 = { { +width, -height, +depth }, {1.0, 0.0, 1.0, 1.0} };
+    Vertex p110 = { { +width, +height, -depth }, {1.0, 1.0, 0.0, 1.0} };
+    Vertex p111 = { { +width, +height, +depth }, {1.0, 1.0, 1.0, 1.0} };
+
+    // normals
+    glm::vec3 nFront = { 0.0f, 0.0f, 1.0f };
+    glm::vec3 nBack = -nFront;
+    glm::vec3 nLeft = { 1.0f, 0.0, 0.0 };
+    glm::vec3 nRight = -nLeft;
+    glm::vec3 nUp = { 0.0f, 1.0f, 0.0f };
+    glm::vec3 nDown = -nUp;
+
+    // faces (four corners in CCW, 1 normal)
+    struct Face { std::array<Vertex, 4> corners; glm::vec3 normal; };
+    Face fBack = { { p010, p110, p100, p000, }, nBack };
+    Face fFront = { { p001, p101, p111, p011, }, nFront };
+    Face fLeft = { { p110, p111, p101, p100, }, nLeft };
+    Face fRight = { { p000, p001, p011, p010, }, nRight };
+    Face fUp = { { p010, p011, p111, p110 }, nUp };
+    Face fDown = { { p100, p101, p001, p000 }, nDown };
+
+    std::vector<BasicVertex> vertices;
+    int indices[] = { 0, 1, 2,    // triangle 1 of quad
+                      0, 2, 3, }; // triangle 2 of quad
+    glm::vec2 uvs[] = { {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
+    for (auto& face : { fBack, fFront, fLeft, fRight, fUp, fDown }) {
+        for (int ix : indices) {
+            const Vertex& v = face.corners[ix];
+            vertices.emplace_back<BasicVertex>(
+                { v.position, face.normal, uvs[ix], v.color, }
+            );
+        }
+    }
+    return vertices;
+};
