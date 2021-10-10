@@ -5,6 +5,7 @@ add_executable(Editor
     Panels/SceneHierarchyPanel.h Panels/SceneHierarchyPanel.cpp
     Panels/InspectorPanel.h Panels/InspectorPanel.cpp
     Panels/ViewportPanel.h Panels/ViewportPanel.cpp
+	ExampleScene.h
 )
 
 target_link_libraries(

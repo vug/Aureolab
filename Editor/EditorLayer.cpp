@@ -1,5 +1,7 @@
 #include "EditorLayer.h"
 
+#include "ExampleScene.h"
+
 #include "Core/GraphicsContext.h"
 #include "Renderer/GraphicsAPI.h"
 #include "Core/Math.h"
@@ -23,28 +25,7 @@ void EditorLayer::OnAttach() {
 	selectionFbo = FrameBuffer::Create(100, 100, FrameBuffer::TextureFormat::RED_INTEGER);
 	camera = new EditorCamera(45, 1.0f, 0.01f, 100); // aspect = 1.0f will be recomputed
 
-	// Hard-coded example scene
-	using ObjectData = struct {
-		std::string name;
-		glm::vec3 pos;
-		std::string meshFilePath;
-		MeshRendererComponent::Visualization viz;
-	};
-	std::vector<ObjectData> sceneData = {
-		{ "monkey1", { 0.75, 0.5, 0.0 }, "assets/models/suzanne_smooth.obj", MeshRendererComponent::Visualization::Normal, },
-		{ "monkey2", { -0.5, -0.1, 0.0 }, "assets/models/suzanne.obj", MeshRendererComponent::Visualization::UV, },
-		{ "torus", { 0.1, -0.4, 0.7 }, "assets/models/torus_smooth.obj", MeshRendererComponent::Visualization::Depth, },
-	};
-	for (ObjectData& obj : sceneData) {
-		auto ent = scene.CreateEntity(obj.name);
-		auto& transform = ent.get<TransformComponent>();
-		transform.translation = obj.pos;
-		transform.rotation = obj.pos;
-		transform.scale = { 0.4, 0.4, 0.4 };
-		ent.emplace<MeshComponent>(obj.meshFilePath);
-		ent.emplace<MeshRendererComponent>(obj.viz);
-	}
-	//scene.LoadFromFile("assets/scenes/first.scene");
+	ExampleScene::PopulateScene(scene);
 }
 
 
