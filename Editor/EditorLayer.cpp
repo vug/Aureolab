@@ -92,18 +92,29 @@ void EditorLayer::OnImGuiRender() {
 	inspectorPanel.OnImGuiRender(); // Right column
 
 	ImGui::Begin("Stats");
-	ImGui::Text("Stats:\n"
-		"mainViewportSize: (%.1f, %.1f)\n"
-		"",
-		viewport->Size.x, viewport->Size.y
-	);
+	if (ImGui::CollapsingHeader("Global Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+		static bool shouldCullFaces = false;
+		if (ImGui::Checkbox("Face Culling", &shouldCullFaces)) {
+			if (shouldCullFaces) { GraphicsAPI::Get()->Enable(GraphicsAbility::FaceCulling); }
+			else { GraphicsAPI::Get()->Disable(GraphicsAbility::FaceCulling); }
+		}
 
-	if (ImGui::CollapsingHeader("FPS", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::PlotLines("", frameRates.data(), (int)frameRates.size());
-		const auto [minIt, maxIt] = std::minmax_element(frameRates.begin(), frameRates.end());
-		ImGui::Text("[%.1f %.1f]", *minIt, *maxIt);
-		static bool isVSync = false;
-		if (ImGui::Checkbox("VSync", &isVSync)) { GraphicsContext::Get()->SetVSync(isVSync); }
+		if (shouldCullFaces) {
+			static CullFace cullFace = CullFace::Back;
+			int chosen_index = (int)cullFace;
+			if (ImGui::BeginCombo("Cull Face", CullFaceNames[chosen_index], ImGuiComboFlags_None)) {
+				for (int ix = 0; ix < IM_ARRAYSIZE(CullFaceNames); ix++) {
+					const bool is_selected = (chosen_index == ix);
+					if (ImGui::Selectable(CullFaceNames[ix], is_selected)) {
+						cullFace = (CullFace)ix;
+						GraphicsAPI::Get()->SetCullFace(cullFace);
+					}
+					// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+					if (is_selected) ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+		}
 	}
 
 	if (ImGui::CollapsingHeader("Editor Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -117,10 +128,19 @@ void EditorLayer::OnImGuiRender() {
 	}
 
 	ImGui::Separator();
+	if (ImGui::CollapsingHeader("FPS", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::PlotLines("", frameRates.data(), (int)frameRates.size());
+		const auto [minIt, maxIt] = std::minmax_element(frameRates.begin(), frameRates.end());
+		ImGui::Text("[%.1f %.1f]", *minIt, *maxIt);
+		static bool isVSync = false;
+		if (ImGui::Checkbox("VSync", &isVSync)) { GraphicsContext::Get()->SetVSync(isVSync); }
+	}
+
+	ImGui::Separator();
 	static bool shouldShowDemo = false;
 	ImGui::Checkbox("Show Demo Window", &shouldShowDemo);
 	ImGui::End();
-
 	if (shouldShowDemo) ImGui::ShowDemoWindow();
+	ImGui::Text("mainViewportSize: (%.1f, %.1f)", viewport->Size.x, viewport->Size.y);
 }
 

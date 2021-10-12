@@ -17,6 +17,8 @@ public:
 
 	virtual void SetDefaultPointSize(float diameter) override;
 	virtual void SetBlendingFunction(BlendingFactor src, BlendingFactor dst) override;
+	
+	virtual void SetCullFace(CullFace cullFace) override;
 
 	virtual void DrawIndexedTriangles(const VertexArray& vertexArray, unsigned int indexCount = 0) override;
 	virtual void DrawIndexedPoints(const VertexArray& vertexArray, unsigned int indexCount = 0) override;

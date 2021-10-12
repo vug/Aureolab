@@ -36,6 +36,20 @@ GLenum BlendingFactorAL2GL(BlendingFactor bf) {
 	}
 }
 
+GLenum cullFaceAL2GL(CullFace cf) {
+	switch (cf) {
+	case CullFace::Back:
+		return GL_BACK;
+	case CullFace::Front:
+		return GL_FRONT;
+	case CullFace::FrontAndBack:
+		return GL_FRONT_AND_BACK;
+	default:
+		assert(false); // unknown BlendingFactor
+		return -1;
+	}
+}
+
 void OpenGLGraphicsAPI::SetClearColor(const glm::vec4& color) {
 	glClearColor(color.r, color.b, color.g, color.a);
 }
@@ -76,6 +90,11 @@ void OpenGLGraphicsAPI::SetBlendingFunction(BlendingFactor src, BlendingFactor d
 	GLenum srcEnum = BlendingFactorAL2GL(src);
 	GLenum dstEnum = BlendingFactorAL2GL(dst);
 	glBlendFunc(srcEnum, dstEnum);
+}
+
+void OpenGLGraphicsAPI::SetCullFace(CullFace cullFace) {
+	GLenum glEnum = cullFaceAL2GL(cullFace);
+	glCullFace(glEnum);
 }
 
 void OpenGLGraphicsAPI::DrawIndexedTriangles(const VertexArray& vertexArray, unsigned int indexCount) {
