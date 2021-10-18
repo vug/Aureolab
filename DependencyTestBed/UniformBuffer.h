@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace StartingExample {
+namespace UniformBuffer {
     static const char* vertex_shader_text =
         "#version 460 core\n"
         "uniform mat4 MVP;\n"
@@ -36,16 +36,12 @@ namespace StartingExample {
         glm::vec3 color = {};
     };
 
-    GLint MakeQuad() {
-        return 1;
-    }
-
-	int Main() {
-		auto LOGGER = Utils::Log::CreateLogger("UBOs");
+    int Main() {
+        auto LOGGER = Utils::Log::CreateLogger("UBOs");
 
         Utils::GL::InitGLFWLoadGLFunctions();
         GLFWwindow* window = glfwGetCurrentContext();
-		
+
         auto shader = Utils::GL::MakeShaderProgram(vertex_shader_text, fragment_shader_text);
         GLuint uMVPLocation;
         uMVPLocation = glGetUniformLocation(shader, "MVP");
@@ -85,7 +81,7 @@ namespace StartingExample {
         glEnableVertexAttribArray(vColLocation);
 
         Utils::ImGUI::Init(window, false);
-        glClearColor(0.1, 0.1, 0.1, 1.0);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         while (!glfwWindowShouldClose(window)) {
             int width, height;
             glfwGetFramebufferSize(window, &width, &height);
@@ -112,9 +108,12 @@ namespace StartingExample {
         }
 
         glDeleteProgram(shader);
+        glDeleteVertexArrays(1, &vao);
+        glDeleteBuffers(1, &vbo);
+        glDeleteBuffers(1, &ebo);
         Utils::ImGUI::Shutdown();
         glfwDestroyWindow(window);
         glfwTerminate();
         return 0;
-	}
+    }
 }
