@@ -291,4 +291,13 @@ namespace Utils {
     }
 }
 
+#include <numbers>
+
+namespace Utils {
+    namespace Math {
+        static const float PI = (float)std::numbers::pi;
+        static const float TAU = (float)(2.0f * std::numbers::pi);
+    }
+}
+
 

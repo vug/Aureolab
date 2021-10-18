@@ -3,6 +3,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <algorithm>
+#include <vector>
+
 namespace UniformBuffer {
     static const char* vertex_shader_text =
         "#version 460 core\n"
@@ -18,21 +21,30 @@ namespace UniformBuffer {
 
     static const char* fragment_shader_text =
         "#version 460 core\n"
-        "uniform vec2 uLocation;\n"
-        "uniform float uRadius;\n"
+        "#define MAX_DISKS 10\n"
+        "uniform int uNumDisks\n;"
+        "uniform vec2 uLocations[MAX_DISKS];\n"
+        "uniform float uRadii[MAX_DISKS];\n"
         "in vec2 uv;\n"
         "out vec4 outColor;\n"
         "void main()\n"
         "{\n"
         "   vec2 p = (uv - 0.5) * 2.0;\n"
-        "   float r = length(p - uLocation);\n"
-        "   float disk = 1.0 - smoothstep(uRadius - 0.005, uRadius, r);\n"
-        "   outColor = vec4(vec3(disk), 1.0);\n"
+        "   outColor = vec4(vec3(0.0), 1.0);\n"
+        "   for (int i = 0; i < uNumDisks; i++) {\n"
+        "       float r = length(p - uLocations[i]);\n"
+        "       float disk = 1.0 - smoothstep(uRadii[i] - 0.005, uRadii[i], r);\n"
+        "       outColor += vec4(vec3(disk), 1.0);\n"
+        "   }\n"
         "}\n";
 
     struct Vertex {
         glm::vec3 position = {};
         glm::vec2 uv = {};
+    };
+    struct Disk {
+        glm::vec2 location;
+        float radius;
     };
 
     int Main() {
@@ -42,11 +54,14 @@ namespace UniformBuffer {
         GLFWwindow* window = glfwGetCurrentContext();
 
         auto shader = Utils::GL::MakeShaderProgram(vertex_shader_text, fragment_shader_text);
-        GLuint uMVPLocation, uLocationLocation, uRadiusLocation;
+        GLuint uMVPLocation;
         uMVPLocation = glGetUniformLocation(shader, "uMVP");
-        uLocationLocation = glGetUniformLocation(shader, "uLocation");
-        uRadiusLocation = glGetUniformLocation(shader, "uRadius");
-        GLuint vPosLocation, vUvLocation, vColLocation;
+
+        GLuint uNumDisksLocation, uLocationLocation, uRadiusLocation;
+        uNumDisksLocation = glGetUniformLocation(shader, "uNumDisks");
+        uLocationLocation = glGetUniformLocation(shader, "uLocations");
+        uRadiusLocation = glGetUniformLocation(shader, "uRadii");
+        GLuint vPosLocation, vUvLocation;
         vPosLocation = glGetAttribLocation(shader, "vPos");
         vUvLocation = glGetAttribLocation(shader, "vUV");
 
@@ -98,8 +113,21 @@ namespace UniformBuffer {
             glUseProgram(shader);
             glm::mat4 uMVP = glm::mat4(1.0);
             glUniformMatrix4fv(uMVPLocation, 1, GL_FALSE, glm::value_ptr(uMVP));
-            glUniform2f(uLocationLocation, 0.f, 0.f);
-            glUniform1f(uRadiusLocation, 1.0);
+            int uNumDisks = 6;
+            glUniform1i(uNumDisksLocation, uNumDisks);
+            std::vector<Disk> disks;
+            for (int i = 0; i < uNumDisks; i++) {
+                float angle = i * Utils::Math::TAU / uNumDisks;
+                disks.emplace_back(Disk { { 0.5f * cosf(angle), 0.5f * sinf(angle) }, 0.1f * (float)i / uNumDisks + 0.01f });
+            }
+            std::vector<glm::vec2> locations;
+            std::transform(disks.begin(), disks.end(),
+                std::back_inserter(locations), [](Disk d) -> glm::vec2 { return d.location; });
+            glUniform2fv(uLocationLocation, locations.size() * 2, glm::value_ptr(locations.data()[0]));
+            std::vector<float> radii;
+            std::transform(disks.begin(), disks.end(),
+                std::back_inserter(radii), [](Disk d) -> float { return d.radius; });
+            glUniform1fv(uRadiusLocation, radii.size(), radii.data());
             glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(unsigned int), GL_UNSIGNED_INT, 0);
 
             Utils::ImGUI::Render();
