@@ -3,6 +3,8 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
+#include <vector>
+
 namespace Utils {
     namespace Log {
         /*
@@ -72,6 +74,36 @@ namespace Utils {
         }
 
         static GLuint MakeShaderProgram(const char* vertex_shader_text, const char* fragment_shader_text) {
+            GLuint program = glCreateProgram();
+
+            GLuint vert = CompileShader(program, GL_VERTEX_SHADER, vertex_shader_text);
+            GLuint frag = CompileShader(program, GL_FRAGMENT_SHADER, fragment_shader_text);
+
+            glLinkProgram(program);
+            GLint isLinked = 0;
+            glGetProgramiv(program, GL_LINK_STATUS, (int*)&isLinked);
+            if (isLinked == GL_FALSE)
+            {
+                GLint maxLength = 0;
+                glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+                std::vector<GLchar> infoLog(maxLength);
+                glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+                glDeleteProgram(program);
+                glDeleteShader(vert);
+                glDeleteShader(frag);
+                UtilsLogger->critical("Shader link failure.\n{}", infoLog.data());
+                exit(1);
+            }
+
+            glDetachShader(program, vert);
+            glDetachShader(program, frag);
+            glDeleteShader(vert);
+            glDeleteShader(frag);
+
+            return program;
+        }
+
+        static GLuint MakeShaderProgram2(const char* vertex_shader_text, const char* fragment_shader_text) {
             GLuint vertex_shader, fragment_shader, program;
 
             vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -90,6 +122,25 @@ namespace Utils {
         }
 
     private:
+        static GLuint CompileShader(GLuint program, GLenum shaderType, const GLchar* source) {
+            GLuint shader = glCreateShader(shaderType);
+            glShaderSource(shader, 1, &source, 0);
+            glCompileShader(shader);
+            GLint isCompiled = 0;
+            glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
+
+            if (isCompiled == GL_FALSE) {
+                GLint maxLength = 0;
+                glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+                                std::vector<GLchar> infoLog(maxLength);
+                glGetShaderInfoLog(shader, maxLength, &maxLength, &infoLog[0]);
+                glDeleteShader(shader); // previously successful shaders won't be deleted
+                UtilsLogger->critical("Shader compilation failure.\n{}", infoLog.data());
+                exit(1);
+            }
+            glAttachShader(program, shader);
+            return shader;
+        }
         static inline const char* glMessageSourceToString(GLenum source) {
             switch (source) {
             case GL_DEBUG_SOURCE_API:
@@ -187,13 +238,13 @@ namespace Utils {
 
 namespace Utils {
     namespace ImGUI {
-        void Init(GLFWwindow* window) {
+        void Init(GLFWwindow* window, bool useDocking) {
             // ImGui Init
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
             ImGuiIO& io = ImGui::GetIO();
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
-            io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+            if (useDocking) { io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; } // Enable Docking
             io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
             // platform/renderer bindings
             ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -212,6 +263,11 @@ namespace Utils {
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
+
+            if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+                ImGuiViewport* viewport = ImGui::GetMainViewport();
+                ImGui::DockSpaceOverViewport(viewport, ImGuiDockNodeFlags_None);
+            }
         }
 
         void Render() {
