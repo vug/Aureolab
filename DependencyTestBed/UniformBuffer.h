@@ -22,9 +22,14 @@ namespace UniformBuffer {
     static const char* fragment_shader_text =
         "#version 460 core\n"
         "#define MAX_DISKS 10\n"
+        "struct Disk {\n"
+        "    vec2 location;\n"
+        "    float radius;\n"
+        " };\n"
+        "layout(binding = 0, std140) uniform DisksBlock {\n"
+        "    Disk disks[MAX_DISKS];\n"
+        "};\n"
         "uniform int uNumDisks\n;"
-        "uniform vec2 uLocations[MAX_DISKS];\n"
-        "uniform float uRadii[MAX_DISKS];\n"
         "in vec2 uv;\n"
         "out vec4 outColor;\n"
         "void main()\n"
@@ -32,8 +37,8 @@ namespace UniformBuffer {
         "   vec2 p = (uv - 0.5) * 2.0;\n"
         "   outColor = vec4(vec3(0.0), 1.0);\n"
         "   for (int i = 0; i < uNumDisks; i++) {\n"
-        "       float r = length(p - uLocations[i]);\n"
-        "       float disk = 1.0 - smoothstep(uRadii[i] - 0.005, uRadii[i], r);\n"
+        "       float r = length(p - disks[i].location);\n"
+        "       float disk = 1.0 - smoothstep(disks[i].radius - 0.005, disks[i].radius, r);\n"
         "       outColor += vec4(vec3(disk), 1.0);\n"
         "   }\n"
         "}\n";
@@ -44,7 +49,10 @@ namespace UniformBuffer {
     };
     struct Disk {
         glm::vec2 location;
-        float radius;
+        alignas(8) float radius;
+        // OR
+        //float radius;
+        //float _pad1;
     };
 
     int Main() {
@@ -57,10 +65,12 @@ namespace UniformBuffer {
         GLuint uMVPLocation;
         uMVPLocation = glGetUniformLocation(shader, "uMVP");
 
-        GLuint uNumDisksLocation, uLocationLocation, uRadiusLocation;
+        GLuint disksBlockIndex;
+        disksBlockIndex = glGetUniformBlockIndex(shader, "DisksBlock");
+        glUniformBlockBinding(shader, disksBlockIndex, 0);
+
+        GLuint uNumDisksLocation;
         uNumDisksLocation = glGetUniformLocation(shader, "uNumDisks");
-        uLocationLocation = glGetUniformLocation(shader, "uLocations");
-        uRadiusLocation = glGetUniformLocation(shader, "uRadii");
         GLuint vPosLocation, vUvLocation;
         vPosLocation = glGetAttribLocation(shader, "vPos");
         vUvLocation = glGetAttribLocation(shader, "vUV");
@@ -93,6 +103,13 @@ namespace UniformBuffer {
         glVertexAttribPointer(vUvLocation, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
         glEnableVertexAttribArray(vUvLocation);
 
+        int uNumDisks = 5;
+        GLuint ubo;
+        glGenBuffers(1, &ubo);
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+        glBufferData(GL_UNIFORM_BUFFER, uNumDisks * sizeof(Disk), NULL, GL_STATIC_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, disksBlockIndex, ubo);
+
         Utils::ImGUI::Init(window, false);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         while (!glfwWindowShouldClose(window)) {
@@ -113,21 +130,18 @@ namespace UniformBuffer {
             glUseProgram(shader);
             glm::mat4 uMVP = glm::mat4(1.0);
             glUniformMatrix4fv(uMVPLocation, 1, GL_FALSE, glm::value_ptr(uMVP));
-            int uNumDisks = 6;
             glUniform1i(uNumDisksLocation, uNumDisks);
             std::vector<Disk> disks;
             for (int i = 0; i < uNumDisks; i++) {
                 float angle = i * Utils::Math::TAU / uNumDisks;
                 disks.emplace_back(Disk { { 0.5f * cosf(angle), 0.5f * sinf(angle) }, 0.1f * (float)i / uNumDisks + 0.01f });
             }
-            std::vector<glm::vec2> locations;
-            std::transform(disks.begin(), disks.end(),
-                std::back_inserter(locations), [](Disk d) -> glm::vec2 { return d.location; });
-            glUniform2fv(uLocationLocation, locations.size() * 2, glm::value_ptr(locations.data()[0]));
-            std::vector<float> radii;
-            std::transform(disks.begin(), disks.end(),
-                std::back_inserter(radii), [](Disk d) -> float { return d.radius; });
-            glUniform1fv(uRadiusLocation, radii.size(), radii.data());
+            glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+            glBufferData(GL_UNIFORM_BUFFER, uNumDisks * sizeof(Disk), disks.data(), GL_DYNAMIC_DRAW);
+
+            //glBindVertexArray(vao);
+            //glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
             glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(unsigned int), GL_UNSIGNED_INT, 0);
 
             Utils::ImGUI::Render();
