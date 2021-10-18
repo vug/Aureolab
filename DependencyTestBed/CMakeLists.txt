@@ -1,7 +1,7 @@
 add_executable(DependencyTestBed 
-	DependencyTestBed.cpp
+	DependencyTestBed.cpp Utilities.h
 	ObjectSelection.cpp
-	UniformBuffers.cpp
+	StartingExample.cpp
 )
 
 target_link_libraries(
