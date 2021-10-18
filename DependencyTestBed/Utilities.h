@@ -55,22 +55,31 @@ namespace Utils {
             }
             glfwMakeContextCurrent(window);
             gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-            glfwSwapInterval(0);  // VSync {0: disabled, 1: enabled}
-            glEnable(GL_DEBUG_OUTPUT);
-            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-            glDebugMessageCallback(OpenGLDebugMessageCallback, nullptr);
-            // Ignore notifications
-            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
 
-            //GLint glContextFlags;
-            //glGetIntegerv(GL_CONTEXT_FLAGS, &glContextFlags);
-            //GL_CONTEXT_PROFILE_MASK;
+            glfwSwapInterval(0);  // VSync {0: disabled, 1: enabled}
+            GLint glContextFlags;
+            glGetIntegerv(GL_CONTEXT_FLAGS, &glContextFlags);
+#if defined(DEBUG) | defined(_DEBUG)
+            if (glContextFlags & GL_CONTEXT_FLAG_DEBUG_BIT) {
+                glEnable(GL_DEBUG_OUTPUT);
+                glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+                glDebugMessageCallback(OpenGLDebugMessageCallback, nullptr);
+                // Ignore notifications
+                glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
+                UtilsLogger->info("Debug for OpenGL turned on.");
+            }
+            else { UtilsLogger->info("Debug for OpenGL not supported.");  }
+#else
+            UtilsLogger->info("Debug for OpenGL NOT active.");
+#endif
+
+
             UtilsLogger->info("OpenGL Info (glGetString):");
             UtilsLogger->info("Renderer: {}", glGetString(GL_RENDERER));
             UtilsLogger->info("Vendor: {}", glGetString(GL_VENDOR));
             UtilsLogger->info("Version: {}", glGetString(GL_VERSION));
             UtilsLogger->info("GLSL Version: {}", glGetString(GL_SHADING_LANGUAGE_VERSION));
-            //UtilsLogger->info("GL_CONTEXT_FLAGS: {}", glContextFlags);
+            UtilsLogger->info("GL Context Flags: {}", glContextFlags);
         }
 
         static GLuint MakeShaderProgram(const char* vertex_shader_text, const char* fragment_shader_text) {
