@@ -6,34 +6,33 @@
 namespace UniformBuffer {
     static const char* vertex_shader_text =
         "#version 460 core\n"
-        "uniform mat4 MVP;\n"
+        "uniform mat4 uMVP;\n"
         "layout (location = 0) in vec3 vPos;\n"
         "layout (location = 1) in vec2 vUV;\n"
-        "layout (location = 2) in vec3 vCol;\n"
         "out vec2 uv;\n"
-        "out vec3 color;\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = MVP * vec4(vPos, 1.0);\n"
+        "   gl_Position = uMVP * vec4(vPos, 1.0);\n"
         "   uv = vUV;\n"
-        "   color = vCol;\n"
         "}\n";
 
     static const char* fragment_shader_text =
         "#version 460 core\n"
+        "uniform vec2 uLocation;\n"
+        "uniform float uRadius;\n"
         "in vec2 uv;\n"
-        "in vec3 color;\n"
         "out vec4 outColor;\n"
         "void main()\n"
         "{\n"
-        "   float checker = int(uv.x * 10) % 2 ^ int(uv.y * 10) % 2;\n"
-        "   outColor = vec4(checker * color, 1.0);\n"
+        "   vec2 p = (uv - 0.5) * 2.0;\n"
+        "   float r = length(p - uLocation);\n"
+        "   float disk = 1.0 - smoothstep(uRadius - 0.005, uRadius, r);\n"
+        "   outColor = vec4(vec3(disk), 1.0);\n"
         "}\n";
 
     struct Vertex {
         glm::vec3 position = {};
         glm::vec2 uv = {};
-        glm::vec3 color = {};
     };
 
     int Main() {
@@ -43,18 +42,19 @@ namespace UniformBuffer {
         GLFWwindow* window = glfwGetCurrentContext();
 
         auto shader = Utils::GL::MakeShaderProgram(vertex_shader_text, fragment_shader_text);
-        GLuint uMVPLocation;
-        uMVPLocation = glGetUniformLocation(shader, "MVP");
+        GLuint uMVPLocation, uLocationLocation, uRadiusLocation;
+        uMVPLocation = glGetUniformLocation(shader, "uMVP");
+        uLocationLocation = glGetUniformLocation(shader, "uLocation");
+        uRadiusLocation = glGetUniformLocation(shader, "uRadius");
         GLuint vPosLocation, vUvLocation, vColLocation;
         vPosLocation = glGetAttribLocation(shader, "vPos");
         vUvLocation = glGetAttribLocation(shader, "vUV");
-        vColLocation = glGetAttribLocation(shader, "vCol");
 
         Vertex vertices[] = {
-            { { -0.5, -0.5, 0.0 }, { 0.0, 0.0 }, { 0.9, 0.2, 0.1 } },
-            { { +0.5, -0.5, 0.0 }, { 1.0, 0.0 }, { 0.1, 0.9, 0.2 } },
-            { { -0.5, +0.5, 0.0 }, { 0.0, 1.0 }, { 0.2, 0.1, 0.9 } },
-            { { +0.5, +0.5, 0.0 }, { 1.0, 1.0 }, { 0.8, 0.8, 0.2 } },
+            { { -1.0, -1.0, 0.0 }, { 0.0, 0.0 } },
+            { { +1.0, -1.0, 0.0 }, { 1.0, 0.0 } },
+            { { -1.0, +1.0, 0.0 }, { 0.0, 1.0 } },
+            { { +1.0, +1.0, 0.0 }, { 1.0, 1.0 } },
         };
         unsigned int indices[] = {
             0, 1, 2,
@@ -77,8 +77,6 @@ namespace UniformBuffer {
         glEnableVertexAttribArray(vPosLocation);
         glVertexAttribPointer(vUvLocation, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
         glEnableVertexAttribArray(vUvLocation);
-        glVertexAttribPointer(vColLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
-        glEnableVertexAttribArray(vColLocation);
 
         Utils::ImGUI::Init(window, false);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -100,6 +98,8 @@ namespace UniformBuffer {
             glUseProgram(shader);
             glm::mat4 uMVP = glm::mat4(1.0);
             glUniformMatrix4fv(uMVPLocation, 1, GL_FALSE, glm::value_ptr(uMVP));
+            glUniform2f(uLocationLocation, 0.f, 0.f);
+            glUniform1f(uRadiusLocation, 1.0);
             glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(unsigned int), GL_UNSIGNED_INT, 0);
 
             Utils::ImGUI::Render();
