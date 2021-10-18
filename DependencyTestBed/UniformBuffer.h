@@ -61,19 +61,21 @@ namespace UniformBuffer {
         Utils::GL::InitGLFWLoadGLFunctions();
         GLFWwindow* window = glfwGetCurrentContext();
 
-        auto shader = Utils::GL::MakeShaderProgram(vertex_shader_text, fragment_shader_text);
+        auto shader1 = Utils::GL::MakeShaderProgram(vertex_shader_text, fragment_shader_text);
         GLuint uMVPLocation;
-        uMVPLocation = glGetUniformLocation(shader, "uMVP");
+        uMVPLocation = glGetUniformLocation(shader1, "uMVP");
 
-        GLuint disksBlockIndex;
-        disksBlockIndex = glGetUniformBlockIndex(shader, "DisksBlock");
-        glUniformBlockBinding(shader, disksBlockIndex, 0);
+        GLuint disksBlockIndexForShader1;
+        disksBlockIndexForShader1 = glGetUniformBlockIndex(shader1, "DisksBlock");
+        GLuint disksBindingPoint = 0; // Binding point values are stored by the app manually. Multiple shaders can bind to this point.
+        glUniformBlockBinding(shader1, disksBlockIndexForShader1, disksBindingPoint);
 
         GLuint uNumDisksLocation;
-        uNumDisksLocation = glGetUniformLocation(shader, "uNumDisks");
+        uNumDisksLocation = glGetUniformLocation(shader1, "uNumDisks");
+
         GLuint vPosLocation, vUvLocation;
-        vPosLocation = glGetAttribLocation(shader, "vPos");
-        vUvLocation = glGetAttribLocation(shader, "vUV");
+        vPosLocation = glGetAttribLocation(shader1, "vPos");
+        vUvLocation = glGetAttribLocation(shader1, "vUV");
 
         Vertex vertices[] = {
             { { -1.0, -1.0, 0.0 }, { 0.0, 0.0 } },
@@ -108,7 +110,7 @@ namespace UniformBuffer {
         glGenBuffers(1, &ubo);
         glBindBuffer(GL_UNIFORM_BUFFER, ubo);
         glBufferData(GL_UNIFORM_BUFFER, uNumDisks * sizeof(Disk), NULL, GL_STATIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, disksBlockIndex, ubo);
+        glBindBufferBase(GL_UNIFORM_BUFFER, disksBlockIndexForShader1, ubo);
 
         Utils::ImGUI::Init(window, false);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -127,13 +129,13 @@ namespace UniformBuffer {
             }
             ImGui::End();
 
-            glUseProgram(shader);
+            glUseProgram(shader1);
             glm::mat4 uMVP = glm::mat4(1.0);
             glUniformMatrix4fv(uMVPLocation, 1, GL_FALSE, glm::value_ptr(uMVP));
             glUniform1i(uNumDisksLocation, uNumDisks);
             std::vector<Disk> disks;
             for (int i = 0; i < uNumDisks; i++) {
-                float angle = i * Utils::Math::TAU / uNumDisks;
+                float angle = i * Utils::Math::TAU / uNumDisks + glfwGetTime();
                 disks.emplace_back(Disk { { 0.5f * cosf(angle), 0.5f * sinf(angle) }, 0.1f * (float)i / uNumDisks + 0.01f });
             }
             glBindBuffer(GL_UNIFORM_BUFFER, ubo);
@@ -149,7 +151,7 @@ namespace UniformBuffer {
             glfwPollEvents();
         }
 
-        glDeleteProgram(shader);
+        glDeleteProgram(shader1);
         glDeleteVertexArrays(1, &vao);
         glDeleteBuffers(1, &vbo);
         glDeleteBuffers(1, &ebo);
