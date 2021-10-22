@@ -14,6 +14,7 @@ public:
 
 	virtual void Bind() const override;
 	virtual void Unbind() const override;
+	virtual unsigned int GetRendererID() const override { return rendererID; };
 
 	virtual unsigned int GetAttribLocation(const std::string& name) override;
 
@@ -34,7 +35,7 @@ public:
 
 	static std::string ReadFile(const std::string& filepath);
 private:
-	int rendererID = -1;
+	unsigned int rendererID = -1;
 	std::string filepath;
 	std::unordered_map<GLenum, std::string> PreProcess(const std::string& source);
 	void Compile(std::unordered_map<GLenum, std::string>& shaderSources);

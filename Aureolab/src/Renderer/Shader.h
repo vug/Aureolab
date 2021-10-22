@@ -13,6 +13,7 @@ public:
 
 	virtual void Bind() const = 0;
 	virtual void Unbind() const = 0;
+	virtual unsigned int GetRendererID() const = 0;
 
 	virtual unsigned int GetAttribLocation(const std::string& name) = 0;
 

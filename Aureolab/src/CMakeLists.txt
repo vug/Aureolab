@@ -20,6 +20,8 @@
 	Platform/OpenGL/OpenGLFrameBuffer.h Platform/OpenGL/OpenGLFrameBuffer.cpp
     Renderer/Shader.h Renderer/Shader.cpp
 	Platform/OpenGL/OpenGLShader.h Platform/OpenGL/OpenGLShader.cpp
+	Renderer/UniformBuffer.h Renderer/UniformBuffer.cpp
+	Platform/OpenGL/OpenGLUniformBuffer.h Platform/OpenGL/OpenGLUniformBuffer.cpp
     Renderer/GraphicsAPI.h Renderer/GraphicsAPI.cpp
 	Platform/OpenGL/OpenGLGraphicsAPI.h Platform/OpenGL/OpenGLGraphicsAPI.cpp
 	Renderer/Renderer.h Renderer/Renderer.cpp
