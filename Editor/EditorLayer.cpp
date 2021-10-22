@@ -35,8 +35,9 @@ void EditorLayer::OnUpdate(float ts) {
 	frameRates[frameRates.size() - 1] = 1.0f / ts;
 
 	camera->OnUpdate(ts);
-	const glm::mat4& projection = camera->GetProjection();
-	const glm::mat4& view = camera->GetViewMatrix();
+	ViewMatrices viewMatrices;
+	viewMatrices.projection = camera->GetProjection();
+	viewMatrices.view = camera->GetViewMatrix();
 
 	GraphicsAPI::Get()->Clear();
 
@@ -47,11 +48,11 @@ void EditorLayer::OnUpdate(float ts) {
 	shader->Bind();
 	auto query = scene.View<TransformComponent, MeshComponent, MeshRendererComponent>();
 	for (const auto& [ent, transform, mesh, meshRenderer] : query.each()) {
-		Renderer::RenderMesh(shader, view, projection, transform, mesh, meshRenderer);
+		Renderer::RenderMesh(shader, viewMatrices, transform, mesh, meshRenderer);
 	}
 	auto query2 = scene.View<TransformComponent, ProceduralMeshComponent, MeshRendererComponent>();
 	for (const auto& [ent, transform, pMesh, meshRenderer] : query2.each()) {
-		Renderer::RenderProceduralMesh(shader, view, projection, transform, pMesh, meshRenderer);
+		Renderer::RenderProceduralMesh(shader, viewMatrices, transform, pMesh, meshRenderer);
 	}
 	shader->Unbind();
 	viewportFbo->Unbind();
@@ -61,10 +62,10 @@ void EditorLayer::OnUpdate(float ts) {
 	selectionFbo->Clear(-1); // value when not hovering on any object
 	selectionShader->Bind();
 	for (const auto& [ent, transform, mesh, meshRenderer] : query.each()) {
-		Renderer::RenderVertexArrayEntityID(ent, selectionShader, view, projection, transform, mesh.vao, meshRenderer);
+		Renderer::RenderVertexArrayEntityID(ent, selectionShader, viewMatrices, transform, mesh.vao, meshRenderer);
 	}
 	for (const auto& [ent, transform, pMesh, meshRenderer] : query2.each()) {
-		Renderer::RenderVertexArrayEntityID(ent, selectionShader, view, projection, transform, pMesh.vao, meshRenderer);
+		Renderer::RenderVertexArrayEntityID(ent, selectionShader, viewMatrices, transform, pMesh.vao, meshRenderer);
 	}
 	hoveredEntityId = -3; // value when queried coordinates are not inside the selectionFbo
 	selectionFbo->ReadPixel(hoveredEntityId, mouseX, mouseY);
