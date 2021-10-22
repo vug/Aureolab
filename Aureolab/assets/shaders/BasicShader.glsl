@@ -1,6 +1,11 @@
 #type vertex
 #version 460 core
 
+layout(binding = 0, std140) uniform ViewMatrices {
+	mat4 u_View;
+	mat4 u_Projection;
+};
+
 uniform mat4 u_ModelViewPerspective;
 uniform mat4 u_ModelView;
 uniform mat4 u_Model;
@@ -35,14 +40,18 @@ void main() {
 #type fragment
 #version 460 core
 
-uniform mat4 u_View;
+layout(binding = 0, std140) uniform ViewMatrices {
+	mat4 u_View;
+	mat4 u_Projection;
+};
+
 uniform int u_RenderType = 1; // { SolidColor, Normal, UV, Depth }
 uniform vec4 u_SolidColor = vec4(1.0, 1.0, 1.0, 1.0);
 uniform float u_DepthMax = 5.0;
 uniform float u_DepthPow = 2.0;
 uniform vec3 u_LightPosition = vec3(0.0, 10.0, 0.0);
 uniform vec3 u_LightColor = vec3(1.0, 1.0, 1.0);
-uniform vec3 u_LightAttenuation = vec3(0.0, 0.0, 1.0);
+uniform vec3 u_LightAttenuation = vec3(0.0, 1.0, 0.0);
 uniform vec4 u_DiffuseColor = vec4(1.0, 1.0, 1.0, 1.0);
 uniform vec3 u_HemisphereLightPosition = vec3(0.0, 0.0, 0.0);
 uniform vec3 u_SkyColor = vec3(0.0, 0.0, 1.0);

@@ -8,6 +8,7 @@
 #include "Core/Layer.h"
 #include "Events/Event.h"
 #include "Renderer/Shader.h"
+#include "Renderer/UniformBuffer.h"
 #include "Renderer/FrameBuffer.h"
 #include "Renderer/EditorCamera.h"
 #include "Scene/Scene.h"
@@ -28,6 +29,7 @@ public:
 private:
 	Shader* shader = nullptr;
 	Shader* selectionShader = nullptr;
+	UniformBuffer* viewUbo = nullptr;
 	FrameBuffer* viewportFbo = nullptr;
 	FrameBuffer* selectionFbo = nullptr;
 	int mouseX, mouseY;

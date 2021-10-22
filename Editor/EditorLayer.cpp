@@ -19,9 +19,10 @@ void EditorLayer::OnAttach() {
 	GraphicsAPI::Get()->Enable(GraphicsAbility::DepthTest);
 	GraphicsAPI::Get()->Enable(GraphicsAbility::FaceCulling);
 
-
 	selectionShader = Shader::Create("assets/shaders/SelectionShader.glsl");
 	shader = Shader::Create("assets/shaders/BasicShader.glsl");
+	viewUbo = UniformBuffer::Create("ViewMatrices", sizeof(ViewMatrices));
+	viewUbo->BlockBind(shader);
 	viewportFbo = FrameBuffer::Create(100, 100, FrameBuffer::TextureFormat::RGBA8); // arguments does not matter since FBO's going to be resized
 	selectionFbo = FrameBuffer::Create(100, 100, FrameBuffer::TextureFormat::RED_INTEGER);
 	camera = new EditorCamera(45, 1.0f, 0.01f, 100); // aspect = 1.0f will be recomputed
@@ -38,6 +39,7 @@ void EditorLayer::OnUpdate(float ts) {
 	ViewMatrices viewMatrices;
 	viewMatrices.projection = camera->GetProjection();
 	viewMatrices.view = camera->GetViewMatrix();
+	viewUbo->UploadData((const void*)&viewMatrices);
 
 	GraphicsAPI::Get()->Clear();
 
