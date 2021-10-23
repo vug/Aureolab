@@ -156,4 +156,4 @@ struct LightComponent {
 	void serialize(Archive& ar) { ar(CEREAL_NVP(type), CEREAL_NVP(intensity), CEREAL_NVP(color), CEREAL_NVP(pointParams)); }
 };
 
-#define ALL_COMPONENTS TagComponent, TransformComponent, MeshComponent, ProceduralMeshComponent, MeshRendererComponent
+#define ALL_COMPONENTS TagComponent, TransformComponent, MeshComponent, ProceduralMeshComponent, MeshRendererComponent, LightComponent
