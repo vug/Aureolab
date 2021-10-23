@@ -158,15 +158,9 @@ void InspectorPanel::OnImGuiRender() {
 
 		if (ImGui::Button("Add Component")) { ImGui::OpenPopup("AddComponent"); }
 		if (ImGui::BeginPopup("AddComponent")) {
-			if (!selectedObject.any_of<MeshComponent>() && ImGui::MenuItem("Mesh Component")) {
-				selectedObject.emplace<MeshComponent>();
-			}
-			if (!selectedObject.any_of<ProceduralMeshComponent>() && ImGui::MenuItem("Procedural Mesh Component")) {
-				selectedObject.emplace<ProceduralMeshComponent>();
-			}
-			if (!selectedObject.any_of<MeshRendererComponent>() &&  ImGui::MenuItem("Mesh Renderer Component")) {
-				selectedObject.emplace<MeshRendererComponent>();
-			}
+			AddComponentMenuItem<MeshComponent>("Mesh Component");
+			AddComponentMenuItem<ProceduralMeshComponent>("Procedural Mesh Component");
+			AddComponentMenuItem<MeshRendererComponent>("Mesh Renderer Component");
 			ImGui::EndPopup();
 		}
 	}
