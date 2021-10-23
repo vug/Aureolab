@@ -151,6 +151,30 @@ void InspectorPanel::OnImGuiRender() {
 					}
 				}
 			}
+			else if (info == entt::type_id<LightComponent>()) {
+				if (ImGui::CollapsingHeader("Procedural Mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
+					auto& light = selectedObject.get<LightComponent>();
+					int chosen_index = (int)light.type;
+					if (ImGui::BeginCombo("Type", LightComponent::typeNames[chosen_index], ImGuiComboFlags_None)) {
+						for (int ix = 0; ix < IM_ARRAYSIZE(LightComponent::typeNames); ix++) {
+							const bool is_selected = (chosen_index == ix);
+							if (ImGui::Selectable(LightComponent::typeNames[ix], is_selected)) {
+								light.type = (LightComponent::Type)ix;
+							}
+							// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+							if (is_selected) ImGui::SetItemDefaultFocus();
+						}
+						ImGui::EndCombo();
+					}
+					ImGui::ColorEdit3("Color", glm::value_ptr(light.color));
+					ImGui::DragFloat("Intensity", &light.intensity, 1.0f, 0.0f, 100.0f);
+					switch (light.type) {
+					case LightComponent::Type::Point:
+						ImGui::DragFloat3("Attenuation", glm::value_ptr(light.pointParams.attenuation), 1.0f, 0.0f, 10.0f);
+						break;
+					}
+				}
+			}
 			else if (info != entt::type_id<TagComponent>()) { // default
 				ImGui::Text("Component '%s' has no UI yet", info.name().data());
 			}
@@ -161,6 +185,7 @@ void InspectorPanel::OnImGuiRender() {
 			AddComponentMenuItem<MeshComponent>("Mesh Component");
 			AddComponentMenuItem<ProceduralMeshComponent>("Procedural Mesh Component");
 			AddComponentMenuItem<MeshRendererComponent>("Mesh Renderer Component");
+			AddComponentMenuItem<LightComponent>("Light Component");
 			ImGui::EndPopup();
 		}
 	}
