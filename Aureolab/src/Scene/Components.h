@@ -137,4 +137,23 @@ struct MeshRendererComponent {
 	void serialize(Archive& ar) { ar(CEREAL_NVP(visualization), CEREAL_NVP(depthParams), CEREAL_NVP(solidColor)); }
 };
 
+struct LightComponent {
+	enum class Type { Point, };
+	static inline const char* typeNames[] = { "Point", }; // for GUI
+	struct Point {
+		glm::vec3 attenuation = { 0.0f, 1.0f, 0.0f };
+
+		template <class Archive>
+		void serialize(Archive& ar) { ar(CEREAL_NVP(attenuation)); }
+	};
+
+	Type type = Type::Point;
+	float intensity = 1.0f;
+	glm::vec3 color = { 1.0f, 1.0f, 1.0f };
+	Point pointParams;
+
+	template <class Archive>
+	void serialize(Archive& ar) { ar(CEREAL_NVP(type), CEREAL_NVP(intensity), CEREAL_NVP(color), CEREAL_NVP(pointParams)); }
+};
+
 #define ALL_COMPONENTS TagComponent, TransformComponent, MeshComponent, ProceduralMeshComponent, MeshRendererComponent
