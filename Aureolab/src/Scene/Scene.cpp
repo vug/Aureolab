@@ -39,14 +39,14 @@ void Scene::New() {
 void Scene::SaveToFile(const std::string& filepath) {
 	std::ofstream file(filepath);
 	cereal::JSONOutputArchive output{ file };
-	entt::snapshot{ registry }.entities(output).component<TagComponent, TransformComponent, MeshComponent, ProceduralMeshComponent, MeshRendererComponent>(output);
+	entt::snapshot{ registry }.entities(output).component<ALL_COMPONENTS>(output);
 }
 
 void Scene::LoadFromFile(const std::string& filepath) {
 	registry.clear();
 	std::ifstream file(filepath);
 	cereal::JSONInputArchive input{ file };
-	entt::snapshot_loader{ registry }.entities(input).component<TagComponent, TransformComponent, MeshComponent, ProceduralMeshComponent, MeshRendererComponent>(input).orphans();
+	entt::snapshot_loader{ registry }.entities(input).component<ALL_COMPONENTS>(input).orphans();
 }
 
 void Scene::SaveToMemory() {
@@ -55,13 +55,13 @@ void Scene::SaveToMemory() {
 	storage.clear();
 
 	cereal::JSONOutputArchive outputMemory{ storage };
-	entt::snapshot{ registry }.entities(outputMemory).component<TagComponent, TransformComponent, MeshComponent, ProceduralMeshComponent, MeshRendererComponent>(outputMemory);
+	entt::snapshot{ registry }.entities(outputMemory).component<ALL_COMPONENTS>(outputMemory);
 }
 
 void Scene::LoadFromMemory() {
 	cereal::JSONInputArchive input{ storage };
 	registry.clear();
-	entt::snapshot_loader{ registry }.entities(input).component<TagComponent, TransformComponent, MeshComponent, ProceduralMeshComponent, MeshRendererComponent>(input).orphans();
+	entt::snapshot_loader{ registry }.entities(input).component<ALL_COMPONENTS>(input).orphans();
 	// rewind storage
 	storage.clear();
 	storage.seekg(0, std::ios_base::beg);

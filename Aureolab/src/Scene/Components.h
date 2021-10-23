@@ -136,3 +136,5 @@ struct MeshRendererComponent {
 	template <class Archive>
 	void serialize(Archive& ar) { ar(CEREAL_NVP(visualization), CEREAL_NVP(depthParams), CEREAL_NVP(solidColor)); }
 };
+
+#define ALL_COMPONENTS TagComponent, TransformComponent, MeshComponent, ProceduralMeshComponent, MeshRendererComponent
