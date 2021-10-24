@@ -42,6 +42,8 @@ void EditorLayer::OnUpdate(float ts) {
 	ViewMatrices viewMatrices;
 	viewMatrices.projection = camera->GetProjection();
 	viewMatrices.view = camera->GetViewMatrix();
+	const glm::vec3& camPos = camera->GetPosition();
+	viewMatrices.viewPosition = { camPos.x, camPos.y, camPos.z, 1.0f };
 	viewUbo->UploadData((const void*)&viewMatrices);
 
 	// Lights System
@@ -51,7 +53,7 @@ void EditorLayer::OnUpdate(float ts) {
 	for (const auto& [ent, transform, lightC] : queryLights.each()) {
 		Light light;
 		light.type = (int)lightC.type;
-		light.position = { transform.translation.x, transform.translation.y, transform.translation.z, 0.0f };
+		light.position = { transform.translation.x, transform.translation.y, transform.translation.z, 1.0f };
 		light.color = { lightC.color.x, lightC.color.y, lightC.color.z, 0.0f };
 		light.intensity = lightC.intensity;
 		light.pointParams.attenuation = { lightC.pointParams.attenuation.x, lightC.pointParams.attenuation.y, lightC.pointParams.attenuation.z, 0.0f };

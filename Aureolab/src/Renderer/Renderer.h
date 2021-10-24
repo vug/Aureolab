@@ -9,6 +9,7 @@
 struct ViewMatrices {
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4 projection = glm::mat4(1.0f);
+	glm::vec4 viewPosition;
 };
 
 #define MAX_LIGHTS 10

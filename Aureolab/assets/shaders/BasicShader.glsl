@@ -4,6 +4,7 @@
 layout(std140) uniform ViewMatrices {
 	mat4 u_View;
 	mat4 u_Projection;
+    vec4 u_ViewPositionWorld;
 };
 
 uniform mat4 u_ModelViewPerspective;
@@ -45,6 +46,7 @@ void main() {
 layout(std140) uniform ViewMatrices {
 	mat4 u_View;
 	mat4 u_Projection;
+    vec4 u_ViewPositionWorld;
 };
 
 #define MAX_LIGHTS 10
@@ -110,6 +112,7 @@ void main() {
         break;
     case 7: // Lit
         vec3 diffuseLight = vec3(0.0f);
+        vec3 specularLight = vec3(0.0f);
         for (int i = 0; i < numLights; i++) {
             Light light = lights[i];
             if (light.type != 0) continue;
@@ -122,8 +125,14 @@ void main() {
             float attFactor = 1.0 / (att.x + att.y * lightDist + att.z * lightDist * lightDist);
             float diffuseVal = max(0.0, dot(normal, lightDir));
             diffuseLight += light.intensity * light.color.rgb * diffuseVal * attFactor;
+
+            float specularStrength = 0.5;
+            vec3 viewDir = normalize(u_ViewPositionWorld.xyz - positionWorld);
+            vec3 reflectDir = reflect(-lightDir, normal);  
+            float specularVal = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+            specularLight += specularStrength * light.color.rgb * specularVal;  
         }
-        vec3 rgb = u_ObjectColor.rgb * (ambientLight.rgb + diffuseLight);
+        vec3 rgb = u_ObjectColor.rgb * (ambientLight.rgb + diffuseLight + specularLight);
         outColor = vec4(rgb, u_ObjectColor.a);
         break;
     case 8: // Hemispherical Light
