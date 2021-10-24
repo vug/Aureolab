@@ -23,6 +23,8 @@ void EditorLayer::OnAttach() {
 	shader = Shader::Create("assets/shaders/BasicShader.glsl");
 	viewUbo = UniformBuffer::Create("ViewMatrices", sizeof(ViewMatrices));
 	viewUbo->BlockBind(shader);
+	lightsUbo = UniformBuffer::Create("PointLight", sizeof(PointLight));
+	lightsUbo->BlockBind(shader);
 	viewportFbo = FrameBuffer::Create(100, 100, FrameBuffer::TextureFormat::RGBA8); // arguments does not matter since FBO's going to be resized
 	selectionFbo = FrameBuffer::Create(100, 100, FrameBuffer::TextureFormat::RED_INTEGER);
 	camera = new EditorCamera(45, 1.0f, 0.01f, 100); // aspect = 1.0f will be recomputed
@@ -40,6 +42,15 @@ void EditorLayer::OnUpdate(float ts) {
 	viewMatrices.projection = camera->GetProjection();
 	viewMatrices.view = camera->GetViewMatrix();
 	viewUbo->UploadData((const void*)&viewMatrices);
+	auto queryLights = scene.View<TransformComponent, LightComponent>();
+	for (const auto& [ent, transform, light] : queryLights.each()) {
+		PointLight pl;
+		pl.u_LightPosition = transform.translation;
+		pl.u_LightColor = light.color;
+		pl.u_LightAttenuation = light.pointParams.attenuation;
+		lightsUbo->UploadData((const void*)&pl);
+		break;
+	}
 
 	GraphicsAPI::Get()->Clear();
 

@@ -48,5 +48,14 @@ public:
 		pmComp2.parameters.torus = { 0.333, 12, 0.166, 8 };
 		pmComp2.GenerateMesh();
 		procedural2.emplace<MeshRendererComponent>(MeshRendererComponent::Visualization::Checkers);
+
+		{
+			auto pointLight1 = scene.CreateEntity("PointLight1");
+			TransformComponent& transform = pointLight1.get<TransformComponent>();
+			transform.translation.y = 2.0f;
+			auto& light = pointLight1.emplace<LightComponent>();
+			light.type = LightComponent::Type::Point;
+			light.color = { 1.0, 0.8, 0.8 };
+		}
 	}
 };

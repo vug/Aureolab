@@ -30,6 +30,7 @@ private:
 	Shader* shader = nullptr;
 	Shader* selectionShader = nullptr;
 	UniformBuffer* viewUbo = nullptr;
+	UniformBuffer* lightsUbo = nullptr;
 	FrameBuffer* viewportFbo = nullptr;
 	FrameBuffer* selectionFbo = nullptr;
 	int mouseX, mouseY;
