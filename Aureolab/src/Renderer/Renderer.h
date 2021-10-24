@@ -29,6 +29,7 @@ struct Light {
 
 struct Lights {
 	Light lights[MAX_LIGHTS];
+	glm::vec4 ambientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
 	int numLights;
 };
 

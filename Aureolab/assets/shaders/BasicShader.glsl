@@ -60,6 +60,7 @@ struct Light {
 };
 layout(std140) uniform Lights {
     Light lights[MAX_LIGHTS];
+    vec4 ambientLight;
     int numLights;
 };
 
@@ -122,7 +123,7 @@ void main() {
             float diffuseVal = max(0.0, dot(normal, lightDir));
             diffuseLight += light.intensity * light.color.rgb * diffuseVal * attFactor;
         }
-        vec3 rgb = u_DiffuseColor.rgb * diffuseLight;
+        vec3 rgb = u_DiffuseColor.rgb * (ambientLight.rgb + diffuseLight);
         outColor = vec4(rgb, u_DiffuseColor.a);
         break;
     case 8: // Hemispherical Light

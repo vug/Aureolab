@@ -6,6 +6,7 @@
 #include <entt/entt.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/archives/json.hpp>
+#include <glm/glm.hpp>
 
 #include <string>
 
@@ -33,6 +34,9 @@ public:
 	void LoadFromFile(const std::string& filepath);
 	void SaveToMemory();
 	void LoadFromMemory();
+
+	glm::vec4 ambientColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	glm::vec4 backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 private:
 	entt::registry registry;

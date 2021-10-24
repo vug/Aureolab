@@ -9,6 +9,7 @@
 
 #include <imgui.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <string>
 
@@ -59,13 +60,14 @@ void EditorLayer::OnUpdate(float ts) {
 		if (ix == MAX_LIGHTS) break;
 	}
 	lightsData.numLights = ix;
+	lightsData.ambientLight = scene.ambientColor;
 	lightsUbo->UploadData((const void*)&lightsData);
 
 	GraphicsAPI::Get()->Clear();
 
 	// Render pass 1: render scene into viewportFBO
 	viewportFbo->Bind();
-	GraphicsAPI::Get()->SetClearColor({ 0, 0, 0, 1 });
+	GraphicsAPI::Get()->SetClearColor(scene.backgroundColor);
 	GraphicsAPI::Get()->Clear();
 	shader->Bind();
 	auto query = scene.View<TransformComponent, MeshComponent, MeshRendererComponent>();
@@ -121,6 +123,9 @@ void EditorLayer::OnImGuiRender() {
 			if (shouldCullFaces) { GraphicsAPI::Get()->Enable(GraphicsAbility::FaceCulling); }
 			else { GraphicsAPI::Get()->Disable(GraphicsAbility::FaceCulling); }
 		}
+
+		ImGui::ColorEdit3("Ambient Light", glm::value_ptr(scene.ambientColor));
+		ImGui::ColorEdit4("Background Color", glm::value_ptr(scene.backgroundColor));
 
 		if (shouldCullFaces) {
 			static CullFace cullFace = CullFace::Back;
