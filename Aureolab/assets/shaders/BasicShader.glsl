@@ -129,21 +129,22 @@ void main() {
             vec3 lightDir;
             Light light = lights[i];
             switch (light.type) {
-            case 0: // PointLight
-            {
-                vec3 relLightPos = light.pointParams.position.xyz - positionWorld;
-                float lightDist = length(relLightPos);
-                lightDir = relLightPos / lightDist; // normalize
-                vec3 att = light.pointParams.attenuation.xyz;
-                float attFactor = 1.0 / (att.x + att.y * lightDist + att.z * lightDist * lightDist);
-                float diffuseVal = max(0.0, dot(normal, lightDir));
-                diffuseLight += light.intensity * light.color.rgb * diffuseVal * attFactor;
-            }
-            break;
-            case 1: // DirectionalLight
-                lightDir = -normalize(light.directionalParams.direction.xyz);
-                float diffuseVal = max(0.0, dot(normal, lightDir));
-                diffuseLight += light.intensity * light.color.rgb * diffuseVal;
+                case 0: { // PointLight
+                    vec3 relLightPos = light.pointParams.position.xyz - positionWorld;
+                    float lightDist = length(relLightPos);
+                    lightDir = relLightPos / lightDist; // normalize
+                    vec3 att = light.pointParams.attenuation.xyz;
+                    float attFactor = 1.0 / (att.x + att.y * lightDist + att.z * lightDist * lightDist);
+                    float diffuseVal = max(0.0, dot(normal, lightDir));
+                    diffuseLight += light.intensity * light.color.rgb * diffuseVal * attFactor;
+                }
+                break;
+                case 1: { // DirectionalLight
+                    lightDir = -normalize(light.directionalParams.direction.xyz);
+                    float diffuseVal = max(0.0, dot(normal, lightDir));
+                    diffuseLight += light.intensity * light.color.rgb * diffuseVal;
+                }
+                break;
             }
 
             // specular
