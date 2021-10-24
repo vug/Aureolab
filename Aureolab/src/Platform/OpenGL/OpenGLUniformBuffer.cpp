@@ -14,8 +14,8 @@ OpenGLUniformBuffer::OpenGLUniformBuffer(const std::string& name, unsigned int s
 void OpenGLUniformBuffer::BlockBind(Shader* shader) {
     GLuint blockIndexForShader;
     blockIndexForShader = glGetUniformBlockIndex(shader->GetRendererID(), name.c_str());
+    assert(blockIndexForShader != GL_INVALID_INDEX); // global uniform block is not used in this shader program
     glUniformBlockBinding(shader->GetRendererID(), blockIndexForShader, bindingPoint);
-    glBindBufferBase(GL_UNIFORM_BUFFER, blockIndexForShader, rendererID);
 }
 
 void OpenGLUniformBuffer::UploadData(const void* data) {
