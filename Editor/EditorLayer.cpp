@@ -23,7 +23,7 @@ void EditorLayer::OnAttach() {
 	shader = Shader::Create("assets/shaders/BasicShader.glsl");
 	viewUbo = UniformBuffer::Create("ViewMatrices", sizeof(ViewMatrices));
 	viewUbo->BlockBind(shader);
-	lightsUbo = UniformBuffer::Create("PointLight", sizeof(PointLight));
+	lightsUbo = UniformBuffer::Create("Lights", sizeof(Lights));
 	lightsUbo->BlockBind(shader);
 	viewportFbo = FrameBuffer::Create(100, 100, FrameBuffer::TextureFormat::RGBA8); // arguments does not matter since FBO's going to be resized
 	selectionFbo = FrameBuffer::Create(100, 100, FrameBuffer::TextureFormat::RED_INTEGER);
@@ -42,15 +42,24 @@ void EditorLayer::OnUpdate(float ts) {
 	viewMatrices.projection = camera->GetProjection();
 	viewMatrices.view = camera->GetViewMatrix();
 	viewUbo->UploadData((const void*)&viewMatrices);
+
+	// Lights System
 	auto queryLights = scene.View<TransformComponent, LightComponent>();
-	for (const auto& [ent, transform, light] : queryLights.each()) {
-		PointLight pl;
-		pl.u_LightPosition = transform.translation;
-		pl.u_LightColor = light.color;
-		pl.u_LightAttenuation = light.pointParams.attenuation;
-		lightsUbo->UploadData((const void*)&pl);
-		break;
+	int ix = 0;
+	Lights lightsData;
+	for (const auto& [ent, transform, lightC] : queryLights.each()) {
+		Light light;
+		light.type = (int)lightC.type;
+		light.position = { transform.translation.x, transform.translation.y, transform.translation.z, 0.0f };
+		light.color = { lightC.color.x, lightC.color.y, lightC.color.z, 0.0f };
+		light.intensity = lightC.intensity;
+		light.pointParams.attenuation = { lightC.pointParams.attenuation.x, lightC.pointParams.attenuation.y, lightC.pointParams.attenuation.z, 0.0f };
+		lightsData.lights[ix] = light;
+		ix++;
+		if (ix == MAX_LIGHTS) break;
 	}
+	lightsData.numLights = ix;
+	lightsUbo->UploadData((const void*)&lightsData);
 
 	GraphicsAPI::Get()->Clear();
 

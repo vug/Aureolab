@@ -16,9 +16,9 @@ public:
 			MeshRendererComponent::Visualization viz;
 		};
 		std::vector<ObjectData> sceneData = {
-			{ "monkey1", { 0.75, 0.5, 0.0 }, "assets/models/suzanne_smooth.obj", MeshRendererComponent::Visualization::Normal, },
-			{ "monkey2", { -0.5, -0.1, 0.0 }, "assets/models/suzanne.obj", MeshRendererComponent::Visualization::HemisphericalLight, },
-			{ "torus", { 0.1, -0.4, 0.7 }, "assets/models/torus_smooth.obj", MeshRendererComponent::Visualization::UV, },
+			{ "monkey1", { 0.75, 0.5, 0.0 }, "assets/models/suzanne_smooth.obj", MeshRendererComponent::Visualization::Lit, }, // Normal
+			{ "monkey2", { -0.5, -0.1, 0.0 }, "assets/models/suzanne.obj", MeshRendererComponent::Visualization::Lit, }, // HemisphericalLight
+			{ "torus", { 0.1, -0.4, 0.7 }, "assets/models/torus_smooth.obj", MeshRendererComponent::Visualization::Lit, }, // UV
 		};
 		for (ObjectData& obj : sceneData) {
 			auto ent = scene.CreateEntity(obj.name);
@@ -37,7 +37,7 @@ public:
 		auto& pmComp1 = procedural1.emplace<ProceduralMeshComponent>();
 		pmComp1.parameters.box.dimensions = { 0.4f, 0.6f, 0.2f };
 		pmComp1.GenerateMesh();
-		procedural1.emplace<MeshRendererComponent>(MeshRendererComponent::Visualization::VertexColor);
+		procedural1.emplace<MeshRendererComponent>(MeshRendererComponent::Visualization::Lit); // VertexColor
 
 		auto procedural2 = scene.CreateEntity("procedural2");
 		TransformComponent& tTransform = procedural2.get<TransformComponent>();
@@ -47,7 +47,7 @@ public:
 		pmComp2.parameters.shape = ProceduralMeshComponent::Shape::Torus;
 		pmComp2.parameters.torus = { 0.333, 12, 0.166, 8 };
 		pmComp2.GenerateMesh();
-		procedural2.emplace<MeshRendererComponent>(MeshRendererComponent::Visualization::Checkers);
+		procedural2.emplace<MeshRendererComponent>(MeshRendererComponent::Visualization::Lit); // Checkers
 
 		{
 			auto pointLight1 = scene.CreateEntity("PointLight1");
@@ -55,7 +55,16 @@ public:
 			transform.translation.y = 2.0f;
 			auto& light = pointLight1.emplace<LightComponent>();
 			light.type = LightComponent::Type::Point;
-			light.color = { 1.0, 0.8, 0.8 };
+			light.color = { 1.0, 0.5, 0.5 };
+		}
+
+		{
+			auto pointLight2 = scene.CreateEntity("PointLight2");
+			TransformComponent& transform = pointLight2.get<TransformComponent>();
+			transform.translation.z = 2.0f;
+			auto& light = pointLight2.emplace<LightComponent>();
+			light.type = LightComponent::Type::Point;
+			light.color = { 0.5, 0.5, 1.0 };
 		}
 	}
 };

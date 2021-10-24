@@ -47,10 +47,20 @@ layout(std140) uniform ViewMatrices {
 	mat4 u_Projection;
 };
 
-layout(binding = 1, std140) uniform PointLight {
-    vec3 u_LightPosition; // = vec3(0.0, 10.0, 0.0);
-    vec3 u_LightColor; // = vec3(1.0, 1.0, 1.0);
-    vec3 u_LightAttenuation; // = vec3(0.0, 1.0, 0.0);
+#define MAX_LIGHTS 10
+struct PointLight {
+    vec4 attenuation;
+};
+struct Light {
+    vec4 position;
+    vec4 color;
+    PointLight pointParams;
+    float intensity;
+    int type;
+};
+layout(std140) uniform Lights {
+    Light lights[MAX_LIGHTS];
+    int numLights;
 };
 
 uniform int u_RenderType = 1; // { SolidColor, Normal, UV, Depth }
@@ -97,14 +107,22 @@ void main() {
         vec2 p = uv * 10.0;
         outColor = vec4(vec3(int(p.x) % 2 ^ int(p.y) % 2), 1.0); // bitwise XOR for checkers pattern
         break;
-    case 7: // Point Light
-        vec3 relLightPos = u_LightPosition - positionWorld;
-        float lightDist = length(relLightPos);
-        vec3 lightDir = relLightPos / lightDist; // normalize
-        float attenuation = 1.0 / (u_LightAttenuation.x + u_LightAttenuation.y * lightDist + u_LightAttenuation.z * lightDist * lightDist);
-        float diffuseVal = max(0.0, dot(normal, lightDir));
-        vec3 lightScattered = u_LightColor * diffuseVal * attenuation;
-        vec3 rgb = u_DiffuseColor.rgb * lightScattered;
+    case 7: // Lit
+        vec3 diffuseLight = vec3(0.0f);
+        for (int i = 0; i < numLights; i++) {
+            Light light = lights[i];
+            if (light.type != 0) continue;
+
+            // Point Light
+            vec3 relLightPos = light.position.xyz - positionWorld;
+            float lightDist = length(relLightPos);
+            vec3 lightDir = relLightPos / lightDist; // normalize
+            vec3 att = light.pointParams.attenuation.xyz;
+            float attFactor = 1.0 / (att.x + att.y * lightDist + att.z * lightDist * lightDist);
+            float diffuseVal = max(0.0, dot(normal, lightDir));
+            diffuseLight += light.intensity * light.color.rgb * diffuseVal * attFactor;
+        }
+        vec3 rgb = u_DiffuseColor.rgb * diffuseLight;
         outColor = vec4(rgb, u_DiffuseColor.a);
         break;
     case 8: // Hemispherical Light

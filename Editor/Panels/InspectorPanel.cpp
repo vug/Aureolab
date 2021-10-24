@@ -152,7 +152,7 @@ void InspectorPanel::OnImGuiRender() {
 				}
 			}
 			else if (info == entt::type_id<LightComponent>()) {
-				if (ImGui::CollapsingHeader("Procedural Mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
 					auto& light = selectedObject.get<LightComponent>();
 					int chosen_index = (int)light.type;
 					if (ImGui::BeginCombo("Type", LightComponent::typeNames[chosen_index], ImGuiComboFlags_None)) {

@@ -11,14 +11,27 @@ struct ViewMatrices {
 	glm::mat4 projection = glm::mat4(1.0f);
 };
 
+#define MAX_LIGHTS 10
+
 struct PointLight {
-	glm::vec3 u_LightPosition;
-	float _pad1;
-	glm::vec3 u_LightColor;
-	float _pad2;
-	glm::vec3 u_LightAttenuation;
-	float _pad3;
+	glm::vec4 attenuation;
 };
+
+struct Light {
+	glm::vec4 position;
+	glm::vec4 color;
+	PointLight pointParams;
+	float intensity;
+	int type;
+	float _pad3;
+	float _pad4;
+};
+
+struct Lights {
+	Light lights[MAX_LIGHTS];
+	int numLights;
+};
+
 
 class Renderer {
 public:
