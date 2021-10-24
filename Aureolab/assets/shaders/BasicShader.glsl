@@ -66,11 +66,19 @@ layout(std140) uniform Lights {
     int numLights;
 };
 
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+    float alpha;
+};
+
 uniform int u_RenderType = 1; // { SolidColor, Normal, UV, Depth }
 uniform vec4 u_SolidColor = vec4(1.0, 1.0, 1.0, 1.0);
 uniform float u_DepthMax = 5.0;
 uniform float u_DepthPow = 2.0;
-uniform vec4 u_ObjectColor = vec4(1.0, 1.0, 1.0, 1.0);
+uniform Material u_Material;
 uniform vec3 u_SkyColor = vec3(0.0, 0.0, 1.0);
 uniform vec3 u_GroundColor = vec3(0.0, 1.0, 0.0);
 
@@ -126,14 +134,13 @@ void main() {
             float diffuseVal = max(0.0, dot(normal, lightDir));
             diffuseLight += light.intensity * light.color.rgb * diffuseVal * attFactor;
 
-            float specularStrength = 0.5;
             vec3 viewDir = normalize(u_ViewPositionWorld.xyz - positionWorld);
             vec3 reflectDir = reflect(-lightDir, normal);  
-            float specularVal = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-            specularLight += specularStrength * light.color.rgb * specularVal;  
+            float specularVal = pow(max(dot(viewDir, reflectDir), 0.0), u_Material.shininess);
+            specularLight += light.color.rgb * specularVal;  
         }
-        vec3 rgb = u_ObjectColor.rgb * (ambientLight.rgb + diffuseLight + specularLight);
-        outColor = vec4(rgb, u_ObjectColor.a);
+        vec3 rgb = ambientLight.rgb * u_Material.ambient + diffuseLight * u_Material.diffuse + specularLight * u_Material.specular;
+        outColor = vec4(rgb, u_Material.alpha);
         break;
     case 8: // Hemispherical Light
         float costheta = dot(normal, vec3(0.0, 1.0, 0.0));

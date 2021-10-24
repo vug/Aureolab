@@ -123,11 +123,22 @@ struct MeshRendererComponent {
 		float pow = 2.0f; 
 		template <class Archive> void serialize(Archive& ar) { ar(CEREAL_NVP(max), CEREAL_NVP(pow)); }
 	};
+	struct Material {
+		glm::vec3 ambientColor = { 1.0f, 1.0f, 1.0f };
+		glm::vec3 diffuseColor = { 1.0f, 1.0f, 1.0f };
+		glm::vec3 specularColor = { 1.0f, 1.0f, 1.0f };
+		float shininess = 32.0f;
+		float alpha = 1.0f;
+
+		template <class Archive> void serialize(Archive& ar) { 
+			ar(CEREAL_NVP(ambientColor), CEREAL_NVP(diffuseColor), CEREAL_NVP(specularColor), CEREAL_NVP(shininess), CEREAL_NVP(alpha));
+		}
+	};
 
 	Visualization visualization = Visualization::Normal;
-	Depth depthParams;
+	Depth depthParams; // for Depth
 	glm::vec4 solidColor = { 1.0f, 1.0f, 1.0f, 1.0f }; // for SolidColor
-	glm::vec4 objectColor = { 1.0f, 1.0f, 1.0f, 1.0f }; // for Lit
+	Material material; // for Lit
 
 	MeshRendererComponent() = default;
 	MeshRendererComponent(const MeshRendererComponent&) = default;
@@ -135,7 +146,7 @@ struct MeshRendererComponent {
 		: visualization(visualization) {}
 
 	template <class Archive>
-	void serialize(Archive& ar) { ar(CEREAL_NVP(visualization), CEREAL_NVP(depthParams), CEREAL_NVP(solidColor), CEREAL_NVP(objectColor)); }
+	void serialize(Archive& ar) { ar(CEREAL_NVP(visualization), CEREAL_NVP(depthParams), CEREAL_NVP(solidColor), CEREAL_NVP(material)); }
 };
 
 struct LightComponent {

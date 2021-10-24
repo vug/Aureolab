@@ -119,7 +119,12 @@ void InspectorPanel::OnImGuiRender() {
 						ImGui::ColorEdit4("Solid Color", glm::value_ptr(meshRenderer.solidColor));
 						break;
 					case MeshRendererComponent::Visualization::Lit:
-						ImGui::ColorEdit4("Object Color", glm::value_ptr(meshRenderer.objectColor));
+						ImGui::Text("Material");
+						ImGui::ColorEdit3("Ambient", glm::value_ptr(meshRenderer.material.ambientColor));
+						ImGui::ColorEdit3("Diffuse", glm::value_ptr(meshRenderer.material.diffuseColor));
+						ImGui::ColorEdit3("Specular", glm::value_ptr(meshRenderer.material.specularColor));
+						ImGui::SliderFloat("Shininess", &meshRenderer.material.shininess, 0.1f, 256.0f);
+						ImGui::SliderFloat("Alpha", &meshRenderer.material.alpha, 0.0f, 1.0f);
 						break;
 					}
 				}
