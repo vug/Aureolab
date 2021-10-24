@@ -51,7 +51,7 @@ GLenum cullFaceAL2GL(CullFace cf) {
 }
 
 void OpenGLGraphicsAPI::SetClearColor(const glm::vec4& color) {
-	glClearColor(color.r, color.b, color.g, color.a);
+	glClearColor(color.r, color.g, color.b, color.a);
 }
 
 void OpenGLGraphicsAPI::Clear(bool colorBuffer, bool depthBuffer) {
