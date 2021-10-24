@@ -18,6 +18,7 @@ void Renderer::RenderVertexArray(Shader* shader, const ViewMatrices& viewMatrice
 	const glm::mat4 modelView = viewMatrices.view * model;
 	const glm::mat4 modelViewProjection = viewMatrices.projection * modelView;
 	const glm::mat4 normalMatrix = glm::transpose(glm::inverse(modelView));
+	shader->UploadUniformMat4("u_Model", model);
 	shader->UploadUniformMat4("u_ModelView", modelView);
 	shader->UploadUniformMat4("u_ModelViewPerspective", modelViewProjection);
 	shader->UploadUniformMat4("u_NormalMatrix", normalMatrix);
