@@ -1,7 +1,7 @@
 #type vertex
 #version 460 core
 
-layout(std140) uniform ViewMatrices {
+layout(std140) uniform ViewData {
 	mat4 u_View;
 	mat4 u_Projection;
     vec4 u_ViewPositionWorld;
@@ -43,7 +43,7 @@ void main() {
 #type fragment
 #version 460 core
 
-layout(std140) uniform ViewMatrices {
+layout(std140) uniform ViewData {
 	mat4 u_View;
 	mat4 u_Projection;
     vec4 u_ViewPositionWorld;

@@ -22,7 +22,7 @@ void EditorLayer::OnAttach() {
 
 	selectionShader = Shader::Create("assets/shaders/SelectionShader.glsl");
 	shader = Shader::Create("assets/shaders/BasicShader.glsl");
-	viewUbo = UniformBuffer::Create("ViewMatrices", sizeof(ViewMatrices));
+	viewUbo = UniformBuffer::Create("ViewData", sizeof(ViewData));
 	viewUbo->BlockBind(shader);
 	lightsUbo = UniformBuffer::Create("Lights", sizeof(Lights));
 	lightsUbo->BlockBind(shader);
@@ -39,12 +39,12 @@ void EditorLayer::OnUpdate(float ts) {
 	frameRates[frameRates.size() - 1] = 1.0f / ts;
 
 	camera->OnUpdate(ts);
-	ViewMatrices viewMatrices;
-	viewMatrices.projection = camera->GetProjection();
-	viewMatrices.view = camera->GetViewMatrix();
+	ViewData viewData;
+	viewData.projection = camera->GetProjection();
+	viewData.view = camera->GetViewMatrix();
 	const glm::vec3& camPos = camera->GetPosition();
-	viewMatrices.viewPosition = { camPos.x, camPos.y, camPos.z, 1.0f };
-	viewUbo->UploadData((const void*)&viewMatrices);
+	viewData.viewPosition = { camPos.x, camPos.y, camPos.z, 1.0f };
+	viewUbo->UploadData((const void*)&viewData);
 
 	// Lights System
 	auto queryLights = scene.View<TransformComponent, LightComponent>();
@@ -74,11 +74,11 @@ void EditorLayer::OnUpdate(float ts) {
 	shader->Bind();
 	auto query = scene.View<TransformComponent, MeshComponent, MeshRendererComponent>();
 	for (const auto& [ent, transform, mesh, meshRenderer] : query.each()) {
-		Renderer::RenderMesh(shader, viewMatrices, transform, mesh, meshRenderer);
+		Renderer::RenderMesh(shader, viewData, transform, mesh, meshRenderer);
 	}
 	auto query2 = scene.View<TransformComponent, ProceduralMeshComponent, MeshRendererComponent>();
 	for (const auto& [ent, transform, pMesh, meshRenderer] : query2.each()) {
-		Renderer::RenderProceduralMesh(shader, viewMatrices, transform, pMesh, meshRenderer);
+		Renderer::RenderProceduralMesh(shader, viewData, transform, pMesh, meshRenderer);
 	}
 	shader->Unbind();
 	viewportFbo->Unbind();
@@ -88,10 +88,10 @@ void EditorLayer::OnUpdate(float ts) {
 	selectionFbo->Clear(-1); // value when not hovering on any object
 	selectionShader->Bind();
 	for (const auto& [ent, transform, mesh, meshRenderer] : query.each()) {
-		Renderer::RenderVertexArrayEntityID(ent, selectionShader, viewMatrices, transform, mesh.vao, meshRenderer);
+		Renderer::RenderVertexArrayEntityID(ent, selectionShader, viewData, transform, mesh.vao, meshRenderer);
 	}
 	for (const auto& [ent, transform, pMesh, meshRenderer] : query2.each()) {
-		Renderer::RenderVertexArrayEntityID(ent, selectionShader, viewMatrices, transform, pMesh.vao, meshRenderer);
+		Renderer::RenderVertexArrayEntityID(ent, selectionShader, viewData, transform, pMesh.vao, meshRenderer);
 	}
 	hoveredEntityId = -3; // value when queried coordinates are not inside the selectionFbo
 	selectionFbo->ReadPixel(hoveredEntityId, mouseX, mouseY);
