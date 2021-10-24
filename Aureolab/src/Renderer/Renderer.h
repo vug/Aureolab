@@ -15,13 +15,16 @@ struct ViewData {
 #define MAX_LIGHTS 10
 
 struct PointLight {
-	glm::vec4 attenuation;
+	glm::vec4 attenuation; // vec3
+	glm::vec4 position; // vec3
 };
-
+struct DirectionalLight {
+	glm::vec4 direction; // vec3
+};
 struct Light {
-	glm::vec4 position;
 	glm::vec4 color;
 	PointLight pointParams;
+	DirectionalLight directionalParams;
 	float intensity;
 	int type;
 	float _pad3;

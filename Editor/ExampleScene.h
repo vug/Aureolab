@@ -50,11 +50,12 @@ public:
 		procedural2.emplace<MeshRendererComponent>(MeshRendererComponent::Visualization::Lit); // Checkers
 
 		{
-			auto pointLight1 = scene.CreateEntity("PointLight1");
+			auto pointLight1 = scene.CreateEntity("DirectionalLight1");
 			TransformComponent& transform = pointLight1.get<TransformComponent>();
 			transform.translation.y = 2.0f;
 			auto& light = pointLight1.emplace<LightComponent>();
-			light.type = LightComponent::Type::Point;
+			light.type = LightComponent::Type::Directional;
+			light.directionalParams.direction = { 0.0f, -1.0f, 0.0f };
 			light.color = { 1.0, 0.5, 0.5 };
 		}
 

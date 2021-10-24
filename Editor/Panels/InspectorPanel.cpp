@@ -180,6 +180,9 @@ void InspectorPanel::OnImGuiRender() {
 					case LightComponent::Type::Point:
 						ImGui::DragFloat3("Attenuation", glm::value_ptr(light.pointParams.attenuation), 1.0f, 0.0f, 10.0f);
 						break;
+					case LightComponent::Type::Directional:
+						ImGui::DragFloat3("Direction", glm::value_ptr(light.directionalParams.direction), 1.0f);
+						break;
 					}
 				}
 			}

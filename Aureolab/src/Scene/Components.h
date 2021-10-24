@@ -150,22 +150,27 @@ struct MeshRendererComponent {
 };
 
 struct LightComponent {
-	enum class Type { Point, };
-	static inline const char* typeNames[] = { "Point", }; // for GUI
+	enum class Type { Point, Directional, };
+	static inline const char* typeNames[] = { "Point", "Directional", }; // for GUI
 	struct Point {
 		glm::vec3 attenuation = { 0.0f, 1.0f, 0.0f };
 
-		template <class Archive>
-		void serialize(Archive& ar) { ar(CEREAL_NVP(attenuation)); }
+		template <class Archive> void serialize(Archive& ar) { ar(CEREAL_NVP(attenuation)); }
+	};
+	struct Directional {
+		glm::vec3 direction = { 0.0f, -1.0f, 0.0f };
+
+		template <class Archive> void serialize(Archive& ar) { ar(CEREAL_NVP(direction)); }
 	};
 
 	Type type = Type::Point;
 	float intensity = 1.0f;
 	glm::vec3 color = { 1.0f, 1.0f, 1.0f };
 	Point pointParams;
+	Directional directionalParams;
 
 	template <class Archive>
-	void serialize(Archive& ar) { ar(CEREAL_NVP(type), CEREAL_NVP(intensity), CEREAL_NVP(color), CEREAL_NVP(pointParams)); }
+	void serialize(Archive& ar) { ar(CEREAL_NVP(type), CEREAL_NVP(intensity), CEREAL_NVP(color), CEREAL_NVP(pointParams), CEREAL_NVP(directionalParams)); }
 };
 
 #define ALL_COMPONENTS TagComponent, TransformComponent, MeshComponent, ProceduralMeshComponent, MeshRendererComponent, LightComponent
