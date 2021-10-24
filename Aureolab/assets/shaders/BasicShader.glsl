@@ -68,7 +68,7 @@ uniform int u_RenderType = 1; // { SolidColor, Normal, UV, Depth }
 uniform vec4 u_SolidColor = vec4(1.0, 1.0, 1.0, 1.0);
 uniform float u_DepthMax = 5.0;
 uniform float u_DepthPow = 2.0;
-uniform vec4 u_DiffuseColor = vec4(1.0, 1.0, 1.0, 1.0);
+uniform vec4 u_ObjectColor = vec4(1.0, 1.0, 1.0, 1.0);
 uniform vec3 u_SkyColor = vec3(0.0, 0.0, 1.0);
 uniform vec3 u_GroundColor = vec3(0.0, 1.0, 0.0);
 
@@ -123,8 +123,8 @@ void main() {
             float diffuseVal = max(0.0, dot(normal, lightDir));
             diffuseLight += light.intensity * light.color.rgb * diffuseVal * attFactor;
         }
-        vec3 rgb = u_DiffuseColor.rgb * (ambientLight.rgb + diffuseLight);
-        outColor = vec4(rgb, u_DiffuseColor.a);
+        vec3 rgb = u_ObjectColor.rgb * (ambientLight.rgb + diffuseLight);
+        outColor = vec4(rgb, u_ObjectColor.a);
         break;
     case 8: // Hemispherical Light
         float costheta = dot(normal, vec3(0.0, 1.0, 0.0));

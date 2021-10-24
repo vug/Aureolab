@@ -118,6 +118,9 @@ void InspectorPanel::OnImGuiRender() {
 					case MeshRendererComponent::Visualization::SolidColor:
 						ImGui::ColorEdit4("Solid Color", glm::value_ptr(meshRenderer.solidColor));
 						break;
+					case MeshRendererComponent::Visualization::Lit:
+						ImGui::ColorEdit4("Object Color", glm::value_ptr(meshRenderer.objectColor));
+						break;
 					}
 				}
 			}

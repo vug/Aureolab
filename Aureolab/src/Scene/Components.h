@@ -126,7 +126,8 @@ struct MeshRendererComponent {
 
 	Visualization visualization = Visualization::Normal;
 	Depth depthParams;
-	glm::vec4 solidColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glm::vec4 solidColor = { 1.0f, 1.0f, 1.0f, 1.0f }; // for SolidColor
+	glm::vec4 objectColor = { 1.0f, 1.0f, 1.0f, 1.0f }; // for Lit
 
 	MeshRendererComponent() = default;
 	MeshRendererComponent(const MeshRendererComponent&) = default;
@@ -134,7 +135,7 @@ struct MeshRendererComponent {
 		: visualization(visualization) {}
 
 	template <class Archive>
-	void serialize(Archive& ar) { ar(CEREAL_NVP(visualization), CEREAL_NVP(depthParams), CEREAL_NVP(solidColor)); }
+	void serialize(Archive& ar) { ar(CEREAL_NVP(visualization), CEREAL_NVP(depthParams), CEREAL_NVP(solidColor), CEREAL_NVP(objectColor)); }
 };
 
 struct LightComponent {

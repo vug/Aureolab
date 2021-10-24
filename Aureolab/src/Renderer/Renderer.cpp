@@ -25,6 +25,7 @@ void Renderer::RenderVertexArray(Shader* shader, const ViewMatrices& viewMatrice
 
 	shader->UploadUniformInt("u_RenderType", (int)meshRenderer.visualization);
 	shader->UploadUniformFloat4("u_SolidColor", meshRenderer.solidColor);
+	shader->UploadUniformFloat4("u_ObjectColor", meshRenderer.objectColor);
 	shader->UploadUniformFloat("u_DepthMax", meshRenderer.depthParams.max);
 	shader->UploadUniformFloat("u_DepthPow", meshRenderer.depthParams.pow);
 

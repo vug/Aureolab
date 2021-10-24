@@ -74,7 +74,7 @@ public:
         shader->UploadUniformFloat("u_MaxDepth", maxDepth);
         shader->UploadUniformFloat3("u_LightPosition", lightPosition);
         shader->UploadUniformFloat3("u_LightAttenuation", lightAttenuation);
-        shader->UploadUniformFloat4("u_DiffuseColor", diffuseColor);
+        shader->UploadUniformFloat4("u_ObjectColor", diffuseColor);
         shader->UploadUniformFloat3("u_HemisphereLightPosition", hemisphereLightPosition);
         shader->UploadUniformFloat3("u_SkyColor", skyColor);
         shader->UploadUniformFloat3("u_GroundColor", groundColor);
