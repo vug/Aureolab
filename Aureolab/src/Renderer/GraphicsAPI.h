@@ -4,6 +4,8 @@
 
 #include <glm/glm.hpp>
 
+#include <unordered_set>
+
 enum class GraphicsAbility {
 	Blend, // Blend fragment color with buffer color
 	DepthTest, // Update buffer after depth comparison
@@ -34,14 +36,18 @@ enum class DepthTestFunction {
 	Equal, NotEqual,
 };
 
+enum class ClearableBuffer {
+	Color, Depth, Stencil,
+};
+
 
 class GraphicsAPI {
 public:
 	static GraphicsAPI* Get();
 
 	virtual void SetClearColor(const glm::vec4& color) = 0;
-	virtual void Clear(bool colorBuffer = true, bool depthBuffer = true) = 0;
-
+	virtual void Clear(std::unordered_set<ClearableBuffer> buffers = {}) = 0;
+	
 	virtual void Enable(GraphicsAbility ability) = 0;
 	virtual void Disable(GraphicsAbility ability) = 0;
 	virtual bool IsEnabled(GraphicsAbility ability) = 0;

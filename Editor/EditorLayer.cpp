@@ -86,7 +86,7 @@ void EditorLayer::OnUpdate(float ts) {
 
 	// Highlight hovered/selected objects if any
 	solidColorShader->Bind();
-	GraphicsAPI::Get()->Clear(false, true);
+	GraphicsAPI::Get()->Clear({ClearableBuffer::Depth});
 	GraphicsAPI::Get()->SetPolygonMode(PolygonMode::Line);
 	auto highLightObjectIfExists = [&](const EntityHandle& obj, const glm::vec4& color) {
 		if (!obj) { return; }

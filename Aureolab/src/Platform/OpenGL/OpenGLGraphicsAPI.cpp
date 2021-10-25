@@ -93,11 +93,17 @@ void OpenGLGraphicsAPI::SetClearColor(const glm::vec4& color) {
 	glClearColor(color.r, color.g, color.b, color.a);
 }
 
-void OpenGLGraphicsAPI::Clear(bool colorBuffer, bool depthBuffer) {
-	GLbitfield mask = 0x00000000;
-	if (colorBuffer) mask |= GL_COLOR_BUFFER_BIT;
-	if (depthBuffer) mask |= GL_DEPTH_BUFFER_BIT;
-	glClear(mask);
+void OpenGLGraphicsAPI::Clear(std::unordered_set<ClearableBuffer> buffers) {
+	if (buffers.empty()) {
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+	else {
+		GLbitfield mask = 0x00000000;
+		if (buffers.contains(ClearableBuffer::Color)) { mask |= GL_COLOR_BUFFER_BIT; }
+		if (buffers.contains(ClearableBuffer::Depth)) { mask |= GL_DEPTH_BUFFER_BIT; }
+		if (buffers.contains(ClearableBuffer::Stencil)) { mask |= GL_STENCIL_BUFFER_BIT; }
+		glClear(mask);
+	}
 }
 
 void OpenGLGraphicsAPI::Enable(GraphicsAbility ability) {

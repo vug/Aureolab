@@ -7,7 +7,7 @@ public:
 	OpenGLGraphicsAPI() = default;
 
 	virtual void SetClearColor(const glm::vec4& color) override;
-	virtual void Clear(bool colorBuffer = true, bool depthBuffer = true) override;
+	virtual void Clear(std::unordered_set<ClearableBuffer> buffers) override;
 
 	virtual void Enable(GraphicsAbility ability) override;
 	virtual void Disable(GraphicsAbility ability) override;
