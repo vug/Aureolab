@@ -63,13 +63,29 @@ void ViewportPanel::OnImGuiRender() {
 
 	ImGui::End();
 	ImGui::PopStyleVar();
+
+	static glm::vec2 mousePrev = { 0.0f, 0.0f };
+	const glm::vec2& mouse = Input::Get()->GetMouseCursorPosition();
+	const glm::vec2 delta = (mouse - mousePrev) * 0.003f;
+	mousePrev = mouse;
+	if (isManipulatingEditorCamera) { 
+
+		if (Input::Get()->IsMouseButtonPressed(MouseButton::Middle))
+			camera->MousePan(delta);
+		else if (Input::Get()->IsMouseButtonPressed(MouseButton::Left))
+			camera->MouseRotate(delta);
+		else if (Input::Get()->IsMouseButtonPressed(MouseButton::Right))
+			camera->MouseZoom(delta.y);
+	}
 }
 
 void ViewportPanel::OnEvent(Event& ev) {
 	auto dispatcher = EventDispatcher(ev);
 	dispatcher.Dispatch<MouseScrolledEvent>(AL_BIND_EVENT_FN(ViewportPanel::OnMouseScrolled));
 	dispatcher.Dispatch<KeyPressedEvent>(AL_BIND_EVENT_FN(ViewportPanel::OnKeyPressed));
+	dispatcher.Dispatch<KeyReleasedEvent>(AL_BIND_EVENT_FN(ViewportPanel::OnKeyReleased));
 	dispatcher.Dispatch<MouseButtonPressedEvent>(AL_BIND_EVENT_FN(ViewportPanel::OnMouseClicked));
+	dispatcher.Dispatch<MouseButtonReleasedEvent>(AL_BIND_EVENT_FN(ViewportPanel::OnMouseReleased));
 }
 
 void ViewportPanel::OnMouseScrolled(MouseScrolledEvent& ev) {
@@ -79,10 +95,18 @@ void ViewportPanel::OnMouseScrolled(MouseScrolledEvent& ev) {
 void ViewportPanel::OnMouseClicked(MouseButtonPressedEvent& ev) {
 	if (isViewportPanelHovered // don't unselect when interacting with UI on other panels
 		&& !ImGuizmo::IsOver() // don't unselect when transforming objects via Gizmos
+		&& !Input::Get()->IsKeyPressed(342) // don't unselect when ALT is pressed (i.e. when manipulating EditorCamera)
 		&& ((MouseButton)ev.GetMouseButton() == MouseButton::Left) // select with left click
 	) { 
 		selectedObject = hoveredObject; // (just unselects if hovering over nothing)
 	}
+	if (isViewportPanelHovered && Input::Get()->IsKeyPressed(342)) {
+		isManipulatingEditorCamera = true;
+	}
+}
+
+void ViewportPanel::OnMouseReleased(MouseButtonReleasedEvent& ev) {
+	isManipulatingEditorCamera = false;
 }
 
 void ViewportPanel::OnKeyPressed(KeyPressedEvent& ev) {
@@ -108,4 +132,8 @@ void ViewportPanel::OnKeyPressed(KeyPressedEvent& ev) {
 		gizmoMode = (ImGuizmo::MODE)( (gizmoMode + 1) % 2 );
 		break;
 	}
+}
+
+void ViewportPanel::OnKeyReleased(KeyReleasedEvent& ev) {
+	if (ev.GetKeyCode() == 342) { isManipulatingEditorCamera = false; }
 }

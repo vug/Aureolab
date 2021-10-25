@@ -56,13 +56,13 @@ public:
 
 	float GetFOV() const { return m_FOV; }
 	void SetFOV(float fov) { m_FOV = fov; UpdateProjection(); }
-private:
-	void UpdateProjection();
-	void UpdateView();
 
 	void MousePan(const glm::vec2& delta);
 	void MouseRotate(const glm::vec2& delta);
 	void MouseZoom(float delta);
+private:
+	void UpdateProjection();
+	void UpdateView();
 
 	glm::vec3 CalculatePosition() const;
 
@@ -75,8 +75,6 @@ private:
 	glm::mat4 m_ViewMatrix;
 	glm::vec3 m_Position = { 0.0f, 0.0f, 0.0f }; // re-computed every frame
 	glm::vec3 m_FocalPoint = { 0.0f, 0.0f, 0.0f };
-
-	glm::vec2 m_InitialMousePosition = { 0.0f, 0.0f };
 
 	float m_Distance = 5.0f;
 	float m_Pitch = 0.0f, m_Yaw = 0.0f, m_Roll = 0.0f;

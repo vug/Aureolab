@@ -21,7 +21,9 @@ public:
 	void OnEvent(Event& ev);
 	void OnMouseScrolled(MouseScrolledEvent& ev);
 	void OnMouseClicked (MouseButtonPressedEvent& ev);
+	void OnMouseReleased(MouseButtonReleasedEvent& ev);
 	void OnKeyPressed(KeyPressedEvent& ev);
+	void OnKeyReleased(KeyReleasedEvent& ev);
 
 private:
 	// references to EditorLayer's members
@@ -35,6 +37,7 @@ private:
 	EntityHandle& hoveredObject;
 
 	bool isViewportPanelHovered = false;
+	bool isManipulatingEditorCamera = false;
 	float aspect = 1.0f;
 	bool gizmoShouldShow = false;
 	ImGuizmo::OPERATION gizmoType = ImGuizmo::OPERATION::TRANSLATE;

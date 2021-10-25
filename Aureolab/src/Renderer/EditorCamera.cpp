@@ -1,7 +1,6 @@
 #include "EditorCamera.h"
 
 #include "Core/Log.h"
-#include "Core/Input.h"
 
 #include <glfw/glfw3.h>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -66,20 +65,6 @@ float EditorCamera::ZoomSpeed() const
 
 void EditorCamera::OnUpdate(float ts)
 {
-	if (Input::Get()->IsKeyPressed(GLFW_KEY_LEFT_ALT))
-	{
-		const glm::vec2& mouse = Input::Get()->GetMouseCursorPosition();
-		glm::vec2 delta = (mouse - m_InitialMousePosition) * 0.003f;
-		m_InitialMousePosition = mouse;
-
-		if (Input::Get()->IsMouseButtonPressed(MouseButton::Middle))
-			MousePan(delta);
-		else if (Input::Get()->IsMouseButtonPressed(MouseButton::Left))
-			MouseRotate(delta);
-		else if (Input::Get()->IsMouseButtonPressed(MouseButton::Right))
-			MouseZoom(delta.y);
-	}
-	
 	UpdateView();
 	GetForwardDirection();
 }
