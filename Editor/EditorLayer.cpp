@@ -18,11 +18,15 @@ void EditorLayer::OnAttach() {
 	auto turquoise = glm::vec4{ 64, 224, 238, 1 } / 255.0f;
 	GraphicsAPI::Get()->SetClearColor(turquoise);
 	GraphicsAPI::Get()->Enable(GraphicsAbility::DepthTest);
+	GraphicsAPI::Get()->Enable(GraphicsAbility::StencilTest);
 	GraphicsAPI::Get()->Enable(GraphicsAbility::FaceCulling);
+	// keep if stencil fails. replace if stencil pass, independent of depth.
+	GraphicsAPI::Get()->SetStencilOperation(StencilAction::Keep, StencilAction::Replace, StencilAction::Replace);
 
 	selectionShader = Shader::Create("assets/shaders/SelectionShader.glsl");
 	shader = Shader::Create("assets/shaders/BasicShader.glsl");
 	solidColorShader = Shader::Create("assets/shaders/SolidColor.glsl");
+	outlineShader = Shader::Create("assets/shaders/Outline.glsl");
 	viewUbo = UniformBuffer::Create("ViewData", sizeof(ViewData));
 	viewUbo->BlockBind(shader);
 	lightsUbo = UniformBuffer::Create("Lights", sizeof(Lights));
@@ -73,13 +77,19 @@ void EditorLayer::OnUpdate(float ts) {
 	viewportFbo->Bind();
 	GraphicsAPI::Get()->SetClearColor(scene.backgroundColor);
 	GraphicsAPI::Get()->Clear();
+	GraphicsAPI::Get()->SetStencilFunction(BufferTestFunction::Always, 1, 0xFF);
+	unsigned int mask = 0x00;
 	shader->Bind();
 	auto query = scene.View<TransformComponent, MeshComponent, MeshRendererComponent>();
 	for (const auto& [ent, transform, mesh, meshRenderer] : query.each()) {
+		mask = (selectedObject && selectedObject.entity() == ent) ? 0xFF : 0x00;
+		GraphicsAPI::Get()->SetStencilMask(mask);
 		Renderer::RenderMesh(shader, viewData, transform, mesh, meshRenderer);
 	}
 	auto query2 = scene.View<TransformComponent, ProceduralMeshComponent, MeshRendererComponent>();
 	for (const auto& [ent, transform, pMesh, meshRenderer] : query2.each()) {
+		mask = (selectedObject && selectedObject.entity() == ent) ? 0xFF : 0x00;
+		GraphicsAPI::Get()->SetStencilMask(mask);
 		Renderer::RenderProceduralMesh(shader, viewData, transform, pMesh, meshRenderer);
 	}
 	shader->Unbind();
@@ -103,6 +113,26 @@ void EditorLayer::OnUpdate(float ts) {
 	GraphicsAPI::Get()->SetPolygonMode(PolygonMode::Fill);
 	GraphicsAPI::Get()->Disable(GraphicsAbility::PolygonOffsetLine);
 	solidColorShader->Unbind();
+
+	// Outline selected object, if any
+	GraphicsAPI::Get()->SetStencilFunction(BufferTestFunction::NotEqual, 1, 0xFF);
+	GraphicsAPI::Get()->SetStencilMask(0x00);
+	GraphicsAPI::Get()->Disable(GraphicsAbility::DepthTest);
+	outlineShader->Bind();
+	if (selectedObject) {
+		const EntityHandle& obj = selectedObject;
+		outlineShader->UploadUniformFloat4("u_Color", { 1.0f, 1.0f, 0.0f, 1.0f });
+		if (obj.any_of<MeshComponent>()) {
+			Renderer::RenderMesh(outlineShader, viewData, obj.get<TransformComponent>(), obj.get<MeshComponent>(), obj.get<MeshRendererComponent>());
+		}
+		else if (obj.any_of<ProceduralMeshComponent>()) {
+			Renderer::RenderProceduralMesh(outlineShader, viewData, obj.get<TransformComponent>(), obj.get<ProceduralMeshComponent>(), obj.get<MeshRendererComponent>());
+		}
+	}
+	GraphicsAPI::Get()->SetStencilMask(0xFF);
+	GraphicsAPI::Get()->SetStencilFunction(BufferTestFunction::Always, 1, 0xFF);
+	GraphicsAPI::Get()->Enable(GraphicsAbility::DepthTest);
+	outlineShader->Unbind();
 	viewportFbo->Unbind();
 
 	// Render pass 2: render entityID of each object into an integer buffer
