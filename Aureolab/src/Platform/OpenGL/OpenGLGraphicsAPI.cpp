@@ -50,6 +50,20 @@ GLenum cullFaceAL2GL(CullFace cf) {
 	}
 }
 
+inline GLenum PolygonModeAL2GL(PolygonMode pm) {
+	switch (pm) {
+	case PolygonMode::Fill:
+		return GL_FILL;
+	case PolygonMode::Line:
+		return GL_LINE;
+	case PolygonMode::Point:
+		return GL_POINT;
+	default:
+		assert(false); // unknown PolygonMode
+		return -1;
+	}
+}
+
 void OpenGLGraphicsAPI::SetClearColor(const glm::vec4& color) {
 	glClearColor(color.r, color.g, color.b, color.a);
 }
@@ -95,6 +109,11 @@ void OpenGLGraphicsAPI::SetBlendingFunction(BlendingFactor src, BlendingFactor d
 void OpenGLGraphicsAPI::SetCullFace(CullFace cullFace) {
 	GLenum glEnum = cullFaceAL2GL(cullFace);
 	glCullFace(glEnum);
+}
+
+void OpenGLGraphicsAPI::SetPolygonMode(PolygonMode polygonMode) {
+	GLenum glEnum = PolygonModeAL2GL(polygonMode);
+	glPolygonMode(GL_FRONT_AND_BACK, glEnum);
 }
 
 void OpenGLGraphicsAPI::DrawIndexedTriangles(const VertexArray& vertexArray, unsigned int indexCount) {
