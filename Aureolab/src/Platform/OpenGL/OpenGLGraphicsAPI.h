@@ -19,7 +19,11 @@ public:
 	virtual void SetBlendingFunction(BlendingFactor src, BlendingFactor dst) override;
 	virtual void SetCullFace(CullFace cullFace) override;
 	virtual void SetPolygonMode(PolygonMode polygonMode) override;
-	virtual void SetDepthFunction(DepthTestFunction depthTestFunction) override;
+	virtual void SetDepthFunction(BufferTestFunction depthTestFunction) override;
+	virtual void SetStencilOperation(StencilAction stencilTestFail, StencilAction depthTestFail, StencilAction depthTestPass) override;
+	virtual void SetStencilFunction(BufferTestFunction stencilTestFunction, int reference, unsigned int mask) override;
+	virtual void SetStencilMask(unsigned int mask) override;
+	virtual void SetPolygonOffset(float factor, float units) override;
 
 	virtual void DrawIndexedTriangles(const VertexArray& vertexArray, unsigned int indexCount = 0) override;
 	virtual void DrawIndexedPoints(const VertexArray& vertexArray, unsigned int indexCount = 0) override;

@@ -10,8 +10,16 @@ GLenum AbilityAL2GL(GraphicsAbility ability) {
 		return GL_PROGRAM_POINT_SIZE;
 	case GraphicsAbility::DepthTest:
 		return GL_DEPTH_TEST;
+	case GraphicsAbility::StencilTest:
+		return GL_STENCIL_TEST;
 	case GraphicsAbility::FaceCulling:
 		return GL_CULL_FACE;
+	case GraphicsAbility::PolygonOffsetFill:
+		return GL_POLYGON_OFFSET_FILL;
+	case GraphicsAbility::PolygonOffsetLine:
+		return GL_POLYGON_OFFSET_LINE;
+	case GraphicsAbility::PolygonOffsetPoint:
+		return GL_POLYGON_OFFSET_POINT;
 	default:
 		assert(false); // unknown GraphicsAbility
 		return -1;
@@ -64,26 +72,50 @@ inline GLenum PolygonModeAL2GL(PolygonMode pm) {
 	}
 }
 
-inline GLenum DepthTestFunctionAL2GL(DepthTestFunction df) {
+inline GLenum BufferTestFunctionAL2GL(BufferTestFunction df) {
 	switch (df) {
-	case DepthTestFunction::Never:
+	case BufferTestFunction::Never:
 		return GL_NEVER;
-	case DepthTestFunction::Always:
+	case BufferTestFunction::Always:
 		return GL_ALWAYS;
-	case DepthTestFunction::Less:
+	case BufferTestFunction::Less:
 		return GL_LESS;
-	case DepthTestFunction::LessThanEqual:
+	case BufferTestFunction::LessThanEqual:
 		return GL_LEQUAL;
-	case DepthTestFunction::GreaterThanEqual:
+	case BufferTestFunction::GreaterThanEqual:
 		return GL_GEQUAL;
-	case DepthTestFunction::Greater:
+	case BufferTestFunction::Greater:
 		return GL_GREATER;
-	case DepthTestFunction::Equal:
+	case BufferTestFunction::Equal:
 		return GL_EQUAL;
-	case DepthTestFunction::NotEqual:
+	case BufferTestFunction::NotEqual:
 		return GL_NOTEQUAL;
 	default:
 		assert(false); // unknown DepthTestFunction
+		return -1;
+	}
+}
+
+inline GLenum StencilActionAL2GL(StencilAction sa) {
+	switch (sa) {
+	default:
+		case StencilAction::Keep:
+			return GL_KEEP;
+		case StencilAction::Zero:
+			return GL_ZERO;
+		case StencilAction::Replace:
+			return GL_REPLACE;
+		case StencilAction::IncrementClamp:
+			return GL_INCR;
+		case StencilAction::InrecementWrap:
+			return GL_INCR_WRAP;
+		case StencilAction::DecrementClamp:
+			return GL_DECR;
+		case StencilAction::DecrementWrap:
+			return GL_DECR_WRAP;
+		case StencilAction::BitwiseInvert:
+			return GL_INVERT;
+		assert(false); // unknown StencilAction
 		return -1;
 	}
 }
@@ -95,7 +127,7 @@ void OpenGLGraphicsAPI::SetClearColor(const glm::vec4& color) {
 
 void OpenGLGraphicsAPI::Clear(std::unordered_set<ClearableBuffer> buffers) {
 	if (buffers.empty()) {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	}
 	else {
 		GLbitfield mask = 0x00000000;
@@ -147,9 +179,29 @@ void OpenGLGraphicsAPI::SetPolygonMode(PolygonMode polygonMode) {
 	glPolygonMode(GL_FRONT_AND_BACK, glEnum);
 }
 
-void OpenGLGraphicsAPI::SetDepthFunction(DepthTestFunction depthTestFunction) {
-	GLenum glEnum = DepthTestFunctionAL2GL(depthTestFunction);
+void OpenGLGraphicsAPI::SetDepthFunction(BufferTestFunction depthTestFunction) {
+	GLenum glEnum = BufferTestFunctionAL2GL(depthTestFunction);
 	glDepthFunc(glEnum);
+}
+
+void OpenGLGraphicsAPI::SetStencilOperation(StencilAction stencilTestFail, StencilAction depthTestFail, StencilAction depthTestPass) {
+	GLenum fail = StencilActionAL2GL(stencilTestFail);
+	GLenum zfail = StencilActionAL2GL(depthTestFail);
+	GLenum zpass = StencilActionAL2GL(depthTestPass);
+	glStencilOp(fail, zfail, zpass);
+}
+
+void OpenGLGraphicsAPI::SetStencilFunction(BufferTestFunction stencilTestFunction, int reference, unsigned int mask) {
+	GLenum func = BufferTestFunctionAL2GL(stencilTestFunction);
+	glStencilFunc(func, reference, mask);
+}
+
+void OpenGLGraphicsAPI::SetStencilMask(unsigned int mask) {
+	glStencilMask(mask);
+}
+
+void OpenGLGraphicsAPI::SetPolygonOffset(float factor, float units) {
+	glPolygonOffset(factor, units);
 }
 
 void OpenGLGraphicsAPI::DrawIndexedTriangles(const VertexArray& vertexArray, unsigned int indexCount) {

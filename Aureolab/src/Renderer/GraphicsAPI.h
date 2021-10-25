@@ -9,8 +9,12 @@
 enum class GraphicsAbility {
 	Blend, // Blend fragment color with buffer color
 	DepthTest, // Update buffer after depth comparison
+	StencilTest,
 	PointSize, // Use gl_PointSize from shaders
 	FaceCulling, // Rendering front/back/both faces
+	PolygonOffsetFill,
+	PolygonOffsetLine,
+	PolygonOffsetPoint,
 };
 
 enum class BlendingFactor {
@@ -30,10 +34,14 @@ enum class PolygonMode {
 	Point, Line, Fill,
 };
 
-enum class DepthTestFunction {
+enum class BufferTestFunction {
 	Never, Always, 
 	Less, LessThanEqual, GreaterThanEqual, Greater,
 	Equal, NotEqual,
+};
+
+enum class StencilAction {
+	Keep, Zero, Replace, IncrementClamp, InrecementWrap, DecrementClamp, DecrementWrap, BitwiseInvert,
 };
 
 enum class ClearableBuffer {
@@ -60,7 +68,11 @@ public:
 	virtual void SetCullFace(CullFace cullFace) = 0;
 	// Whether to render points, lines or filled faces
 	virtual void SetPolygonMode(PolygonMode polygonMode) = 0;
-	virtual void SetDepthFunction(DepthTestFunction depthTestFunction) = 0;
+	virtual void SetDepthFunction(BufferTestFunction depthTestFunction) = 0;
+	virtual void SetStencilOperation(StencilAction stencilTestFail, StencilAction depthTestFail, StencilAction depthTestPass) = 0;
+	virtual void SetStencilFunction(BufferTestFunction stencilTestFunction, int reference, unsigned int mask) = 0;
+	virtual void SetStencilMask(unsigned int mask) = 0;
+	virtual void SetPolygonOffset(float factor, float units) = 0;
 
 	virtual void DrawIndexedTriangles(const VertexArray& vertexArray, unsigned int indexCount = 0) = 0;
 	virtual void DrawIndexedPoints(const VertexArray& vertexArray, unsigned int indexCount = 0) = 0;
