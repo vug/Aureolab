@@ -22,6 +22,7 @@ void EditorLayer::OnAttach() {
 
 	selectionShader = Shader::Create("assets/shaders/SelectionShader.glsl");
 	shader = Shader::Create("assets/shaders/BasicShader.glsl");
+	solidColorShader = Shader::Create("assets/shaders/SolidColor.glsl");
 	viewUbo = UniformBuffer::Create("ViewData", sizeof(ViewData));
 	viewUbo->BlockBind(shader);
 	lightsUbo = UniformBuffer::Create("Lights", sizeof(Lights));
@@ -82,6 +83,27 @@ void EditorLayer::OnUpdate(float ts) {
 		Renderer::RenderProceduralMesh(shader, viewData, transform, pMesh, meshRenderer);
 	}
 	shader->Unbind();
+
+	// Highlight hovered/selected objects if any
+	solidColorShader->Bind();
+	GraphicsAPI::Get()->Clear(false, true);
+	GraphicsAPI::Get()->SetPolygonMode(PolygonMode::Line);
+	auto highLightObjectIfExists = [&](const EntityHandle& obj, const glm::vec4& color) {
+		if (!obj) { return; }
+		solidColorShader->UploadUniformFloat4("u_Color", color);
+		if (obj.any_of<MeshComponent>()) {
+			Renderer::RenderMesh(solidColorShader, viewData, obj.get<TransformComponent>(), obj.get<MeshComponent>(), obj.get<MeshRendererComponent>());
+		}
+		else if (obj.any_of<ProceduralMeshComponent>()) {
+			Renderer::RenderProceduralMesh(solidColorShader, viewData, obj.get<TransformComponent>(), obj.get<ProceduralMeshComponent>(), obj.get<MeshRendererComponent>());
+		}
+	};
+	highLightObjectIfExists(hoveredObject, { 0.8f, 0.8f, 0.8f, 1.0f });
+	GraphicsAPI::Get()->SetDepthFunction(DepthTestFunction::LessThanEqual);
+	highLightObjectIfExists(selectedObject, { 1.0f, 1.0f, 0.0f, 1.0f });
+	GraphicsAPI::Get()->SetDepthFunction(DepthTestFunction::Less);
+	GraphicsAPI::Get()->SetPolygonMode(PolygonMode::Fill);
+	solidColorShader->Unbind();
 	viewportFbo->Unbind();
 
 	// Render pass 2: render entityID of each object into an integer buffer
@@ -174,4 +196,3 @@ void EditorLayer::OnImGuiRender() {
 	if (shouldShowDemo) ImGui::ShowDemoWindow();
 	ImGui::Text("mainViewportSize: (%.1f, %.1f)", viewport->Size.x, viewport->Size.y);
 }
-

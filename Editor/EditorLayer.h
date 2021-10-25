@@ -29,6 +29,7 @@ public:
 private:
 	Shader* shader = nullptr;
 	Shader* selectionShader = nullptr;
+	Shader* solidColorShader = nullptr;
 	UniformBuffer* viewUbo = nullptr;
 	UniformBuffer* lightsUbo = nullptr;
 	FrameBuffer* viewportFbo = nullptr;
