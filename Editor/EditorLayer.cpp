@@ -84,13 +84,15 @@ void EditorLayer::OnUpdate(float ts) {
 	}
 	shader->Unbind();
 
-	// Highlight hovered/selected objects if any
+	// Overlay wireframe of hovered object, if any
 	solidColorShader->Bind();
-	GraphicsAPI::Get()->Clear({ClearableBuffer::Depth});
+	GraphicsAPI::Get()->SetStencilMask(0x00);
+	GraphicsAPI::Get()->Enable(GraphicsAbility::PolygonOffsetLine);
+	GraphicsAPI::Get()->SetPolygonOffset(-1.0f, -1.0f); // prevent z-fighting btw the object and its wireframe
 	GraphicsAPI::Get()->SetPolygonMode(PolygonMode::Line);
-	auto highLightObjectIfExists = [&](const EntityHandle& obj, const glm::vec4& color) {
-		if (!obj) { return; }
-		solidColorShader->UploadUniformFloat4("u_Color", color);
+	if (hoveredObject) {
+		const EntityHandle& obj = hoveredObject;
+		solidColorShader->UploadUniformFloat4("u_Color", { 0.8f, 0.8f, 0.8f, 1.0f });
 		if (obj.any_of<MeshComponent>()) {
 			Renderer::RenderMesh(solidColorShader, viewData, obj.get<TransformComponent>(), obj.get<MeshComponent>(), obj.get<MeshRendererComponent>());
 		}
@@ -98,11 +100,8 @@ void EditorLayer::OnUpdate(float ts) {
 			Renderer::RenderProceduralMesh(solidColorShader, viewData, obj.get<TransformComponent>(), obj.get<ProceduralMeshComponent>(), obj.get<MeshRendererComponent>());
 		}
 	};
-	highLightObjectIfExists(hoveredObject, { 0.8f, 0.8f, 0.8f, 1.0f });
-	GraphicsAPI::Get()->SetDepthFunction(DepthTestFunction::LessThanEqual);
-	highLightObjectIfExists(selectedObject, { 1.0f, 1.0f, 0.0f, 1.0f });
-	GraphicsAPI::Get()->SetDepthFunction(DepthTestFunction::Less);
 	GraphicsAPI::Get()->SetPolygonMode(PolygonMode::Fill);
+	GraphicsAPI::Get()->Disable(GraphicsAbility::PolygonOffsetLine);
 	solidColorShader->Unbind();
 	viewportFbo->Unbind();
 
