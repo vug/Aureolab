@@ -25,9 +25,13 @@ enum class CullFace {
 static inline const char* CullFaceNames[] = { "Back", "Front", "FrontAndBack", }; // for GUI
 
 enum class PolygonMode {
-	Point,
-	Line,
-	Fill,
+	Point, Line, Fill,
+};
+
+enum class DepthTestFunction {
+	Never, Always, 
+	Less, LessThanEqual, GreaterThanEqual, Greater,
+	Equal, NotEqual,
 };
 
 
@@ -50,6 +54,7 @@ public:
 	virtual void SetCullFace(CullFace cullFace) = 0;
 	// Whether to render points, lines or filled faces
 	virtual void SetPolygonMode(PolygonMode polygonMode) = 0;
+	virtual void SetDepthFunction(DepthTestFunction depthTestFunction) = 0;
 
 	virtual void DrawIndexedTriangles(const VertexArray& vertexArray, unsigned int indexCount = 0) = 0;
 	virtual void DrawIndexedPoints(const VertexArray& vertexArray, unsigned int indexCount = 0) = 0;

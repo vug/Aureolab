@@ -64,6 +64,31 @@ inline GLenum PolygonModeAL2GL(PolygonMode pm) {
 	}
 }
 
+inline GLenum DepthTestFunctionAL2GL(DepthTestFunction df) {
+	switch (df) {
+	case DepthTestFunction::Never:
+		return GL_NEVER;
+	case DepthTestFunction::Always:
+		return GL_ALWAYS;
+	case DepthTestFunction::Less:
+		return GL_LESS;
+	case DepthTestFunction::LessThanEqual:
+		return GL_LEQUAL;
+	case DepthTestFunction::GreaterThanEqual:
+		return GL_GEQUAL;
+	case DepthTestFunction::Greater:
+		return GL_GREATER;
+	case DepthTestFunction::Equal:
+		return GL_EQUAL;
+	case DepthTestFunction::NotEqual:
+		return GL_NOTEQUAL;
+	default:
+		assert(false); // unknown DepthTestFunction
+		return -1;
+	}
+}
+
+
 void OpenGLGraphicsAPI::SetClearColor(const glm::vec4& color) {
 	glClearColor(color.r, color.g, color.b, color.a);
 }
@@ -114,6 +139,11 @@ void OpenGLGraphicsAPI::SetCullFace(CullFace cullFace) {
 void OpenGLGraphicsAPI::SetPolygonMode(PolygonMode polygonMode) {
 	GLenum glEnum = PolygonModeAL2GL(polygonMode);
 	glPolygonMode(GL_FRONT_AND_BACK, glEnum);
+}
+
+void OpenGLGraphicsAPI::SetDepthFunction(DepthTestFunction depthTestFunction) {
+	GLenum glEnum = DepthTestFunctionAL2GL(depthTestFunction);
+	glDepthFunc(glEnum);
 }
 
 void OpenGLGraphicsAPI::DrawIndexedTriangles(const VertexArray& vertexArray, unsigned int indexCount) {
