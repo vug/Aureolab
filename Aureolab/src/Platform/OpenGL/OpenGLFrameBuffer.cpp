@@ -33,10 +33,10 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height, TextureFormat textur
 	glBindTexture(GL_TEXTURE_2D, 0);
 	colorRendererIDs.push_back(colorRendererID);
 
-	// generate depth buffer texture
+	// generate depth & stencil buffer texture
 	glGenTextures(1, &depthRendererID);
 	glBindTexture(GL_TEXTURE_2D, depthRendererID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -45,7 +45,7 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(int width, int height, TextureFormat textur
 
 	// attach them to currently bound framebuffer object
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorRendererID, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthRendererID, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthRendererID, 0);
 
 	// Check FBO completion
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
@@ -90,7 +90,7 @@ void OpenGLFrameBuffer::Resize(int width, int height) {
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	glBindTexture(GL_TEXTURE_2D, depthRendererID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	Unbind();
 }
