@@ -55,6 +55,7 @@ target_link_libraries(
 	EnTT::EnTT
 	cereal
 	imguizmo
+	vulkan
 )
 
 target_compile_features(Aureolab PRIVATE cxx_std_20)
