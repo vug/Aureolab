@@ -42,9 +42,15 @@ public:
 
 private:
     GLFWwindow* window;
+
     VkInstance instance;
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debugMessenger;
+    VkSurfaceKHR surface;
+
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device;
+    
+    VkQueue graphicsQueue;
 
     static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
         const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -79,14 +85,15 @@ private:
 
     void initVulkan() {
         createInstance();
-        listExtensions();
         setupDebugMessenger(
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
             | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
             //| VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
             //| VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
         );
+        createSurface();
         pickPhysicalDevice();
+        createLogicalDevice();
     }
 
     void mainLoop() {
@@ -96,10 +103,13 @@ private:
     }
 
     void cleanup() {
+        vkDestroyDevice(device, nullptr);
+
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
 
+        vkDestroySurfaceKHR(instance, surface, nullptr);
         vkDestroyInstance(instance, nullptr);
 
         glfwDestroyWindow(window);
@@ -111,6 +121,7 @@ private:
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("validation layers requested, but not available");
         }
+        listExtensions();
 
         // https://khronos.org/registry/vulkan/specs/1.2-extensions/html/chap4.html#VkApplicationInfo
         VkApplicationInfo appInfo{}; // value initialization leaves un-set values as nullptr
@@ -173,6 +184,12 @@ private:
         createInfo.pUserData = this; // can give a pointer to HelloTriangleApplication instance as an example
     }
 
+    void createSurface() {
+        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create window surface!");
+        }
+    }
+
     void setupDebugMessenger(VkDebugUtilsMessageSeverityFlagsEXT severity) {
         if (!enableValidationLayers) { return; }
 
@@ -207,6 +224,40 @@ private:
         if (physicalDevice == VK_NULL_HANDLE) {
             throw std::runtime_error("failed to find a suitable GPU!");
         }
+    }
+
+    void createLogicalDevice() {
+        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+        queueCreateInfo.queueCount = 1;
+        float queuePriority = 1.0f; // determine scheduling of command buffer execution
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+
+        // Device features to be used / enabled. Will populate later.
+        VkPhysicalDeviceFeatures deviceFeatures{};
+
+        VkDeviceCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.pQueueCreateInfos = &queueCreateInfo;
+        createInfo.queueCreateInfoCount = 1;
+        createInfo.pEnabledFeatures = &deviceFeatures;
+        createInfo.enabledExtensionCount = 0;
+        if (enableValidationLayers) {
+            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames = validationLayers.data();
+        }
+        else {
+            createInfo.enabledLayerCount = 0;
+        }
+
+        if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create logical device!");
+        }
+
+        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     }
 
     bool isDeviceSuitable(VkPhysicalDevice device) {
