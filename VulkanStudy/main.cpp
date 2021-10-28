@@ -1,3 +1,5 @@
+#include "Core/Log.h"
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 // Looks like GLFW comes with Vulkan headers. No need for: #include <vulkan/vulkan.h>
@@ -31,8 +33,28 @@ public:
 
 private:
     GLFWwindow* window;
-
     VkInstance instance;
+    VkDebugUtilsMessengerEXT debugMessenger;
+
+    static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+        const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+        // Explicitly load the debug messenger creation function (it's an extension)
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+        if (func != nullptr) {
+            return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+        }
+        else {
+            return VK_ERROR_EXTENSION_NOT_PRESENT;
+        }
+    }
+
+    static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
+        const VkAllocationCallbacks* pAllocator) {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        if (func != nullptr) {
+            func(instance, debugMessenger, pAllocator);
+        }
+    }
 
     void initWindow() {
         glfwInit();
@@ -48,6 +70,12 @@ private:
     void initVulkan() {
         createInstance();
         listExtensions();
+        setupDebugMessenger(
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
+        );
     }
 
     void mainLoop() {
@@ -57,6 +85,10 @@ private:
     }
 
     void cleanup() {
+        if (enableValidationLayers) {
+            DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+        }
+
         vkDestroyInstance(instance, nullptr);
 
         glfwDestroyWindow(window);
@@ -82,23 +114,15 @@ private:
         VkInstanceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-        // Vulkan extensions required by GLFW
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-        createInfo.enabledExtensionCount = glfwExtensionCount;
-        createInfo.ppEnabledExtensionNames = glfwExtensions;
+        auto extensions = getRequiredExtensions();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+        createInfo.ppEnabledExtensionNames = extensions.data();
         if (enableValidationLayers) {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
             createInfo.ppEnabledLayerNames = validationLayers.data();
         }
         else {
             createInfo.enabledLayerCount = 0;
-        }
-
-        std::cout << "glfw required extensions:" << std::endl;
-        for (int i = 0; i < glfwExtensionCount; i++) {
-            std::cout << "\t" << glfwExtensions[i] << std::endl;
         }
 
         // https://khronos.org/registry/vulkan/specs/1.2-extensions/html/chap4.html#vkCreateInstance
@@ -118,6 +142,44 @@ private:
         for (const auto& extension : extensions) {
             std::cout << '\t' << extension.extensionName << '\n';
         }
+    }
+
+    void setupDebugMessenger(VkDebugUtilsMessageSeverityFlagsEXT severity) {
+        if (!enableValidationLayers) { return; }
+
+        VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo.messageSeverity = severity;
+        createInfo.messageType = 
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        createInfo.pfnUserCallback = debugCallback;
+        createInfo.pUserData = this; // can give a pointer to HelloTriangleApplication instance as an example
+
+        if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+            throw std::runtime_error("failed to set up debug messenger!");
+        }
+    }
+
+    std::vector<const char*> getRequiredExtensions() {
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions;
+        // Vulkan extensions required by GLFW
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        std::cout << "glfw required extensions:" << std::endl;
+        for (uint32_t i = 0; i < glfwExtensionCount; i++) {
+            std::cout << "\t" << glfwExtensions[i] << std::endl;
+        }
+        
+        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+        if (enableValidationLayers) {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME); // same as "VK_EXT_debug_utils"
+        }
+
+        return extensions;
     }
 
     bool checkValidationLayerSupport() {
@@ -144,6 +206,43 @@ private:
         }
 
         return true;
+    }
+
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData) {
+
+        std::string msgType;
+        switch (messageType) {
+        case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
+            msgType = "General";
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
+            msgType = "Validation";
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
+            msgType = "Performance";
+            break;
+        }
+
+        switch (messageSeverity) {
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+            Log::Trace("[ValidationLayer, {}] {}", msgType, pCallbackData->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+            Log::Info("[ValidationLayer, {}] {}", msgType, pCallbackData->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+            Log::Warning("[ValidationLayer, {}] {}", msgType, pCallbackData->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+            Log::Error("[ValidationLayer, {}] {}", msgType, pCallbackData->pMessage);
+            break;
+        }
+
+        return VK_FALSE;
     }
 };
 
