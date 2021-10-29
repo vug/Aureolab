@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <set>
@@ -116,6 +117,7 @@ private:
         createLogicalDevice();
         createSwapChain();
         createImageViews();
+        createGraphicsPipeline();
     }
 
     void mainLoop() {
@@ -394,6 +396,45 @@ private:
         }
     }
 
+    void createGraphicsPipeline() {
+        auto vertShaderByteCode = readFile("assets/shaders/shader-vert.spv");
+        auto fragShaderByteCode = readFile("assets/shaders/shader-frag.spv");
+
+        VkShaderModule vertShaderModule = createShaderModule(vertShaderByteCode);
+        VkShaderModule fragShaderModule = createShaderModule(fragShaderByteCode);
+
+        VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+        vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        vertShaderStageInfo.module = vertShaderModule;
+        // entrypoint. can combine multiple shaders into a single file, each of which having a different entrypoint.
+        vertShaderStageInfo.pName = "main";
+        // to set shader constants to help compiler (more efficient than doing it at render time)
+        vertShaderStageInfo.pSpecializationInfo = nullptr;
+
+        VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+        fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        fragShaderStageInfo.module = fragShaderModule;
+        fragShaderStageInfo.pName = "main";
+
+        VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+    }
+
+    VkShaderModule createShaderModule(const std::vector<char>& code) {
+        VkShaderModuleCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = code.size();
+        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+        VkShaderModule shaderModule;
+        if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create shader module!");
+        }
+
+        return shaderModule;
+    }
+
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
         for (const auto& availableFormat : availableFormats) {
             if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB
@@ -578,6 +619,25 @@ private:
         }
 
         return true;
+    }
+
+    static std::vector<char> readFile(const std::string& filename) {
+        // start reading at the end of the file. read as binary.
+        std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+        if (!file.is_open()) {
+            throw std::runtime_error("failed to open shader file!.");
+        }
+
+        size_t fileSize = (size_t)file.tellg();
+        std::cout << filename << " has " << fileSize << " characters.\n";
+        std::vector<char> buffer(fileSize);
+
+        file.seekg(0);
+        file.read(buffer.data(), fileSize);
+        file.close();
+
+        return buffer;
     }
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(

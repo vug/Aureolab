@@ -1,0 +1,2 @@
+C:\VulkanSDK\1.2.189.2\Bin\glslc.exe C:\Users\veliu\Documents\repos\Aureolab\VulkanStudy\assets\shaders\shader.vert -o C:\Users\veliu\Documents\repos\Aureolab\VulkanStudy\assets\shaders\shader-vert.spv
+C:\VulkanSDK\1.2.189.2\Bin\glslc.exe C:\Users\veliu\Documents\repos\Aureolab\VulkanStudy\assets\shaders\shader.frag -o C:\Users\veliu\Documents\repos\Aureolab\VulkanStudy\assets\shaders\shader-frag.spv
