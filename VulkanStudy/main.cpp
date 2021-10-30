@@ -81,6 +81,8 @@ private:
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
 
+    VkSemaphore imageAvailableSemaphore;
+    VkSemaphore renderFinishedSemaphore;
 
     static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
         const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -131,15 +133,24 @@ private:
         createFramebuffers();
         createCommandPool();
         createCommandBuffers();
+        createSemaphores();
     }
 
     void mainLoop() {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
+            drawFrame();
         }
+
+        // drawFrame operations are async.
+        // should finish them before leaving the main loop and starting cleanup.
+        vkDeviceWaitIdle(device);
     }
 
     void cleanup() {
+        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+
         vkDestroyCommandPool(device, commandPool, nullptr);
         for (auto framebuffer : swapChainFramebuffers) {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
@@ -442,12 +453,22 @@ swapChainExtent = extent;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
 
+        VkSubpassDependency dependency{};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // special value referrind implicit subpass before renderpass
+        dependency.dstSubpass = 0; // first subpass (there is only one)
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         renderPassInfo.attachmentCount = 1;
         renderPassInfo.pAttachments = &colorAttachment;
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subpass;
+        renderPassInfo.dependencyCount = 1;
+        renderPassInfo.pDependencies = &dependency;
 
         if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
             throw std::runtime_error("failed to create render pass!");
@@ -662,7 +683,8 @@ swapChainExtent = extent;
         for (size_t i = 0; i < commandBuffers.size(); i++) {
             VkCommandBufferBeginInfo beginInfo{};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-            beginInfo.flags = 0; // Optional
+            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+            //beginInfo.flags = 0; // Optional
             beginInfo.pInheritanceInfo = nullptr; // Optional
 
             if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
@@ -690,6 +712,69 @@ swapChainExtent = extent;
                 throw std::runtime_error("failed to end recording command buffer!");
             }
         }
+    }
+
+    void createSemaphores() {
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
+            vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS) {
+
+            throw std::runtime_error("failed to create semaphores!");
+        }
+    }
+
+    void drawFrame() {
+        // acquire image from swap chain
+        // execute command buffer with that image as attachment in the framebuffer
+        // return the image to the swapchain for presentation
+
+        // Vulkan executes commands asynchroniously/independently. 
+        // Need explicit dependency declaration for correct order of execution, i.e. synchronization
+        // use fences to sync main app with command queue ops, use semaphors to sync operations within/across command queues
+        uint32_t imageIndex;
+        // UINT64_MAX: disables timeout. (std::numeric_limits<uint64_t>::max gave error)
+        vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+        // Submitting command buffer
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        // events to wait for
+        VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
+        // pipeline stage at which to wait. wait writing color attachment until image is available
+        // meaning, can work on vertex shader while image is becoming available
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+        // command buffer responsible of this image
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+        
+        // Once finish rendering the image (i.e. command buffer(s) finished execution)
+        VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+
+        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+            throw std::runtime_error("failed to submit draw command buffer!");
+        }
+
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        // semaphores to wait before presentation can happen
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+        // almost always there'll be one swapchain from which to present
+        VkSwapchainKHR swapChains[] = { swapChain };
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+        presentInfo.pImageIndices = &imageIndex;
+        presentInfo.pResults = nullptr; // Optional
+
+        // submits request to present an image to the swap chain
+        vkQueuePresentKHR(presentQueue, &presentInfo);
     }
 
     VkShaderModule createShaderModule(const std::vector<char>& code) {
