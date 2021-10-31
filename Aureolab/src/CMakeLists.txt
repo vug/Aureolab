@@ -56,6 +56,7 @@ target_link_libraries(
 	cereal
 	imguizmo
 	vulkan
+	stb
 )
 
 target_compile_features(Aureolab PRIVATE cxx_std_20)
