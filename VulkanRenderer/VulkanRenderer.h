@@ -13,6 +13,7 @@ public:
 	virtual void OnResize(int width, int height) override;
 private:
 	VkInstance instance;
+	VkSurfaceKHR surface;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,

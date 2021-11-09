@@ -95,10 +95,17 @@ VulkanRenderer::VulkanRenderer(Window& win) {
         Log::Critical("failed to create Vulkan instance!");
         exit(EXIT_FAILURE);
     }
+
+    // Create Surface
+    if (win.CreateSurface(instance, &surface) != VK_SUCCESS) {
+        Log::Critical("Cannot create Window Surface");
+        exit(EXIT_FAILURE);
+    }
 }
 
 VulkanRenderer::~VulkanRenderer() {
     Log::Debug("Destructing Vulkan Renderer...");
+    vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
 }
 

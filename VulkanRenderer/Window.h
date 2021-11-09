@@ -17,6 +17,7 @@ public:
 	void PollEvents();
 
 	void SetUserPointer(void* ptr);
+	VkResult CreateSurface(VkInstance instance, VkSurfaceKHR* surface);
 private:
 	GLFWwindow* window;
 	uint32_t glfwVulkanExtensionCount;

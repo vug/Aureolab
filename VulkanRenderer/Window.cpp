@@ -56,3 +56,7 @@ void Window::PollEvents() {
 void Window::SetUserPointer(void* ptr) {
     glfwSetWindowUserPointer(window, ptr);
 }
+
+VkResult Window::CreateSurface(VkInstance instance, VkSurfaceKHR* surface) {
+    return glfwCreateWindowSurface(instance, window, nullptr, surface);
+}
