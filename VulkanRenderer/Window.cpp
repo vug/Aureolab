@@ -44,6 +44,14 @@ Window::~Window() {
     glfwTerminate();
 }
 
+bool Window::ShouldClose() {
+    return glfwWindowShouldClose(window);
+}
+
+void Window::PollEvents() {
+    glfwPollEvents();
+}
+
 // ptr can be referred in GLFW's static callback functions
 void Window::SetUserPointer(void* ptr) {
     glfwSetWindowUserPointer(window, ptr);

@@ -13,6 +13,8 @@ public:
 
 	const char** GetVulkanExtensions() const { return glfwVulkanExtensions; }
 	uint32_t GetVulkanExtensionCount() const { return glfwVulkanExtensionCount; }
+	bool ShouldClose();
+	void PollEvents();
 
 	void SetUserPointer(void* ptr);
 private:

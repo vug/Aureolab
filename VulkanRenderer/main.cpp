@@ -7,5 +7,8 @@ int main() {
     Window win;
     VulkanRenderer vr = { win };
 
+    while (!win.ShouldClose()) {
+        win.PollEvents();
+    }
     return 0;
 }
