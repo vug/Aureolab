@@ -17,7 +17,7 @@ private:
 	VkDevice device;
 	VkQueue graphicsQueue;
 	VkQueue presentQueue;
-	VkDebugUtilsMessengerEXT debugMessenger;
+	VkDebugUtilsMessengerEXT debugMessenger = nullptr;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,

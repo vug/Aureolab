@@ -13,6 +13,7 @@ public:
 
 	const char** GetVulkanExtensions() const { return glfwVulkanExtensions; }
 	uint32_t GetVulkanExtensionCount() const { return glfwVulkanExtensionCount; }
+	void GetFramebufferSize(int* width, int* height);
 	bool ShouldClose();
 	void PollEvents();
 

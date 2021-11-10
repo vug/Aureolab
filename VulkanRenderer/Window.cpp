@@ -44,6 +44,10 @@ Window::~Window() {
     glfwTerminate();
 }
 
+void Window::GetFramebufferSize(int* width, int* height) {
+    glfwGetFramebufferSize(window, width, height);
+}
+
 bool Window::ShouldClose() {
     return glfwWindowShouldClose(window);
 }
