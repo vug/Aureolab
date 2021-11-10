@@ -14,6 +14,9 @@ public:
 private:
 	VkInstance instance;
 	VkSurfaceKHR surface;
+	VkDevice device;
+	VkQueue graphicsQueue;
+	VkQueue presentQueue;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
