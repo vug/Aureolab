@@ -4,6 +4,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include <set>
+
 VulkanRenderer::VulkanRenderer(Window& win) {
     // Window binding. Will make window to call OnResize when Window's framebuffer resized.
     win.SetUserPointer(this);
@@ -14,6 +16,8 @@ VulkanRenderer::VulkanRenderer(Window& win) {
     bool enableValidationLayers = true;
     VkDebugUtilsMessageSeverityFlagsEXT severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     std::vector<const char*> layers;
+    // device features: deviceFeatures.samplerAnisotropy
+    // any other queue families?
 
     // Check requested layers
     if (enableValidationLayers) {
@@ -99,6 +103,148 @@ VulkanRenderer::VulkanRenderer(Window& win) {
     // Create Surface
     if (win.CreateSurface(instance, &surface) != VK_SUCCESS) {
         Log::Critical("Cannot create Window Surface");
+        exit(EXIT_FAILURE);
+    }
+
+
+    // Physical Device
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+    if (deviceCount == 0) {
+        Log::Critical("Failed to find GPUs with Vulkan support!");
+        exit(EXIT_FAILURE);
+    }
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+    Log::Debug("Available devices:");
+    for (const auto& device : devices) {
+        VkPhysicalDeviceProperties properties;
+        vkGetPhysicalDeviceProperties(device, &properties);
+        Log::Debug("\t{}", properties.deviceName);
+    }
+    // choose first available and suitable device
+    // (alternatively, we can rate device by their features first and choose best one)
+    struct QueueFamilyIndices {
+        std::optional<uint32_t> graphicsFamily;
+        std::optional<uint32_t> presentFamily;
+
+        bool isComplete() {
+            return graphicsFamily.has_value() && presentFamily.has_value();
+        }
+    };
+    Log::Debug("Suitable devices:");
+    for (const auto& device : devices) {
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+        Log::Debug("\tChecking suitability of {}", deviceProperties.deviceName);
+        // Check required queues, store queue indices if there are any
+        QueueFamilyIndices indices;
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+        int ix = 0;
+        for (const auto& queueFamily : queueFamilies) {
+            // VK_QUEUE_TRANSFER_BIT is to copy/transfer buffers from CPU staging to GPU (actually implied by Graphics bit)
+            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                indices.graphicsFamily = ix;
+            }
+            VkBool32 presentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, ix, surface, &presentSupport);
+            if (presentSupport) { indices.presentFamily = ix; }
+            if (indices.isComplete()) { break; }
+            ix++;
+        }
+        if (ix == queueFamilies.size()) {
+            Log::Debug("\t\tDoes not have queues graphics and presentation.");
+            continue;
+        }
+        // invariant: indices.isComplete() == true aka indices is a QueueFamilyIndices with required queues
+        Log::Debug("\t\tHas {} queue families. Graphics index: {}, Present/Surface index: {}.",
+            queueFamilyCount, indices.graphicsFamily.value(), indices.presentFamily.value());
+
+        // Check required extensions
+        const std::vector<const char*> requiredExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+        uint32_t extensionCount;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+        std::set<std::string> extensionsNotAvailable(requiredExtensions.begin(), requiredExtensions.end());
+        for (const auto& extension : availableExtensions) { extensionsNotAvailable.erase(extension.extensionName); }
+        // not all required extensions are available in this device
+        if (!extensionsNotAvailable.empty()) {
+            std::string s;
+            for (const auto& ext : extensionsNotAvailable) { s += ext + " "; }
+            Log::Debug("\t\tMissing required extensions: {}", s);
+            continue;
+        }
+        else {
+            std::string s;
+            for (const auto& ext : requiredExtensions) { s += std::string(ext) + " "; }
+            Log::Debug("\t\tHas required extensions: {}", s);
+        }
+
+        // Check Swapchain support
+        struct SwapChainSupportDetails {
+            VkSurfaceCapabilitiesKHR capabilities;
+            std::vector<VkSurfaceFormatKHR> formats;
+            std::vector<VkPresentModeKHR> presentModes;
+
+            bool isAdequate() {
+                return !formats.empty() && !presentModes.empty();
+            }
+        };
+        SwapChainSupportDetails details;
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+        uint32_t formatCount;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+        if (formatCount != 0) {
+            details.formats.resize(formatCount);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+        }
+        uint32_t presentModeCount;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+        if (presentModeCount != 0) {
+            details.presentModes.resize(presentModeCount);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+        }
+        if (!details.isAdequate()) {
+            Log::Debug("\t\tHas no formats or present modes to display images in a swap chain");
+            continue;
+        }
+        else {
+            for (const auto& fmt : details.formats) {
+                Log::Debug("\t\tSupports format: VkFormat[{}], colorspace: VkColorSpaceKHR[{}]", fmt.format, fmt.colorSpace);
+            }
+            for (const auto& mode : details.presentModes) {
+                Log::Debug("\t\tSupports presentation modes: VkPresentModeKHR[{}]", mode);
+            }
+        }
+
+        VkPhysicalDeviceFeatures deviceFeatures;
+        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+        if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            Log::Debug("\t\tIs not a GPU");
+            continue;
+        }
+        
+        if (!deviceFeatures.samplerAnisotropy) {
+            Log::Debug("\t\tDoes not have Anisotrophic sampling feature.");
+            continue;
+        }
+        else {
+            Log::Debug("\t\tSupports Anisotrophic sampling feature!");
+        }
+
+        // all requirements satisfied!
+        physicalDevice = device;
+    }
+    if (physicalDevice == VK_NULL_HANDLE) {
+        Log::Debug("Failed to find a suitable GPU with required queues!");
         exit(EXIT_FAILURE);
     }
 }
