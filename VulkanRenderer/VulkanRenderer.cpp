@@ -68,7 +68,7 @@ VulkanRenderer::VulkanRenderer(Window& win) {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
-        // Debug setup for instance creation
+        // Debug setup for instance creation/destruction
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
         // put logic into a function. Needed twice. -> or don't :-)
         debugCreateInfo = {};
@@ -101,6 +101,16 @@ VulkanRenderer::VulkanRenderer(Window& win) {
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             Log::Critical("failed to create Vulkan instance!");
             exit(EXIT_FAILURE);
+        }
+
+        if (enableValidationLayers) {
+            Log::Debug("Creating Debug Messenger...");
+            // Used for debug messages not related to instance creation
+            debugCreateInfo.messageSeverity = severity;
+            auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+            if (func != nullptr) {
+                func(instance, &debugCreateInfo, nullptr, &debugMessenger);
+            }
         }
     }
 
@@ -310,6 +320,11 @@ VulkanRenderer::VulkanRenderer(Window& win) {
 
 VulkanRenderer::~VulkanRenderer() {
     Log::Debug("Destructing Vulkan Renderer...");
+    vkDestroyDevice(device, nullptr);
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {  // TODO: also if enableValidationLayers
+        func(instance, debugMessenger, nullptr);
+    }
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
 }
