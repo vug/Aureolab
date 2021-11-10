@@ -20,84 +20,88 @@ VulkanRenderer::VulkanRenderer(Window& win) {
     // any other queue families?
 
     // Check requested layers
-    if (enableValidationLayers) {
-        layers.push_back("VK_LAYER_KHRONOS_validation");
-    }
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-    for (const char* layerName : layers) {
-        bool layerFound = false;
-        for (const auto& layerProperties : availableLayers) {
-            if (strcmp(layerName, layerProperties.layerName) == 0) {
-                layerFound = true;
-                break;
+    {
+        if (enableValidationLayers) {
+            layers.push_back("VK_LAYER_KHRONOS_validation");
+        }
+        uint32_t layerCount;
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        std::vector<VkLayerProperties> availableLayers(layerCount);
+        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+        for (const char* layerName : layers) {
+            bool layerFound = false;
+            for (const auto& layerProperties : availableLayers) {
+                if (strcmp(layerName, layerProperties.layerName) == 0) {
+                    layerFound = true;
+                    break;
+                }
+            }
+            if (!layerFound) {
+                Log::Critical("Requested Vulkan layer {} not supported or found!", layerName);
+                exit(EXIT_FAILURE);
             }
         }
-        if (!layerFound) { 
-            Log::Critical("Requested Vulkan layer {} not supported or found!", layerName);
-            exit(EXIT_FAILURE);
-        }
     }
-
-    // Check required extensions
-    uint32_t glfwExtensionCount = win.GetVulkanExtensionCount();
-    const char** glfwExtensions = win.GetVulkanExtensions();
-    Log::Debug("Extensions required by GLFW: {}", glfwExtensionCount);
-    for (uint32_t i = 0; i < glfwExtensionCount; i++) {
-        Log::Debug("\t{}", glfwExtensions[i]);
-    }
-    // initialization of a vector from an array: v(a, a + len)
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-    if (enableValidationLayers) {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
-
-    // Application Info
-    VkApplicationInfo appInfo{};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.apiVersion = VK_API_VERSION_1_2;
-    // rest is not important
-    appInfo.pApplicationName = "A Vulkan application";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-
-    // Debug setup for instance creation
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
-    // put logic into a function. Needed twice. -> or don't :-)
-    debugCreateInfo = {};
-    debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    // If kept at warning throws harmless warnings such as "loaderAddLayerProperties: C:\VulkanSDK\1.2.189.2\Bin\VkLayer_device_simulation.json 
-    // invalid layer manifest file version 1.2.0.  May cause errors."
-    debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    debugCreateInfo.messageType =
-        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
-        | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
-        | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    debugCreateInfo.pfnUserCallback = DebugCallback;
-    debugCreateInfo.pUserData = this;
 
     // Create Vulkan Instance
-    VkInstanceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
-    if (enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
-        createInfo.ppEnabledLayerNames = layers.data();
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-    }
-    else {
-        createInfo.enabledLayerCount = 0;
-        createInfo.pNext = nullptr;
-    }
+    {
+        // Application Info
+        VkApplicationInfo appInfo{};
+        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        appInfo.apiVersion = VK_API_VERSION_1_2;
+        // rest is not important
+        appInfo.pApplicationName = "A Vulkan application";
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.pEngineName = "No Engine";
+        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 
-    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-        Log::Critical("failed to create Vulkan instance!");
-        exit(EXIT_FAILURE);
+        // Check required extensions
+        uint32_t glfwExtensionCount = win.GetVulkanExtensionCount();
+        const char** glfwExtensions = win.GetVulkanExtensions();
+        Log::Debug("Extensions required by GLFW: {}", glfwExtensionCount);
+        for (uint32_t i = 0; i < glfwExtensionCount; i++) {
+            Log::Debug("\t{}", glfwExtensions[i]);
+        }
+        // initialization of a vector from an array: v(a, a + len)
+        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+        if (enableValidationLayers) {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
+
+        // Debug setup for instance creation
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+        // put logic into a function. Needed twice. -> or don't :-)
+        debugCreateInfo = {};
+        debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        // If kept at warning throws harmless warnings such as "loaderAddLayerProperties: C:\VulkanSDK\1.2.189.2\Bin\VkLayer_device_simulation.json 
+        // invalid layer manifest file version 1.2.0.  May cause errors."
+        debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debugCreateInfo.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+            | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debugCreateInfo.pfnUserCallback = DebugCallback;
+        debugCreateInfo.pUserData = this;
+
+        VkInstanceCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        createInfo.pApplicationInfo = &appInfo;
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+        createInfo.ppEnabledExtensionNames = extensions.data();
+        if (enableValidationLayers) {
+            createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
+            createInfo.ppEnabledLayerNames = layers.data();
+            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+        }
+        else {
+            createInfo.enabledLayerCount = 0;
+            createInfo.pNext = nullptr;
+        }
+
+        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+            Log::Critical("failed to create Vulkan instance!");
+            exit(EXIT_FAILURE);
+        }
     }
 
     // Create Surface
@@ -107,26 +111,33 @@ VulkanRenderer::VulkanRenderer(Window& win) {
     }
 
 
-    // Physical Device
+    // Pick Physical Device
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    std::vector<VkPhysicalDevice> devices;
 
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-    if (deviceCount == 0) {
-        Log::Critical("Failed to find GPUs with Vulkan support!");
-        exit(EXIT_FAILURE);
-    }
-    std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+    // Available Devices
+    {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+        if (deviceCount == 0) {
+            Log::Critical("Failed to find GPUs with Vulkan support!");
+            exit(EXIT_FAILURE);
+        }
+        devices.resize(deviceCount);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
-    Log::Debug("Available devices:");
-    for (const auto& device : devices) {
-        VkPhysicalDeviceProperties properties;
-        vkGetPhysicalDeviceProperties(device, &properties);
-        Log::Debug("\t{}", properties.deviceName);
+        Log::Debug("Available devices:");
+        for (const auto& device : devices) {
+            VkPhysicalDeviceProperties properties;
+            vkGetPhysicalDeviceProperties(device, &properties);
+            Log::Debug("\t{}", properties.deviceName);
+        }
     }
+
+
     // choose first available and suitable device
     // (alternatively, we can rate device by their features first and choose best one)
+    Log::Debug("Suitable devices:");
     struct QueueFamilyIndices {
         std::optional<uint32_t> graphicsFamily;
         std::optional<uint32_t> presentFamily;
@@ -135,7 +146,6 @@ VulkanRenderer::VulkanRenderer(Window& win) {
             return graphicsFamily.has_value() && presentFamily.has_value();
         }
     };
-    Log::Debug("Suitable devices:");
     for (const auto& device : devices) {
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -237,7 +247,7 @@ VulkanRenderer::VulkanRenderer(Window& win) {
             continue;
         }
         else {
-            Log::Debug("\t\tSupports Anisotrophic sampling feature!");
+            Log::Debug("\t\tSupports Anisotrophic sampling feature.");
         }
 
         // all requirements satisfied!
