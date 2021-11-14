@@ -19,6 +19,7 @@ private:
 	VkQueue presentQueue;
 	VkDebugUtilsMessengerEXT debugMessenger = nullptr;
 	VkSwapchainKHR swapChain;
+	std::vector<VkImageView> swapChainImageViews;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
