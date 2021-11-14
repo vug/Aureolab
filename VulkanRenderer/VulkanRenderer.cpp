@@ -359,10 +359,70 @@ VulkanRenderer::VulkanRenderer(Window& win) {
         Log::Debug("\tSwapchain dimensions chosen in min-max image extend range: ({}, {})", swapExtend.width, swapExtend.height);
     }
 
+
+    uint32_t imageCount = capabilities.minImageCount + 1;
+    if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount) {
+        imageCount = capabilities.maxImageCount;
+    }
+    Log::Debug("\tThere are {} images in the Swapchain. (min: {}, max: {})", 
+        imageCount, capabilities.minImageCount, capabilities.maxImageCount);
+
+    std::vector<VkImage> swapChainImages;
+    {
+        VkSwapchainCreateInfoKHR createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        createInfo.surface = surface;
+        createInfo.minImageCount = imageCount;
+        createInfo.imageFormat = surfaceFormat.format;
+        createInfo.imageColorSpace = surfaceFormat.colorSpace;
+        createInfo.imageExtent = swapExtend;
+        // Can be 2 for stereoscopic 3D/VR applications
+        createInfo.imageArrayLayers = 1;
+        // We'll render directly into this image, therefor they'll be color attachments
+        // We could have rendered scenes into separate images first to do post-processing on them
+        // and then copy/transfer them to a swap chain image via VK_IMAGE_USAGE_TRANSFER_DST_BIT
+        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+        // Wheter the same queue handles drawing and presentation or not
+        if (indices.graphicsFamily != indices.presentFamily) {
+            // images can bu used by multiple queue families without explicit ownership transfer
+            createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+            createInfo.queueFamilyIndexCount = 2;
+            createInfo.pQueueFamilyIndices = std::array<uint32_t, 2>({ indices.graphicsFamily.value(), 
+                                                                       indices.presentFamily.value(), }).data();
+        }
+        else {
+            // at any given time image is owned only by one queue family, ownership must be explicitly transferred to other family before use
+            createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            createInfo.queueFamilyIndexCount = 0;
+            createInfo.pQueueFamilyIndices = nullptr;
+        }
+        Log::Debug("\tImage Sharing Mode (among queue families): {}", createInfo.imageSharingMode);
+
+        // an example transform could be horizontal flip
+        createInfo.preTransform = swapchainSupportDetails.capabilities.currentTransform;
+        // ignore alpha, no blending with other windows in the window system.
+        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        createInfo.presentMode = presentMode;
+        // don't care about obscured pixels (behind another window)
+        createInfo.clipped = VK_TRUE;
+        // Swapchain becomes invalid on resize, and old swap chain is referred while creating new one. Here were are creating swap chain the first time.
+        createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+        if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+            Log::Critical("failed to create swap chain!");
+        }
+
+        vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+        swapChainImages.resize(imageCount);
+        vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+    }
+
 }
 
 VulkanRenderer::~VulkanRenderer() {
     Log::Debug("Destructing Vulkan Renderer...");
+    vkDestroySwapchainKHR(device, swapChain, nullptr);
     vkDestroyDevice(device, nullptr);
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {  // TODO: also if enableValidationLayers
