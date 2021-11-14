@@ -14,10 +14,13 @@ VulkanRenderer::VulkanRenderer(Window& win) {
     Log::Debug("Creating Vulkan Instance...");
     // Vulkan Instance Parameters
     bool enableValidationLayers = true;
-    VkDebugUtilsMessageSeverityFlagsEXT severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    VkDebugUtilsMessageSeverityFlagsEXT severity = 
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+        | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     std::vector<const char*> layers;
     // device features: deviceFeatures.samplerAnisotropy
     // any other queue families?
+    // imageCount
 
     // Check requested layers
     {
@@ -105,7 +108,7 @@ VulkanRenderer::VulkanRenderer(Window& win) {
 
         if (enableValidationLayers) {
             Log::Debug("Creating Debug Messenger...");
-            // Used for debug messages not related to instance creation
+            // For debug messages not related to instance creation. (reusing previous VkDebugUtilsMessengerCreateInfoEXT)
             debugCreateInfo.messageSeverity = severity;
             auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
             if (func != nullptr) {
@@ -273,7 +276,7 @@ VulkanRenderer::VulkanRenderer(Window& win) {
 
     // Create Logical Device
     Log::Debug("Creating Logical Device...");
-    std::vector< VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     {
         std::set<uint32_t> uniqueQueueFamilies =
         { indices.graphicsFamily.value(), indices.presentFamily.value() };
@@ -325,20 +328,20 @@ VulkanRenderer::VulkanRenderer(Window& win) {
             surfaceFormat = availableFormat;
         }
     }
-    Log::Debug("Chosen surface format - format: {}, colorspace: {}", surfaceFormat.format, surfaceFormat.colorSpace);
+    Log::Debug("\tChosen surface format - format: {}, colorspace: {}", surfaceFormat.format, surfaceFormat.colorSpace);
     VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
     for (const auto& availablePresentMode : swapchainSupportDetails.presentModes) {
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
             presentMode = availablePresentMode;
         }
     }
-    Log::Debug("Chosen present mode: {}", presentMode);
+    Log::Debug("\tChosen present mode: {}", presentMode);
 
     VkExtent2D swapExtend;
     const auto& capabilities = swapchainSupportDetails.capabilities;
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         swapExtend = capabilities.currentExtent;
-        Log::Debug("Swapchain dimensions set to window size: ({}, {})", swapExtend.width, swapExtend.height);
+        Log::Debug("\tSwapchain dimensions set to window size: ({}, {})", swapExtend.width, swapExtend.height);
     }
     else {
         int width, height;
@@ -353,7 +356,7 @@ VulkanRenderer::VulkanRenderer(Window& win) {
         swapExtend.height = std::clamp(swapExtend.height,
             capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
-        Log::Debug("Swapchain dimensions chosen in min-max image extend range: ({}, {})", swapExtend.width, swapExtend.height);
+        Log::Debug("\tSwapchain dimensions chosen in min-max image extend range: ({}, {})", swapExtend.width, swapExtend.height);
     }
 
 }

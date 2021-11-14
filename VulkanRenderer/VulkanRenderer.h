@@ -18,6 +18,7 @@ private:
 	VkQueue graphicsQueue;
 	VkQueue presentQueue;
 	VkDebugUtilsMessengerEXT debugMessenger = nullptr;
+	VkSwapchainKHR swapChain;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
