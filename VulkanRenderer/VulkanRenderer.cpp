@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <fstream>
 #include <set>
 
 VulkanRenderer::VulkanRenderer(Window& win) {
@@ -411,6 +412,7 @@ VulkanRenderer::VulkanRenderer(Window& win) {
 
         if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
             Log::Critical("failed to create swap chain!");
+            exit(EXIT_FAILURE);
         }
 
         vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
@@ -437,9 +439,9 @@ VulkanRenderer::VulkanRenderer(Window& win) {
         // VR app can have 2 layers, one of each eye
         viewInfo.subresourceRange.layerCount = 1;
 
-        VkImageView imageView;
         if (vkCreateImageView(device, &viewInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
             Log::Critical("failed to create texture image view!");
+            exit(EXIT_FAILURE);
         }
     }
 }
@@ -462,6 +464,72 @@ VulkanRenderer::~VulkanRenderer() {
 void VulkanRenderer::OnResize(int width, int height) {
     Log::Debug("Framebuffer resized: ({}, {})", width, height);
     // TODO: resize logic will come here
+}
+
+VkPipeline VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename) {
+    Log::Debug("Creating Graphics Pipeline...");
+
+    Log::Debug("\tCreating Shader Modules and Shader Stage...");
+    auto vertShaderByteCode = ReadFile(vertFilename);
+    auto fragShaderByteCode = ReadFile(fragFilename);
+    VkShaderModule vertShaderModule = CreateShaderModule(vertShaderByteCode);
+    VkShaderModule fragShaderModule = CreateShaderModule(fragShaderByteCode);
+
+    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertShaderStageInfo.module = vertShaderModule;
+    // Entrypoint. can combine multiple shaders into a single file, each of which having a different entrypoint.
+    vertShaderStageInfo.pName = "main";
+    // To set shader constants to help compiler (more efficient than doing it at render time)
+    vertShaderStageInfo.pSpecializationInfo = nullptr;
+
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.module = fragShaderModule;
+    fragShaderStageInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+
+    vkDestroyShaderModule(device, fragShaderModule, nullptr);
+    vkDestroyShaderModule(device, vertShaderModule, nullptr);
+    // TODO: return correct pipeline
+    return VkPipeline();
+}
+
+std::vector<char> VulkanRenderer::ReadFile(const std::string& filename) {
+    // start reading at the end of the file. read as binary.
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open()) {
+        Log::Critical("failed to open shader file!");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t fileSize = (size_t)file.tellg();
+    Log::Debug("{} has {} characters.", filename, fileSize);
+    std::vector<char> buffer(fileSize);
+
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+    file.close();
+
+    return buffer;
+}
+
+VkShaderModule VulkanRenderer::CreateShaderModule(const std::vector<char>& code) {
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = code.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+    VkShaderModule shaderModule;
+    if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create shader module!");
+    }
+
+    return shaderModule;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRenderer::DebugCallback(
