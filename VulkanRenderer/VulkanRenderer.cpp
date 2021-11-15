@@ -443,9 +443,24 @@ VulkanRenderer::VulkanRenderer(Window& win) {
             exit(EXIT_FAILURE);
         }
     }
+
+
+    Log::Debug("Creating Command Pool...");
+    // Rendering draw commands will go to graphics queue
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
+    // Not changing commands for now. so no flags.
+    poolInfo.flags = 0; // Optional
+
+    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+        Log::Debug("failed to create command pool!");
+        exit(EXIT_FAILURE);
+    }
 }
 
 VulkanRenderer::~VulkanRenderer() {
+    vkDestroyCommandPool(device, commandPool, nullptr);
     for (auto framebuffer : swapChainFramebuffers) {
         vkDestroyFramebuffer(device, framebuffer, nullptr);
     }

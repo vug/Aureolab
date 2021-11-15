@@ -27,6 +27,7 @@ private:
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
+	VkCommandPool commandPool;
 
 	// SwapChain related info that is used in creation of GraphicsPipeline
 	VkSurfaceFormatKHR surfaceFormat;
