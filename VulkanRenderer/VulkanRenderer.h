@@ -13,7 +13,7 @@ public:
 
 	virtual void OnResize(int width, int height) override;
 
-	VkPipeline CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename);
+	void CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename);
 
 private:
 	// Resources that needs to be destroyed at the end
@@ -26,6 +26,7 @@ private:
 	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
+	std::vector<VkFramebuffer> swapChainFramebuffers;
 
 	// SwapChain related info that is used in creation of GraphicsPipeline
 	VkSurfaceFormatKHR surfaceFormat;
