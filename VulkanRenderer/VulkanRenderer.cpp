@@ -632,6 +632,72 @@ VkPipeline VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vert
         Log::Critical("failed to create pipeline layout!");
         exit(EXIT_FAILURE);
     }
+
+    Log::Debug("\tRender Pass...");
+    /*
+     A Renderpass is a collection of N attachments, M subpassesand their L dependencies.
+     Describes how attachments are used over the course of subpasses.
+     Each subpass can use N_m <= N subset of attachments as their input, color, depth, resolve etc. attachment
+     Dependencies are memory-deps between src and dst subpasses. Self-dependencies are possible.
+    */
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = surfaceFormat.format;
+    // should this be the same as pipeline rasterizationSamples?
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    // at the beginning of subpass: _LOAD would preserved what was previously there. Other: _DONT_CARE
+    // for depth/stencil attachment only apply to depth
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    // at the end of subpass: or _DONT_CARE
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    // ignored when dealing with a color attachment, used by depth/stencil attachments
+    // currently, not using stencil buffer
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    // Layout at the beginning of render pass. Don't care about the layout before rendering. Will overwrite anyway.
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    // Layout to automatically transition to after render pass finishes
+    // Since this is a single render-pass sub-pass example, this attachment will be displayed after drawn
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // Only one sub-pass at the moment
+    VkAttachmentReference colorAttachmentRef{};
+    // index in Renderpass' VkAttachmentDescription* pAttachments
+    colorAttachmentRef.attachment = 0;
+    // Vulkan will transition the attachment into this layout when subpass will start
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // not _COMPUTE
+    subpass.colorAttachmentCount = 1;
+    // index in this "array" is directly referenced in fragment shader, say `layout(location = 0) out vec4 outColor`
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    // specify memory and execution dependencies between subpasses
+    // We want our only single subpass to happen after swap chain image is acquired
+    // Option 1: set waitStages for the imageAvailableSemaphore to VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT <- render pass does not start until image is available
+    // Option 2: (this one) make the render pass wait for the VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT stage
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // special value reference: "subpass before renderpass"
+    dependency.dstSubpass = 0; // first and only subpass
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    // Renderpass is created by providing attachments, subpasses that use them, and the dependency relationship between subpasses
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+        Log::Critical("failed to create render pass!");
+        exit(EXIT_FAILURE);
+    }
     vkDestroyShaderModule(device, fragShaderModule, nullptr);
     vkDestroyShaderModule(device, vertShaderModule, nullptr);
     // TODO: return correct pipeline

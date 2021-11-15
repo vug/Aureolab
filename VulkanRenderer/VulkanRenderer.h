@@ -23,6 +23,7 @@ private:
 	VkDevice device;
 	VkSwapchainKHR swapChain;
 	std::vector<VkImageView> swapChainImageViews;
+	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 
