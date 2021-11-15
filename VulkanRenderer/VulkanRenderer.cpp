@@ -323,7 +323,7 @@ VulkanRenderer::VulkanRenderer(Window& win) {
 
     // Create Swapchain
     Log::Debug("Creating Swapchain...");
-    VkSurfaceFormatKHR surfaceFormat = swapchainSupportDetails.formats[0];
+    surfaceFormat = swapchainSupportDetails.formats[0];
     for (const auto& availableFormat : swapchainSupportDetails.formats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             surfaceFormat = availableFormat;
@@ -338,26 +338,25 @@ VulkanRenderer::VulkanRenderer(Window& win) {
     }
     Log::Debug("\tChosen present mode: {}", presentMode);
 
-    VkExtent2D swapExtend;
     const auto& capabilities = swapchainSupportDetails.capabilities;
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
-        swapExtend = capabilities.currentExtent;
-        Log::Debug("\tSwapchain dimensions set to window size: ({}, {})", swapExtend.width, swapExtend.height);
+        swapExtent = capabilities.currentExtent;
+        Log::Debug("\tSwapchain dimensions set to window size: ({}, {})", swapExtent.width, swapExtent.height);
     }
     else {
         int width, height;
         win.GetFramebufferSize(&width, &height);
 
-        swapExtend = {
+        swapExtent = {
             static_cast<uint32_t>(width), static_cast<uint32_t>(height),
         };
 
-        swapExtend.width = std::clamp(swapExtend.width,
+        swapExtent.width = std::clamp(swapExtent.width,
             capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-        swapExtend.height = std::clamp(swapExtend.height,
+        swapExtent.height = std::clamp(swapExtent.height,
             capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
-        Log::Debug("\tSwapchain dimensions chosen in min-max image extend range: ({}, {})", swapExtend.width, swapExtend.height);
+        Log::Debug("\tSwapchain dimensions chosen in min-max image extend range: ({}, {})", swapExtent.width, swapExtent.height);
     }
 
 
@@ -376,7 +375,7 @@ VulkanRenderer::VulkanRenderer(Window& win) {
         createInfo.minImageCount = imageCount;
         createInfo.imageFormat = surfaceFormat.format;
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
-        createInfo.imageExtent = swapExtend;
+        createInfo.imageExtent = swapExtent;
         // Can be 2 for stereoscopic 3D/VR applications
         createInfo.imageArrayLayers = 1;
         // We'll render directly into this image, therefor they'll be color attachments
@@ -447,6 +446,10 @@ VulkanRenderer::VulkanRenderer(Window& win) {
 }
 
 VulkanRenderer::~VulkanRenderer() {
+    vkDestroyPipeline(device, graphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+    vkDestroyRenderPass(device, renderPass, nullptr);
+
     Log::Debug("Destructing Vulkan Renderer...");
     for (auto imageView : swapChainImageViews) {
         vkDestroyImageView(device, imageView, nullptr);
@@ -468,8 +471,11 @@ void VulkanRenderer::OnResize(int width, int height) {
 
 VkPipeline VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename) {
     Log::Debug("Creating Graphics Pipeline...");
+    // optional parameters: shaders, Vertex class with binding and attribute descriptions,
+    // VkPrimitiveTopology topology, VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace
+    // VkSampleCountFlagBits rasterizationSamples, VkPipelineColorBlendAttachmentState alpha blend settings
 
-    Log::Debug("\tCreating Shader Modules and Shader Stage...");
+    Log::Debug("\tCreating Shader Modules and Shader Stage Info...");
     auto vertShaderByteCode = ReadFile(vertFilename);
     auto fragShaderByteCode = ReadFile(fragFilename);
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderByteCode);
@@ -492,6 +498,140 @@ VkPipeline VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vert
 
     VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
+    Log::Debug("\tVertex Input State Info...");
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexBindingDescriptionCount = 0;
+    vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
+    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+    // TODO: Vertex descriptions will come later, first example does not use vertex input
+    //auto bindingDescription = Vertex::getBindingDescription();
+    //auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    //vertexInputInfo.vertexBindingDescriptionCount = 1;
+    //vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    //vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    //vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+    // TODO: Have a BaseVertex class with getBindingDescription() and getAttributeDescriptions() virtual methods. Graphics Pipeline can take one.
+    // TODO: Or, it can be templated, and call static functions for binding description?
+
+    Log::Debug("\tInput Assembly State Info...");
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
+    inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    // There are also POINT_LIST, LINE_LIST, TRIANGLE_STRIP etc.
+    inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    // restart is useful in instance rendering
+    inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+
+    Log::Debug("\tNo Tesselation State Info.");
+
+    Log::Debug("\tViewport State Info...");
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float)swapExtent.width;
+    viewport.height = (float)swapExtent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = swapExtent;
+    VkPipelineViewportStateCreateInfo viewportStateInfo{};
+    viewportStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportStateInfo.viewportCount = 1;
+    viewportStateInfo.pViewports = &viewport;
+    viewportStateInfo.scissorCount = 1;
+    viewportStateInfo.pScissors = &scissor;
+
+    Log::Debug("\tRasterization State Info...");
+    VkPipelineRasterizationStateCreateInfo rasterizerInfo{};
+    rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    // when true clamps fragments nearer than near plane or further than far plane
+    // as opposed to discarding (might be useful for shadow maps)
+    rasterizerInfo.depthClampEnable = VK_FALSE;
+    // when tru geometry never passes rasterizer stage. => disables framebuffer.
+    rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
+    // Triangle rendering mode. {FILL, LINE, POINT}. Other modes require a GPU feature.
+    rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
+    // NONE, FRONT, BACK, or FRONT_AND_BACK
+    rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+    // or clock-wise (we did y-flip, hence need to switch from CW to CCW)
+    rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizerInfo.depthBiasEnable = VK_FALSE;
+    // contant depth added to each fragment
+    rasterizerInfo.depthBiasConstantFactor = 0.0f;
+    rasterizerInfo.depthBiasClamp = 0.0f;
+    rasterizerInfo.depthBiasSlopeFactor = 0.0f;
+    // max value depends on hardward. lw > 1 requires wideLines GPU feature.
+    rasterizerInfo.lineWidth = 1.0f;
+
+    Log::Debug("\tMultisample State Info...");
+    VkPipelineMultisampleStateCreateInfo multisamplingInfo{};
+    multisamplingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    // number of samples per fragment
+    multisamplingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisamplingInfo.sampleShadingEnable = VK_FALSE;
+    multisamplingInfo.minSampleShading = 1.0f;
+    multisamplingInfo.pSampleMask = nullptr;
+    // Might be useful later.
+    multisamplingInfo.alphaToCoverageEnable = VK_FALSE;
+    multisamplingInfo.alphaToOneEnable = VK_FALSE;
+
+    // TODO: add depth and stencil later
+    Log::Debug("\tDepth Stencil State Info...");
+    VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
+    depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilInfo.depthTestEnable = VK_TRUE;
+    depthStencilInfo.depthWriteEnable = VK_TRUE;
+    depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
+    depthStencilInfo.stencilTestEnable = VK_FALSE;
+    //depthStencilInfo.front. ...
+
+    Log::Debug("\tColor Blend State Info...");
+    // About combining fragment shader color with the color already in Framebuffer
+    // Can be done via colorBlendOp
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    // When false, new color from fragment shader is written into Framebuffer without modification. 
+    colorBlendAttachment.blendEnable = VK_FALSE;
+
+    // Example
+    VkPipelineColorBlendAttachmentState standardAlphaBlending{};
+    standardAlphaBlending.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    standardAlphaBlending.blendEnable = VK_TRUE;
+    standardAlphaBlending.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    standardAlphaBlending.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    standardAlphaBlending.colorBlendOp = VK_BLEND_OP_ADD;
+    standardAlphaBlending.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    standardAlphaBlending.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    standardAlphaBlending.alphaBlendOp = VK_BLEND_OP_ADD;
+
+    VkPipelineColorBlendStateCreateInfo colorBlendingInfo{};
+    colorBlendingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    // Blending also can be done via bitwise operations. Turning this one disables color blending, as if blendEnable was false
+    colorBlendingInfo.logicOpEnable = VK_FALSE;
+    //colorBlendingInfo.logicOp = VK_LOGIC_OP_COPY; // Optional
+    colorBlendingInfo.attachmentCount = 1;
+    colorBlendingInfo.pAttachments = &colorBlendAttachment;
+
+    // No need for a VkPipelineDynamicStateCreateInfo at the moment.
+    // Not changing any pipeline settings dynamically at the moment.
+
+    Log::Debug("\tCreating Pipeline Layout...");
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 0;
+    // TODO: will come when loading vertex data
+    //pipelineLayoutInfo.setLayoutCount = 1;
+    //pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+    //pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+    //pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+        Log::Critical("failed to create pipeline layout!");
+        exit(EXIT_FAILURE);
+    }
     vkDestroyShaderModule(device, fragShaderModule, nullptr);
     vkDestroyShaderModule(device, vertShaderModule, nullptr);
     // TODO: return correct pipeline

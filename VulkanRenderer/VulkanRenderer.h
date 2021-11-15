@@ -14,15 +14,25 @@ public:
 	virtual void OnResize(int width, int height) override;
 
 	VkPipeline CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename);
+
 private:
+	// Resources that needs to be destroyed at the end
 	VkInstance instance;
 	VkSurfaceKHR surface;
-	VkDevice device;
-	VkQueue graphicsQueue;
-	VkQueue presentQueue;
 	VkDebugUtilsMessengerEXT debugMessenger = nullptr;
+	VkDevice device;
 	VkSwapchainKHR swapChain;
 	std::vector<VkImageView> swapChainImageViews;
+	VkPipelineLayout pipelineLayout;
+	VkPipeline graphicsPipeline;
+
+	// SwapChain related info that is used in creation of GraphicsPipeline
+	VkSurfaceFormatKHR surfaceFormat;
+	VkExtent2D swapExtent; // used in GraphicsPipeline creation
+
+	//
+	VkQueue graphicsQueue;
+	VkQueue presentQueue;
 
 	static std::vector<char> ReadFile(const std::string& filename);
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
