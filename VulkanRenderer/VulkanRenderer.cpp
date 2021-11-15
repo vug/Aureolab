@@ -698,6 +698,39 @@ VkPipeline VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vert
         Log::Critical("failed to create render pass!");
         exit(EXIT_FAILURE);
     }
+
+
+    Log::Debug("\tCreating Pipeline...");
+    // Made of 1) Shader stages, 2) Fixed-function states,
+    // 3) Pipeline Layout (uniform/push values used by shaders, updated at draw time), 4) Renderpass
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    // 1) Shaders
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
+    // 2) Fixed-function states
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
+    pipelineInfo.pViewportState = &viewportStateInfo;
+    pipelineInfo.pRasterizationState = &rasterizerInfo;
+    pipelineInfo.pMultisampleState = &multisamplingInfo;
+    pipelineInfo.pDepthStencilState = nullptr; // 
+    pipelineInfo.pColorBlendState = &colorBlendingInfo;
+    pipelineInfo.pDynamicState = nullptr;
+    // 3) Pipeline Layout
+    pipelineInfo.layout = pipelineLayout;
+    // 4) Renderpass
+    pipelineInfo.renderPass = renderPass;
+    pipelineInfo.subpass = 0;
+    // could have created (derive) this pipeline based on another pipeline
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+    pipelineInfo.basePipelineIndex = -1; // Optional
+
+    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+        Log::Critical("failed to create graphics pipeline!");
+        exit(EXIT_FAILURE);
+    }
+
     vkDestroyShaderModule(device, fragShaderModule, nullptr);
     vkDestroyShaderModule(device, vertShaderModule, nullptr);
     // TODO: return correct pipeline
