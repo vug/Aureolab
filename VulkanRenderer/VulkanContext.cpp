@@ -1,6 +1,7 @@
 #include "VulkanContext.h"
 #include "VulkanContext.h"
 #include "VulkanContext.h"
+#include "VulkanContext.h"
 
 #include "Core/Log.h"
 
@@ -25,10 +26,11 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
         Log::Debug("\t{}", windowExtensions[i]);
     }
 
-    instance = CreateInstance(windowExtensionCount, windowExtensions, validation, debugMessenger);
+    std::tie(instance, debugMessenger) = CreateInstance(windowExtensionCount, windowExtensions, validation);
     shouldDestroyDebugUtils = validation;
     surface = CreateSurface(win, instance);
     auto physicalDevice = CreatePhysicalDevice(instance, surface);
+    auto device = CreateLogicalDevice();
 }
 
 VulkanContext::~VulkanContext() {
@@ -43,7 +45,7 @@ VulkanContext::~VulkanContext() {
     vkDestroyInstance(instance, nullptr);
 }
 
-VkInstance& VulkanContext::CreateInstance(uint32_t requestedExtensionCount, const char** requestedExtensions, bool enableValidationLayers, VkDebugUtilsMessengerEXT& outDebugMessenger) {
+std::tuple<VkInstance&, VkDebugUtilsMessengerEXT&> VulkanContext::CreateInstance(uint32_t requestedExtensionCount, const char** requestedExtensions, bool enableValidationLayers) {
     /* Potential Configuration Options:
     - Whole VkApplicationInfo (API version, App Name/Version etc)
     - Debug
@@ -133,16 +135,17 @@ VkInstance& VulkanContext::CreateInstance(uint32_t requestedExtensionCount, cons
         exit(EXIT_FAILURE);
     }
 
+    VkDebugUtilsMessengerEXT debugMessenger;
     if (enableValidationLayers) {
         Log::Debug("Creating Debug Messenger...");
         // For debug messages not related to instance creation. (reusing previous VkDebugUtilsMessengerCreateInfoEXT)
         debugCreateInfo.messageSeverity = severity;
         auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
         if (func != nullptr) {
-            func(instance, &debugCreateInfo, nullptr, &outDebugMessenger);
+            func(instance, &debugCreateInfo, nullptr, &debugMessenger);
         }
     }
-    return instance;
+    return { instance, debugMessenger };
 }
 
 VkSurfaceKHR& VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instance) {
