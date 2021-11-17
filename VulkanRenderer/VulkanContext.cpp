@@ -2,6 +2,7 @@
 #include "VulkanContext.h"
 #include "VulkanContext.h"
 #include "VulkanContext.h"
+#include "VulkanContext.h"
 
 #include "Core/Log.h"
 
@@ -30,13 +31,21 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     surface = CreateSurface(win, instance);
     VkPhysicalDevice physicalDevice;
     QueueFamilyIndices queueIndices;
+    SwapChainSupportDetails swapchainSupportDetails;
     std::vector<const char*> requiredExtensions;
-    std::tie(physicalDevice, queueIndices, requiredExtensions) = CreatePhysicalDevice(instance, surface);
+    std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(instance, surface);
     std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, validation, vulkanLayers);
+    VkSurfaceFormatKHR swapchainSurfaceFormat;
+    VkExtent2D swapchainExtent;
+    std::tie(swapchain, swapchainSurfaceFormat, swapchainExtent, swapchainImageViews) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
 }
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
+    for (auto imageView : swapchainImageViews) {
+        vkDestroyImageView(device, imageView, nullptr);
+    }
+    vkDestroySwapchainKHR(device, swapchain, nullptr);
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     if (shouldDestroyDebugUtils) {
@@ -161,7 +170,7 @@ VkSurfaceKHR& VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instan
     return surface;
 }
 
-std::tuple<VkPhysicalDevice&, QueueFamilyIndices, std::vector<const char*>&> VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface) {
+std::tuple<VkPhysicalDevice&, QueueFamilyIndices, SwapChainSupportDetails, std::vector<const char*>> VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface) {
     /* Potential Configuration Options:
     - Queues to request (to get a compute queue)
     - Device features to query
@@ -192,15 +201,6 @@ std::tuple<VkPhysicalDevice&, QueueFamilyIndices, std::vector<const char*>&> Vul
     Log::Debug("Suitable devices:");
     QueueFamilyIndices indices;
 
-    struct SwapChainSupportDetails {
-        VkSurfaceCapabilitiesKHR capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> presentModes;
-
-        bool isAdequate() {
-            return !formats.empty() && !presentModes.empty();
-        }
-    };
     SwapChainSupportDetails swapchainSupportDetails;
 
     std::vector<const char*> requiredExtensions;
@@ -306,7 +306,7 @@ std::tuple<VkPhysicalDevice&, QueueFamilyIndices, std::vector<const char*>&> Vul
         Log::Debug("Failed to find a suitable GPU with required queues!");
         exit(EXIT_FAILURE);
     }
-    return { physicalDevice, indices, requiredExtensions };
+    return { physicalDevice, indices, swapchainSupportDetails, requiredExtensions };
 }
 
 std::tuple<VkDevice&, VkQueue&, VkQueue&> VulkanContext::CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers) {
@@ -356,6 +356,135 @@ std::tuple<VkDevice&, VkQueue&, VkQueue&> VulkanContext::CreateLogicalDevice(VkP
     vkGetDeviceQueue(device, queueIndices.presentFamily.value(), 0, &presentQueue);
 
     return { device, graphicsQueue, presentQueue };
+}
+
+std::tuple<VkSwapchainKHR&, VkSurfaceFormatKHR&, VkExtent2D&, std::vector<VkImageView>> VulkanContext::CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapchainSupportDetails) {
+    Log::Debug("Creating Swapchain...");
+    VkSwapchainKHR swapchain;
+
+    VkSurfaceFormatKHR surfaceFormat = swapchainSupportDetails.formats[0];
+    for (const auto& availableFormat : swapchainSupportDetails.formats) {
+        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            surfaceFormat = availableFormat;
+        }
+    }
+    Log::Debug("\tChosen surface format - format: {}, colorspace: {}", surfaceFormat.format, surfaceFormat.colorSpace);
+    VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    for (const auto& availablePresentMode : swapchainSupportDetails.presentModes) {
+        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+            presentMode = availablePresentMode;
+        }
+    }
+    Log::Debug("\tChosen present mode: {}", presentMode);
+
+    VkExtent2D swapExtent;
+    const auto& capabilities = swapchainSupportDetails.capabilities;
+    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+        swapExtent = capabilities.currentExtent;
+        Log::Debug("\tSwapchain dimensions set to window size: ({}, {})", swapExtent.width, swapExtent.height);
+    }
+    else {
+        int width = 800, height = 600; // default value, but better to bring it from window
+        //win.GetFramebufferSize(&width, &height);
+
+        swapExtent = {
+            static_cast<uint32_t>(width), static_cast<uint32_t>(height),
+        };
+
+        swapExtent.width = std::clamp(swapExtent.width,
+            capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        swapExtent.height = std::clamp(swapExtent.height,
+            capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+        Log::Debug("\tSwapchain dimensions chosen in min-max image extend range: ({}, {})", swapExtent.width, swapExtent.height);
+    }
+
+
+    uint32_t imageCount = capabilities.minImageCount + 1;
+    if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount) {
+        imageCount = capabilities.maxImageCount;
+    }
+    Log::Debug("\tThere are {} images in the Swapchain. (min: {}, max: {})",
+        imageCount, capabilities.minImageCount, capabilities.maxImageCount);
+
+    VkSwapchainCreateInfoKHR createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = surface;
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = surfaceFormat.format;
+    createInfo.imageColorSpace = surfaceFormat.colorSpace;
+    createInfo.imageExtent = swapExtent;
+    // Can be 2 for stereoscopic 3D/VR applications
+    createInfo.imageArrayLayers = 1;
+    // We'll render directly into this image, therefor they'll be color attachments
+    // We could have rendered scenes into separate images first to do post-processing on them
+    // and then copy/transfer them to a swap chain image via VK_IMAGE_USAGE_TRANSFER_DST_BIT
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    // Wheter the same queue handles drawing and presentation or not
+    if (queueIndices.graphicsFamily != queueIndices.presentFamily) {
+        // images can bu used by multiple queue families without explicit ownership transfer
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = std::array<uint32_t, 2>({ queueIndices.graphicsFamily.value(),
+                                                                    queueIndices.presentFamily.value(), }).data();
+    }
+    else {
+        // at any given time image is owned only by one queue family, ownership must be explicitly transferred to other family before use
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.queueFamilyIndexCount = 0;
+        createInfo.pQueueFamilyIndices = nullptr;
+    }
+    Log::Debug("\tImage Sharing Mode (among queue families): {}", createInfo.imageSharingMode);
+
+    // an example transform could be horizontal flip
+    createInfo.preTransform = swapchainSupportDetails.capabilities.currentTransform;
+    // ignore alpha, no blending with other windows in the window system.
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = presentMode;
+    // don't care about obscured pixels (behind another window)
+    createInfo.clipped = VK_TRUE;
+    // Swapchain becomes invalid on resize, and old swap chain is referred while creating new one. Here were are creating swap chain the first time.
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+    if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
+        Log::Critical("failed to create swap chain!");
+        exit(EXIT_FAILURE);
+    }
+
+    std::vector<VkImage> swapchainImages;
+    vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
+    swapchainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(device, swapchain, &imageCount, swapchainImages.data());
+
+    std::vector<VkImageView> swapchainImageViews;
+    swapchainImageViews.resize(swapchainImages.size());
+    for (uint32_t i = 0; i < swapchainImages.size(); i++) {
+        VkImageViewCreateInfo viewInfo{};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = swapchainImages[i];
+        // can also be 1D, 3D or cube map
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = surfaceFormat.format;
+        viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        // VR app can have 2 layers, one of each eye
+        viewInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(device, &viewInfo, nullptr, &swapchainImageViews[i]) != VK_SUCCESS) {
+            Log::Critical("failed to create texture image view!");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    //std::vector<std::reference_wrapper<VkImageView>> ret(swapchainImages.begin(), swapchainImages.end());
+    return { swapchain, surfaceFormat, swapExtent, swapchainImageViews };
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::DebugCallback(
