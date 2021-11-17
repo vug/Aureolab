@@ -1,4 +1,5 @@
 #include "VulkanContext.h"
+#include "VulkanContext.h"
 
 #include "Core/Log.h"
 
@@ -10,6 +11,7 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     - Queues to request (to get a compute queue)
     - Number of images in SwapChain
     */
+    Log::Debug("Constructing Vulkan Renderer...");
 
     // Window binding. Will make the window to call OnResize when Window's framebuffer resized.
     win.SetUserPointer(this);
@@ -22,10 +24,12 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
 
     instance = CreateInstance(windowExtensionCount, windowExtensions, validation, debugMessenger);
     shouldDestroyDebugUtils = validation;
+    surface = CreateSurface(win, instance);
 }
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
+    vkDestroySurfaceKHR(instance, surface, nullptr);
     if (shouldDestroyDebugUtils) {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
         if (func != nullptr) {
@@ -45,7 +49,6 @@ VkInstance& VulkanContext::CreateInstance(uint32_t requestedExtensionCount, cons
     - Validation: Enable/Disable Features and Checks
     - Headless context
     */
-    Log::Debug("Constructing Vulkan Renderer...");
     Log::Debug("Creating Vulkan Instance...");
     VkInstance instance;
 
@@ -136,6 +139,16 @@ VkInstance& VulkanContext::CreateInstance(uint32_t requestedExtensionCount, cons
         }
     }
     return instance;
+}
+
+VkSurfaceKHR& VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instance) {
+    Log::Debug("Creating Surface...");
+    VkSurfaceKHR surface;
+    if (win.CreateSurface(instance, &surface) != VK_SUCCESS) {
+        Log::Critical("Failed to create Window Surface!");
+        exit(EXIT_FAILURE);
+    }
+    return surface;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::DebugCallback(
