@@ -1,10 +1,10 @@
 #include "Core/Log.h"
 
-#include "Window.h"
+#include "VulkanWindow.h"
 #include "VulkanRenderer.h"
 
 int main() {
-    Window win;
+    VulkanWindow win;
     VulkanRenderer vr = { win };
     vr.CreateExampleGraphicsPipeline("assets/shaders/example-vert.spv", "assets/shaders/example-frag.spv");
 

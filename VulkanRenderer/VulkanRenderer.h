@@ -1,5 +1,5 @@
 #pragma once
-#include "Window.h"
+#include "VulkanWindow.h"
 
 #include "IResizable.h"
 
@@ -8,7 +8,7 @@
 
 class VulkanRenderer : public IResizable {
 public:
-	VulkanRenderer(Window& win);
+	VulkanRenderer(VulkanWindow& win);
 	~VulkanRenderer();
 
 	virtual void OnResize(int width, int height) override;

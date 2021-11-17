@@ -6,10 +6,10 @@
 #include <GLFW/glfw3.h>
 
 // Window for a Vulkan App
-class Window {
+class VulkanWindow {
 public:
-	Window();
-	~Window();
+	VulkanWindow();
+	~VulkanWindow();
 
 	const char** GetVulkanExtensions() const { return glfwVulkanExtensions; }
 	uint32_t GetVulkanExtensionCount() const { return glfwVulkanExtensionCount; }

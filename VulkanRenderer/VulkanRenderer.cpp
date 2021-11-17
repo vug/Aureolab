@@ -7,7 +7,7 @@
 #include <fstream>
 #include <set>
 
-VulkanRenderer::VulkanRenderer(Window& win) {
+VulkanRenderer::VulkanRenderer(VulkanWindow& win) {
     // Window binding. Will make window to call OnResize when Window's framebuffer resized.
     win.SetUserPointer(this);
 

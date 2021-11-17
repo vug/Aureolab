@@ -1,4 +1,4 @@
-#include "Window.h"
+#include "VulkanWindow.h"
 
 #include "Core/Log.h"
 
@@ -11,7 +11,7 @@ static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
     resizable->OnResize(width, height);
 }
 
-Window::Window() {
+VulkanWindow::VulkanWindow() {
     Log::Debug("Constructing GLFW Window...");
 	int WIDTH = 1024;
 	int HEIGHT = 768;
@@ -37,30 +37,30 @@ Window::Window() {
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
 
-Window::~Window() {
+VulkanWindow::~VulkanWindow() {
     Log::Debug("Destructing GLFW Window...");
     glfwDestroyWindow(window);
 
     glfwTerminate();
 }
 
-void Window::GetFramebufferSize(int* width, int* height) {
+void VulkanWindow::GetFramebufferSize(int* width, int* height) {
     glfwGetFramebufferSize(window, width, height);
 }
 
-bool Window::ShouldClose() {
+bool VulkanWindow::ShouldClose() {
     return glfwWindowShouldClose(window);
 }
 
-void Window::PollEvents() {
+void VulkanWindow::PollEvents() {
     glfwPollEvents();
 }
 
 // ptr can be referred in GLFW's static callback functions
-void Window::SetUserPointer(void* ptr) {
+void VulkanWindow::SetUserPointer(void* ptr) {
     glfwSetWindowUserPointer(window, ptr);
 }
 
-VkResult Window::CreateSurface(VkInstance instance, VkSurfaceKHR* surface) {
+VkResult VulkanWindow::CreateSurface(VkInstance instance, VkSurfaceKHR* surface) {
     return glfwCreateWindowSurface(instance, window, nullptr, surface);
 }
