@@ -45,12 +45,14 @@ public:
 	static std::tuple<VkPhysicalDevice&, QueueFamilyIndices, SwapChainSupportDetails, std::vector<const char*>> CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface);
 	static std::tuple<VkDevice&, VkQueue&, VkQueue&> CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers);
 	static std::tuple<VkSwapchainKHR&, VkSurfaceFormatKHR&, VkExtent2D&, std::vector<VkImageView>> CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapChainSupportDetails);
+	static VkCommandPool& CreateGraphicsCommandPool(VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 
 	const VkQueue& GetGraphicsQueue() const { return graphicsQueue; }
 	const VkQueue& GetPresentationQueue() const { return presentQueue; }
 
 private:
 	// Vulkan Objects that needs to be destroyed with VulkanContext
+	VkCommandPool commandPool;
 	std::vector<VkImageView> swapchainImageViews;
 	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 	VkDevice device = VK_NULL_HANDLE;

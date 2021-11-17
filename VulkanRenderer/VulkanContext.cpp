@@ -3,6 +3,7 @@
 #include "VulkanContext.h"
 #include "VulkanContext.h"
 #include "VulkanContext.h"
+#include "VulkanContext.h"
 
 #include "Core/Log.h"
 
@@ -38,10 +39,12 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     VkSurfaceFormatKHR swapchainSurfaceFormat;
     VkExtent2D swapchainExtent;
     std::tie(swapchain, swapchainSurfaceFormat, swapchainExtent, swapchainImageViews) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
+    commandPool = CreateGraphicsCommandPool(device, queueIndices.graphicsFamily.value());
 }
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
+    vkDestroyCommandPool(device, commandPool, nullptr);
     for (auto imageView : swapchainImageViews) {
         vkDestroyImageView(device, imageView, nullptr);
     }
@@ -485,6 +488,25 @@ std::tuple<VkSwapchainKHR&, VkSurfaceFormatKHR&, VkExtent2D&, std::vector<VkImag
 
     //std::vector<std::reference_wrapper<VkImageView>> ret(swapchainImages.begin(), swapchainImages.end());
     return { swapchain, surfaceFormat, swapExtent, swapchainImageViews };
+}
+
+VkCommandPool& VulkanContext::CreateGraphicsCommandPool(VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
+    Log::Debug("Creating Command Pool...");
+    VkCommandPool commandPool;
+
+    // Rendering draw commands will go to graphics queue
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
+    // Not changing commands for now. so no flags.
+    poolInfo.flags = 0; // Optional
+
+    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+        Log::Debug("failed to create command pool!");
+        exit(EXIT_FAILURE);
+    }
+
+    return commandPool;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::DebugCallback(
