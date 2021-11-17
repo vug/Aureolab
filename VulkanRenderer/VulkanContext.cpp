@@ -5,7 +5,6 @@
 
 #include "Core/Log.h"
 
-#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -29,7 +28,9 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     std::tie(instance, debugMessenger) = CreateInstance(windowExtensionCount, windowExtensions, validation);
     shouldDestroyDebugUtils = validation;
     surface = CreateSurface(win, instance);
-    auto physicalDevice = CreatePhysicalDevice(instance, surface);
+    VkPhysicalDevice physicalDevice;
+    QueueFamilyIndices queueIndices;
+    std::tie(physicalDevice, queueIndices) = CreatePhysicalDevice(instance, surface);
     auto device = CreateLogicalDevice();
 }
 
@@ -158,7 +159,7 @@ VkSurfaceKHR& VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instan
     return surface;
 }
 
-VkPhysicalDevice& VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface) {
+std::tuple<VkPhysicalDevice&, QueueFamilyIndices> VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface) {
     /* Potential Configuration Options:
     - Queues to request (to get a compute queue)
     - Device features to query
@@ -187,14 +188,6 @@ VkPhysicalDevice& VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSu
     // choose first available and suitable device
     // (alternatively, we can rate devices by their feature sets and choose best one)
     Log::Debug("Suitable devices:");
-    struct QueueFamilyIndices {
-        std::optional<uint32_t> graphicsFamily;
-        std::optional<uint32_t> presentFamily;
-
-        bool isComplete() {
-            return graphicsFamily.has_value() && presentFamily.has_value();
-        }
-    };
     QueueFamilyIndices indices;
 
     struct SwapChainSupportDetails {
@@ -310,7 +303,7 @@ VkPhysicalDevice& VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSu
         Log::Debug("Failed to find a suitable GPU with required queues!");
         exit(EXIT_FAILURE);
     }
-    return physicalDevice;
+    return { physicalDevice, indices };
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::DebugCallback(
