@@ -1,12 +1,11 @@
 #include "Core/Log.h"
 
 #include "VulkanWindow.h"
-#include "VulkanRenderer.h"
+#include "VulkanContext.h"
 
 int main() {
     VulkanWindow win;
-    VulkanRenderer vr = { win };
-    vr.CreateExampleGraphicsPipeline("assets/shaders/example-vert.spv", "assets/shaders/example-frag.spv");
+    VulkanContext vc = { win };
 
     while (!win.ShouldClose()) {
         win.PollEvents();
