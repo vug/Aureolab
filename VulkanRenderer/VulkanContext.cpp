@@ -7,7 +7,6 @@
 
 #include <set>
 #include <string>
-#include <vector>
 
 VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     /* Potential configuration options:
@@ -25,17 +24,20 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
         Log::Debug("\t{}", windowExtensions[i]);
     }
 
-    std::tie(instance, debugMessenger) = CreateInstance(windowExtensionCount, windowExtensions, validation);
+    std::vector<const char*> vulkanLayers;
+    std::tie(instance, debugMessenger, vulkanLayers) = CreateInstance(windowExtensionCount, windowExtensions, validation);
     shouldDestroyDebugUtils = validation;
     surface = CreateSurface(win, instance);
     VkPhysicalDevice physicalDevice;
     QueueFamilyIndices queueIndices;
-    std::tie(physicalDevice, queueIndices) = CreatePhysicalDevice(instance, surface);
-    auto device = CreateLogicalDevice();
+    std::vector<const char*> requiredExtensions;
+    std::tie(physicalDevice, queueIndices, requiredExtensions) = CreatePhysicalDevice(instance, surface);
+    std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, validation, vulkanLayers);
 }
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
+    vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     if (shouldDestroyDebugUtils) {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
@@ -46,7 +48,7 @@ VulkanContext::~VulkanContext() {
     vkDestroyInstance(instance, nullptr);
 }
 
-std::tuple<VkInstance&, VkDebugUtilsMessengerEXT&> VulkanContext::CreateInstance(uint32_t requestedExtensionCount, const char** requestedExtensions, bool enableValidationLayers) {
+std::tuple<VkInstance&, VkDebugUtilsMessengerEXT&, std::vector<const char*>&> VulkanContext::CreateInstance(uint32_t requestedExtensionCount, const char** requestedExtensions, bool enableValidationLayers) {
     /* Potential Configuration Options:
     - Whole VkApplicationInfo (API version, App Name/Version etc)
     - Debug
@@ -146,7 +148,7 @@ std::tuple<VkInstance&, VkDebugUtilsMessengerEXT&> VulkanContext::CreateInstance
             func(instance, &debugCreateInfo, nullptr, &debugMessenger);
         }
     }
-    return { instance, debugMessenger };
+    return { instance, debugMessenger, layers };
 }
 
 VkSurfaceKHR& VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instance) {
@@ -159,7 +161,7 @@ VkSurfaceKHR& VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instan
     return surface;
 }
 
-std::tuple<VkPhysicalDevice&, QueueFamilyIndices> VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface) {
+std::tuple<VkPhysicalDevice&, QueueFamilyIndices, std::vector<const char*>&> VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface) {
     /* Potential Configuration Options:
     - Queues to request (to get a compute queue)
     - Device features to query
@@ -201,6 +203,7 @@ std::tuple<VkPhysicalDevice&, QueueFamilyIndices> VulkanContext::CreatePhysicalD
     };
     SwapChainSupportDetails swapchainSupportDetails;
 
+    std::vector<const char*> requiredExtensions;
     for (const auto& device : devices) {
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -232,7 +235,7 @@ std::tuple<VkPhysicalDevice&, QueueFamilyIndices> VulkanContext::CreatePhysicalD
             queueFamilyCount, indices.graphicsFamily.value(), indices.presentFamily.value());
 
         // Check required extensions
-        const std::vector<const char*> requiredExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+        requiredExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
         uint32_t extensionCount;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
@@ -303,7 +306,56 @@ std::tuple<VkPhysicalDevice&, QueueFamilyIndices> VulkanContext::CreatePhysicalD
         Log::Debug("Failed to find a suitable GPU with required queues!");
         exit(EXIT_FAILURE);
     }
-    return { physicalDevice, indices };
+    return { physicalDevice, indices, requiredExtensions };
+}
+
+std::tuple<VkDevice&, VkQueue&, VkQueue&> VulkanContext::CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers) {
+    Log::Debug("Creating Logical Device...");
+    VkDevice device;
+    
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    {
+        std::set<uint32_t> uniqueQueueFamilies =
+        { queueIndices.graphicsFamily.value(), queueIndices.presentFamily.value() };
+
+        float queuePriority = 1.0f; // determine scheduling of command buffer execution
+        for (uint32_t queueFamily : uniqueQueueFamilies) {
+            VkDeviceQueueCreateInfo queueCreateInfo{};
+            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = queueFamily;
+            queueCreateInfo.queueCount = 1;
+            queueCreateInfo.pQueuePriorities = &queuePriority;
+            queueCreateInfos.push_back(queueCreateInfo);
+        }
+    }
+
+    // Device features to be used / enabled.
+    VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE; // use anisotropy filters for textures
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+    createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
+    createInfo.ppEnabledExtensionNames = requiredExtensions.data();
+    if (enableValidationLayers) {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(vulkanLayers.size());
+        createInfo.ppEnabledLayerNames = vulkanLayers.data();
+    }
+    else {
+        createInfo.enabledLayerCount = 0;
+    }
+    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+        Log::Debug("Failed to create logical device!");
+    }
+
+    VkQueue graphicsQueue, presentQueue;
+    vkGetDeviceQueue(device, queueIndices.graphicsFamily.value(), 0, &graphicsQueue);
+    vkGetDeviceQueue(device, queueIndices.presentFamily.value(), 0, &presentQueue);
+
+    return { device, graphicsQueue, presentQueue };
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::DebugCallback(
