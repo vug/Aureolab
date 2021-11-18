@@ -109,6 +109,25 @@ VkRenderPass VulkanRenderer::CreateRenderPass() {
     return renderPass;
 }
 
+VkFramebuffer VulkanRenderer::CreateFramebuffer(VkRenderPass& renderPass, const VkImageView& imageView, const VkExtent2D& extent) {
+    Log::Debug("Creating Framebuffer...");
+   
+    VkFramebufferCreateInfo framebufferInfo{};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    // can only be used with compatible (same number and type of attachments) render passes
+    framebufferInfo.renderPass = renderPass;
+    framebufferInfo.attachmentCount = 1;
+    VkImageView attachments[] = { imageView };
+    framebufferInfo.pAttachments = attachments;
+    framebufferInfo.width = extent.width;
+    framebufferInfo.height = extent.height;
+    framebufferInfo.layers = 1;
+
+    VkFramebuffer framebuffer;
+    assert(vkCreateFramebuffer(vc.GetDevice(), &framebufferInfo, nullptr, &framebuffer) == VK_SUCCESS);
+    return framebuffer;
+}
+
 void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename, VkRenderPass& renderPass) {
     Log::Debug("Creating Graphics Pipeline...");
     // optional parameters: shaders, Vertex class with binding and attribute descriptions,
@@ -306,29 +325,6 @@ void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilena
 
     vkDestroyShaderModule(vc.GetDevice(), fragShaderModule, nullptr);
     vkDestroyShaderModule(vc.GetDevice(), vertShaderModule, nullptr);
-
-    Log::Debug("\tCreating Framebuffers for Swapchain Images...");
-    swapChainFramebuffers.resize(vc.GetSwapchainInfo().imageViews.size());
-    for (size_t i = 0; i < vc.GetSwapchainInfo().imageViews.size(); i++) {
-        VkImageView attachments[] = {
-            vc.GetSwapchainInfo().imageViews[i],
-        };
-
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        // can only be used with compatible (same number and type of attachments) render passes
-        framebufferInfo.renderPass = renderPass;
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = attachments;
-        framebufferInfo.width = vc.GetSwapchainInfo().extent.width;
-        framebufferInfo.height = vc.GetSwapchainInfo().extent.height;
-        framebufferInfo.layers = 1;
-
-        if (vkCreateFramebuffer(vc.GetDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
-            Log::Debug("failed to create framebuffer!");
-            exit(EXIT_FAILURE);
-        }
-    }
 }
 
 std::vector<char> VulkanRenderer::ReadFile(const std::string& filename) {
