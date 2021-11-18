@@ -16,8 +16,6 @@ VulkanRenderer::~VulkanRenderer() {
     //}
     //vkDestroyPipeline(vc.GetDevice(), graphicsPipeline, nullptr);
     //vkDestroyPipelineLayout(vc.GetDevice(), pipelineLayout, nullptr);
-    //vkDestroyRenderPass(vc.GetDevice(), renderPass, nullptr);
-
 }
 
 void VulkanRenderer::OnResize(int width, int height) {
@@ -39,7 +37,8 @@ VkCommandBuffer VulkanRenderer::CreateCommandBuffer(VkCommandBufferLevel level) 
     return cmdBuf;
 }
 
-void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename) {
+// Single-Pass "Presenting" RenderPass
+VkRenderPass VulkanRenderer::CreateRenderPass() {
     Log::Debug("Creating Render Pass...");
     /*
      A Renderpass is a collection of N attachments, M subpassesand their L dependencies.
@@ -53,10 +52,10 @@ void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilena
     colorAttachment.format = vc.GetSwapchainInfo().surfaceFormat.format;
     // should this be the same as pipeline rasterizationSamples?
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    // at the beginning of subpass: _LOAD would preserved what was previously there. Other: _DONT_CARE
+    // at the beginning of subpass clear when loaded: _LOAD would preserved what was previously there. Other: _DONT_CARE
     // for depth/stencil attachment only apply to depth
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    // at the end of subpass: or _DONT_CARE
+    // store it at the end of subpass: or _DONT_CARE
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     // ignored when dealing with a color attachment, used by depth/stencil attachments
     // currently, not using stencil buffer
@@ -70,28 +69,30 @@ void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilena
 
     // Only one sub-pass at the moment
     VkAttachmentReference colorAttachmentRef{};
-    // index in Renderpass' VkAttachmentDescription* pAttachments
+    // index in parent Renderpass' VkAttachmentDescription* pAttachments
     colorAttachmentRef.attachment = 0;
     // Vulkan will transition the attachment into this layout when subpass will start
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+    // Need at least one sub-pass
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // not _COMPUTE
     subpass.colorAttachmentCount = 1;
     // index in this "array" is directly referenced in fragment shader, say `layout(location = 0) out vec4 outColor`
     subpass.pColorAttachments = &colorAttachmentRef;
+    // Life of an image: UNDEFINED -> RenderPass Begins -> Subpass 0 begins (Transition to Attachment Optimal) -> Subpass 0 renders -> Subpass 0 ends -> Renderpass Ends (Transitions to Present Source)
 
     // specify memory and execution dependencies between subpasses
     // We want our only single subpass to happen after swap chain image is acquired
     // Option 1: set waitStages for the imageAvailableSemaphore to VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT <- render pass does not start until image is available
     // Option 2: (this one) make the render pass wait for the VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT stage
-    VkSubpassDependency dependency{};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // special value reference: "subpass before renderpass"
-    dependency.dstSubpass = 0; // first and only subpass
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.srcAccessMask = 0;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    //VkSubpassDependency dependency{};
+    //dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // special value reference: "subpass before renderpass"
+    //dependency.dstSubpass = 0; // first and only subpass
+    //dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //dependency.srcAccessMask = 0;
+    //dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     // Renderpass is created by providing attachments, subpasses that use them, and the dependency relationship between subpasses
     VkRenderPassCreateInfo renderPassInfo{};
@@ -100,15 +101,15 @@ void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilena
     renderPassInfo.pAttachments = &colorAttachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = 1;
-    renderPassInfo.pDependencies = &dependency;
+    //renderPassInfo.dependencyCount = 1;
+    //renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(vc.GetDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-        Log::Critical("failed to create render pass!");
-        exit(EXIT_FAILURE);
-    }
+    VkRenderPass renderPass;
+    assert(vkCreateRenderPass(vc.GetDevice(), &renderPassInfo, nullptr, &renderPass) == VK_SUCCESS);
+    return renderPass;
+}
 
-
+void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename, VkRenderPass& renderPass) {
     Log::Debug("Creating Graphics Pipeline...");
     // optional parameters: shaders, Vertex class with binding and attribute descriptions,
     // VkPrimitiveTopology topology, VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace

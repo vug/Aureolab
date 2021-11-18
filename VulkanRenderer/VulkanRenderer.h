@@ -14,14 +14,14 @@ public:
 	virtual void OnResize(int width, int height) override;
 
 	VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-	void CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename);
+	VkRenderPass CreateRenderPass();
+	void CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename, VkRenderPass& renderPass);
 
 private:
 	// declaring as reference prevents it from being destroyed with Renderer
 	VulkanContext& vc;
-	// Resources that needs to be destroyed at the end
 
-	VkRenderPass renderPass;
+	// Resources that needs to be destroyed at the end
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
