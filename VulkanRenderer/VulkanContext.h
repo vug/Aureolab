@@ -49,7 +49,7 @@ public:
 	static VkSurfaceKHR& CreateSurface(VulkanWindow& win, VkInstance& instance);
 	// Search and pick a suitable GPU with needed properties. Also returns the queue families on that device
 	static std::tuple<VkPhysicalDevice&, QueueFamilyIndices, SwapChainSupportDetails, std::vector<const char*>> CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface);
-	static std::tuple<VkDevice&, VkQueue&, VkQueue&> CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers);
+	static std::tuple<VkDevice&, VkQueue, VkQueue> CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers);
 	static std::tuple<VkSwapchainKHR&, VkSurfaceFormatKHR&, VkExtent2D&, std::vector<VkImageView>> CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapChainSupportDetails);
 	static VkCommandPool& CreateGraphicsCommandPool(VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 
@@ -58,6 +58,11 @@ public:
 	const VkQueue& GetGraphicsQueue() const { return graphicsQueue; }
 	const VkQueue& GetPresentationQueue() const { return presentQueue; }
 	const SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
+
+	// 1) acquire image from swap chain
+	// 2) execute command buffer with that image as attachment in the framebuffer
+	// 3) return the image to the swapchain for presentation
+	void drawFrame(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo);
 
 private:
 	// Vulkan Objects that needs to be destroyed with VulkanContext
@@ -74,6 +79,9 @@ private:
 	// Queues into which commands will be submitted by client app
 	VkQueue graphicsQueue = VK_NULL_HANDLE;
 	VkQueue presentQueue = VK_NULL_HANDLE;
+	//
+	VkSemaphore presentSemaphore, renderSemaphore;
+	VkFence renderFence;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,

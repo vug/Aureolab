@@ -7,6 +7,7 @@
 
 #include "Core/Log.h"
 
+#include <cassert>
 #include <set>
 #include <string>
 
@@ -38,10 +39,27 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, validation, vulkanLayers);
     std::tie(swapchain, swapchainInfo.surfaceFormat, swapchainInfo.extent, swapchainInfo.imageViews) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
     commandPool = CreateGraphicsCommandPool(device, queueIndices.graphicsFamily.value());
+
+    // Initialize synchronization objects
+    VkFenceCreateInfo fenceCreateInfo = {};
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    // otherwise we'll wait for the fence to signal for the first frame eternally
+    fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    assert(vkCreateFence(device, &fenceCreateInfo, nullptr, &renderFence) == VK_SUCCESS);
+
+    //for the semaphores we don't need any flags
+    VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphoreCreateInfo.flags = 0;
+    assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &presentSemaphore) == VK_SUCCESS);
+    assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderSemaphore) == VK_SUCCESS);
 }
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
+    vkDestroyFence(device, renderFence, nullptr);
+    vkDestroySemaphore(device, presentSemaphore, nullptr);
+    vkDestroySemaphore(device, renderSemaphore, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
     for (auto imageView : swapchainInfo.imageViews) {
         vkDestroyImageView(device, imageView, nullptr);
@@ -310,7 +328,7 @@ std::tuple<VkPhysicalDevice&, QueueFamilyIndices, SwapChainSupportDetails, std::
     return { physicalDevice, indices, swapchainSupportDetails, requiredExtensions };
 }
 
-std::tuple<VkDevice&, VkQueue&, VkQueue&> VulkanContext::CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers) {
+std::tuple<VkDevice&, VkQueue, VkQueue> VulkanContext::CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers) {
     Log::Debug("Creating Logical Device...");
     VkDevice device;
     
@@ -505,6 +523,98 @@ VkCommandPool& VulkanContext::CreateGraphicsCommandPool(VkDevice& device, uint32
     }
 
     return commandPool;
+}
+
+void VulkanContext::drawFrame(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo) {
+    // Vulkan executes commands asynchroniously/independently. 
+    // Need explicit dependency declaration for correct order of execution, i.e. synchronization
+    // use fences to sync main app with command queue ops, use semaphors to sync operations within/across command queues
+
+    // wait until the GPU has finished rendering the last frame. Timeout of 1 second
+    assert(vkWaitForFences(device, 1, &renderFence, true, 1000000000) == VK_SUCCESS); // 1sec = 1000000000
+    assert(vkResetFences(device, 1, &renderFence) == VK_SUCCESS);
+
+    // previous run of cmdBuf was finished, safely reset the it to begin recording again
+    assert(vkResetCommandBuffer(cmdBuf, 0) == VK_SUCCESS);
+
+    uint32_t swapchainImageIndex;
+    // Request an imaage and wait until it's acquired (or timeout)
+    VkResult result = vkAcquireNextImageKHR(device, swapchain, 1000000000, presentSemaphore, nullptr, &swapchainImageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        // recreateSwapChain();
+        assert(false);
+        // TODO implement resize
+    } else { 
+        assert(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
+    }
+
+    VkCommandBufferBeginInfo cmdBeginInfo = {};
+    cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    // We'll use this buffer only once per frame
+    cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    assert(vkBeginCommandBuffer(cmdBuf, &cmdBeginInfo) == VK_SUCCESS);
+
+    // TODO: move this logic outside of drawFrame (keep it general)
+    //make a clear-color from frame number. This will flash with a 120*pi frame period.
+    VkClearValue clearValue;
+    static int frameNumber = 0;
+    float flash = abs(sin(frameNumber / 120.f));
+    clearValue.color = { { 0.0f, 0.0f, flash, 1.0f } };
+
+    VkRenderPassBeginInfo rpInfo = {};
+    rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    rpInfo.renderPass = renderPass;
+    // using render area we can render a smaller part of a bigger image
+    rpInfo.renderArea.offset = { 0, 0 };
+    rpInfo.renderArea.extent = swapchainInfo.extent;
+    rpInfo.framebuffer = swapchainFramebuffers[swapchainImageIndex];
+    rpInfo.clearValueCount = 1;
+    rpInfo.pClearValues = &clearValue;
+    
+    // Will bind the Framebuffer, clear the Image, put the Image in the layout specified at RenderPass creation
+    vkCmdBeginRenderPass(cmdBuf, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    // TODO: Commands here! Nothing to render yet. Will just see the effect of clear color. Take a function and call it with cmdBuf
+
+    // finishes rendering and transition image to "ready to be displayed" state that we specified
+    vkCmdEndRenderPass(cmdBuf);
+    //finalize the command buffer (we can no longer add commands, but it can now be executed)
+    assert(vkEndCommandBuffer(cmdBuf) == VK_SUCCESS);
+
+    //prepare the submission to the queue.
+    //we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
+    //we will signal the _renderSemaphore, to signal that rendering has finished
+    VkSubmitInfo submit = {};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    submit.pWaitDstStageMask = &waitStage;
+    submit.waitSemaphoreCount = 1;
+    submit.pWaitSemaphores = &presentSemaphore;
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &renderSemaphore;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmdBuf;
+    //submit command buffer to the queue and execute it.
+    // _renderFence will now block until the graphic commands finish execution
+    //assert(vkQueueSubmit(graphicsQueue, 1, &submit, renderFence) == VK_SUCCESS);
+    vkQueueSubmit(graphicsQueue, 1, &submit, renderFence);
+
+
+    // this will put the image we just rendered into the visible window.
+    // we want to wait on the _renderSemaphore for that,
+    // as it's necessary that drawing commands have finished before the image is displayed to the user
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.pNext = nullptr;
+    presentInfo.pSwapchains = &swapchain;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pWaitSemaphores = &renderSemaphore;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pImageIndices = &swapchainImageIndex;
+    //assert(vkQueuePresentKHR(graphicsQueue, &presentInfo) == VK_SUCCESS);
+    vkQueuePresentKHR(graphicsQueue, &presentInfo);
+
+    frameNumber++;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::DebugCallback(
