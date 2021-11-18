@@ -17,6 +17,11 @@ int main() {
         presentFramebuffers[i] = vr.CreateFramebuffer(renderPass, presentImageViews[i], vc.GetSwapchainInfo().extent);
     }
 
+    auto vertShaderByteCode = vr.ReadFile("assets/shaders/example-vert.spv");
+    auto fragShaderByteCode = vr.ReadFile("assets/shaders/example-frag.spv");
+    VkShaderModule vertShaderModule = vr.CreateShaderModule(vertShaderByteCode);
+    VkShaderModule fragShaderModule = vr.CreateShaderModule(fragShaderByteCode);
+
     while (!win.ShouldClose()) {
         win.PollEvents();
 
@@ -33,6 +38,8 @@ int main() {
     // should finish them before starting cleanup while leaving the main loop
     vkDeviceWaitIdle(vc.GetDevice());
 
+    vkDestroyShaderModule(vc.GetDevice(), vertShaderModule, nullptr);
+    vkDestroyShaderModule(vc.GetDevice(), fragShaderModule, nullptr);
     vkFreeCommandBuffers(vc.GetDevice(), vc.GetCommandPool(), 1, &cmdBuf);
     for (size_t i = 0; i < presentImageViews.size(); i++) {
         vkDestroyFramebuffer(vc.GetDevice(), presentFramebuffers[i], nullptr);

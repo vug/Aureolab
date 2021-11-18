@@ -18,6 +18,9 @@ public:
 	VkFramebuffer CreateFramebuffer(VkRenderPass& renderPass, const VkImageView& imageView, const VkExtent2D& extent);
 	void CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename, VkRenderPass& renderPass);
 
+	static std::vector<char> ReadFile(const std::string& filename);
+	VkShaderModule CreateShaderModule(const std::vector<char>& code);
+
 private:
 	// declaring as reference prevents it from being destroyed with Renderer
 	VulkanContext& vc;
@@ -26,7 +29,4 @@ private:
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
-
-	static std::vector<char> ReadFile(const std::string& filename);
-	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 };
