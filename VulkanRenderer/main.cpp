@@ -21,6 +21,7 @@ int main() {
     auto fragShaderByteCode = vr.ReadFile("assets/shaders/example-frag.spv");
     VkShaderModule vertShaderModule = vr.CreateShaderModule(vertShaderByteCode);
     VkShaderModule fragShaderModule = vr.CreateShaderModule(fragShaderByteCode);
+    auto [pipeline, pipelineLayout] = vr.CreateSinglePassGraphicsPipeline(vertShaderModule, fragShaderModule, renderPass);
 
     while (!win.ShouldClose()) {
         win.PollEvents();
@@ -40,6 +41,9 @@ int main() {
 
     vkDestroyShaderModule(vc.GetDevice(), vertShaderModule, nullptr);
     vkDestroyShaderModule(vc.GetDevice(), fragShaderModule, nullptr);
+    vkDestroyPipelineLayout(vc.GetDevice(), pipelineLayout, nullptr);
+    vkDestroyPipeline(vc.GetDevice(), pipeline, nullptr);
+
     vkFreeCommandBuffers(vc.GetDevice(), vc.GetCommandPool(), 1, &cmdBuf);
     for (size_t i = 0; i < presentImageViews.size(); i++) {
         vkDestroyFramebuffer(vc.GetDevice(), presentFramebuffers[i], nullptr);

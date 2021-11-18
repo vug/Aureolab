@@ -128,18 +128,13 @@ VkFramebuffer VulkanRenderer::CreateFramebuffer(VkRenderPass& renderPass, const 
     return framebuffer;
 }
 
-void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename, VkRenderPass& renderPass) {
+std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphicsPipeline(VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule, VkRenderPass& renderPass) {
     Log::Debug("Creating Graphics Pipeline...");
     // optional parameters: shaders, Vertex class with binding and attribute descriptions,
     // VkPrimitiveTopology topology, VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace
     // VkSampleCountFlagBits rasterizationSamples, VkPipelineColorBlendAttachmentState alpha blend settings
 
-    Log::Debug("\tCreating Shader Modules and Shader Stage Info...");
-    auto vertShaderByteCode = ReadFile(vertFilename);
-    auto fragShaderByteCode = ReadFile(fragFilename);
-    VkShaderModule vertShaderModule = CreateShaderModule(vertShaderByteCode);
-    VkShaderModule fragShaderModule = CreateShaderModule(fragShaderByteCode);
-
+    Log::Debug("\tCreating Shader Stage Info...");
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -161,9 +156,7 @@ void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilena
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
     vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
     // TODO: Vertex descriptions will come later, first example does not use vertex input
     //auto bindingDescription = Vertex::getBindingDescription();
     //auto attributeDescriptions = Vertex::getAttributeDescriptions();
@@ -213,7 +206,8 @@ void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilena
     // Triangle rendering mode. {FILL, LINE, POINT}. Other modes require a GPU feature.
     rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
     // NONE, FRONT, BACK, or FRONT_AND_BACK
-    rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
+    //rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
     // or clock-wise (we did y-flip, hence need to switch from CW to CCW)
     rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizerInfo.depthBiasEnable = VK_FALSE;
@@ -278,9 +272,11 @@ void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilena
     // Not changing any pipeline settings dynamically at the moment.
 
     Log::Debug("\tCreating Pipeline Layout...");
+    VkPipelineLayout pipelineLayout;
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 0;
+    pipelineLayoutInfo.pushConstantRangeCount = 0;
     // TODO: will come when loading vertex data
     //pipelineLayoutInfo.setLayoutCount = 1;
     //pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
@@ -318,13 +314,13 @@ void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilena
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipelineInfo.basePipelineIndex = -1; // Optional
 
+    VkPipeline graphicsPipeline;
     if (vkCreateGraphicsPipelines(vc.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
         Log::Critical("failed to create graphics pipeline!");
         exit(EXIT_FAILURE);
     }
 
-    vkDestroyShaderModule(vc.GetDevice(), fragShaderModule, nullptr);
-    vkDestroyShaderModule(vc.GetDevice(), vertShaderModule, nullptr);
+    return { graphicsPipeline, pipelineLayout };
 }
 
 std::vector<char> VulkanRenderer::ReadFile(const std::string& filename) {
