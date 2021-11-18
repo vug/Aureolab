@@ -525,7 +525,7 @@ VkCommandPool& VulkanContext::CreateGraphicsCommandPool(VkDevice& device, uint32
     return commandPool;
 }
 
-void VulkanContext::drawFrame(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo) {
+void VulkanContext::drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const VkClearValue& clearValue) {
     // Vulkan executes commands asynchroniously/independently. 
     // Need explicit dependency declaration for correct order of execution, i.e. synchronization
     // use fences to sync main app with command queue ops, use semaphors to sync operations within/across command queues
@@ -533,9 +533,6 @@ void VulkanContext::drawFrame(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf,
     // wait until the GPU has finished rendering the last frame. Timeout of 1 second
     assert(vkWaitForFences(device, 1, &renderFence, true, 1000000000) == VK_SUCCESS); // 1sec = 1000000000
     assert(vkResetFences(device, 1, &renderFence) == VK_SUCCESS);
-
-    // previous run of cmdBuf was finished, safely reset the it to begin recording again
-    assert(vkResetCommandBuffer(cmdBuf, 0) == VK_SUCCESS);
 
     uint32_t swapchainImageIndex;
     // Request an imaage and wait until it's acquired (or timeout)
@@ -548,18 +545,14 @@ void VulkanContext::drawFrame(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf,
         assert(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
     }
 
+    // previous run of cmdBuf was finished, safely reset it to begin the recording again
+    assert(vkResetCommandBuffer(cmdBuf, 0) == VK_SUCCESS);
+
     VkCommandBufferBeginInfo cmdBeginInfo = {};
     cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     // We'll use this buffer only once per frame
     cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     assert(vkBeginCommandBuffer(cmdBuf, &cmdBeginInfo) == VK_SUCCESS);
-
-    // TODO: move this logic outside of drawFrame (keep it general)
-    //make a clear-color from frame number. This will flash with a 120*pi frame period.
-    VkClearValue clearValue;
-    static int frameNumber = 0;
-    float flash = abs(sin(frameNumber / 120.f));
-    clearValue.color = { { 0.0f, 0.0f, flash, 1.0f } };
 
     VkRenderPassBeginInfo rpInfo = {};
     rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -570,7 +563,6 @@ void VulkanContext::drawFrame(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf,
     rpInfo.framebuffer = swapchainFramebuffers[swapchainImageIndex];
     rpInfo.clearValueCount = 1;
     rpInfo.pClearValues = &clearValue;
-    
     // Will bind the Framebuffer, clear the Image, put the Image in the layout specified at RenderPass creation
     vkCmdBeginRenderPass(cmdBuf, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -581,40 +573,30 @@ void VulkanContext::drawFrame(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf,
     //finalize the command buffer (we can no longer add commands, but it can now be executed)
     assert(vkEndCommandBuffer(cmdBuf) == VK_SUCCESS);
 
-    //prepare the submission to the queue.
-    //we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
-    //we will signal the _renderSemaphore, to signal that rendering has finished
     VkSubmitInfo submit = {};
     submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     submit.pWaitDstStageMask = &waitStage;
     submit.waitSemaphoreCount = 1;
+    // Queue will wait until when the Swapchain is ready
     submit.pWaitSemaphores = &presentSemaphore;
     submit.signalSemaphoreCount = 1;
+    // When Queue processing is done on GPU it'll signal that rendering has finished
     submit.pSignalSemaphores = &renderSemaphore;
     submit.commandBufferCount = 1;
     submit.pCommandBuffers = &cmdBuf;
-    //submit command buffer to the queue and execute it.
-    // _renderFence will now block until the graphic commands finish execution
-    //assert(vkQueueSubmit(graphicsQueue, 1, &submit, renderFence) == VK_SUCCESS);
-    vkQueueSubmit(graphicsQueue, 1, &submit, renderFence);
+    // CPU submission will wait for GPU rendering to complete
+    assert(vkQueueSubmit(graphicsQueue, 1, &submit, renderFence) == VK_SUCCESS);
 
-
-    // this will put the image we just rendered into the visible window.
-    // we want to wait on the _renderSemaphore for that,
-    // as it's necessary that drawing commands have finished before the image is displayed to the user
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.pNext = nullptr;
     presentInfo.pSwapchains = &swapchain;
     presentInfo.swapchainCount = 1;
+    // Present after GPU rendering is completed
     presentInfo.pWaitSemaphores = &renderSemaphore;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pImageIndices = &swapchainImageIndex;
-    //assert(vkQueuePresentKHR(graphicsQueue, &presentInfo) == VK_SUCCESS);
-    vkQueuePresentKHR(graphicsQueue, &presentInfo);
-
-    frameNumber++;
+    assert(vkQueuePresentKHR(graphicsQueue, &presentInfo) == VK_SUCCESS);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::DebugCallback(

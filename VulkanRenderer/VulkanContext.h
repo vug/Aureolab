@@ -59,10 +59,11 @@ public:
 	const VkQueue& GetPresentationQueue() const { return presentQueue; }
 	const SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
 
-	// 1) acquire image from swap chain
-	// 2) execute command buffer with that image as attachment in the framebuffer
+	// 1) acquire (next available) image from swap chain
+	// 2) execute command buffer in given RenderPass with that image as attachment in the framebuffer
 	// 3) return the image to the swapchain for presentation
-	void drawFrame(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo);
+	// Blocked means acquisition, queue processing and presentation happens sequentially
+	void drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const VkClearValue& clearValue);
 
 private:
 	// Vulkan Objects that needs to be destroyed with VulkanContext

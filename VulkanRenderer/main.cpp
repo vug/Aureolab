@@ -20,7 +20,13 @@ int main() {
     while (!win.ShouldClose()) {
         win.PollEvents();
 
-        vc.drawFrame(renderPass, cmdBuf, presentFramebuffers, vc.GetSwapchainInfo());
+        VkClearValue clearValue;
+        static int frameNumber = 0;
+        float flash = abs(sin(frameNumber / 2400.f));
+        clearValue.color = { { 0.0f, 0.0f, flash, 1.0f } };
+        vc.drawFrameBlocked(renderPass, cmdBuf, presentFramebuffers, vc.GetSwapchainInfo(), clearValue);
+
+        frameNumber++;
     }
 
     // drawFrame operations are async.
