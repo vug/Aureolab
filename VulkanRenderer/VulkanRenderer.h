@@ -7,12 +7,10 @@
 #include <tuple>
 #include <vector>
 
-class VulkanRenderer : public IResizable {
+class VulkanRenderer {
 public:
 	VulkanRenderer(VulkanContext& context);
 	~VulkanRenderer();
-
-	virtual void OnResize(int width, int height) override;
 
 	VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	VkRenderPass CreateRenderPass();

@@ -18,11 +18,6 @@ VulkanRenderer::~VulkanRenderer() {
     //vkDestroyPipelineLayout(vc.GetDevice(), pipelineLayout, nullptr);
 }
 
-void VulkanRenderer::OnResize(int width, int height) {
-    Log::Debug("Framebuffer resized: ({}, {})", width, height);
-    // TODO: resize logic will come here
-}
-
 VkCommandBuffer VulkanRenderer::CreateCommandBuffer(VkCommandBufferLevel level) {
     Log::Debug("Creating main, graphics Command Buffer...");
     VkCommandBuffer cmdBuf;

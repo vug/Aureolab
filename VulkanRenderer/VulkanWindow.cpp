@@ -7,6 +7,7 @@ static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
     if (ptr == nullptr) {
         return;
     }
+    // can cause an error if object set via SetUserPointer is not IResizable
     auto resizable = reinterpret_cast<IResizable*>(ptr);
     resizable->OnResize(width, height);
 }

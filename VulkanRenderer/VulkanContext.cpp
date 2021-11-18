@@ -526,6 +526,11 @@ VkCommandPool& VulkanContext::CreateGraphicsCommandPool(VkDevice& device, uint32
     return commandPool;
 }
 
+void VulkanContext::OnResize(int width, int height) {
+    Log::Debug("Framebuffer resized: ({}, {})", width, height);
+    // TODO: resize logic will come here
+}
+
 void VulkanContext::drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const VkClearValue& clearValue, std::function<void(VkCommandBuffer&)> cmdFunc) {
     // Vulkan executes commands asynchroniously/independently. 
     // Need explicit dependency declaration for correct order of execution, i.e. synchronization

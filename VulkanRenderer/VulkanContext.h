@@ -34,7 +34,7 @@ struct SwapchainInfo {
 	std::vector<VkImageView> imageViews;
 };
 
-class VulkanContext {
+class VulkanContext : public IResizable {
 public:
 	VulkanContext(VulkanWindow& win, bool validation = true);
 	~VulkanContext();
@@ -65,6 +65,7 @@ public:
 	// Blocked means acquisition, queue processing and presentation happens sequentially
 	void drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const VkClearValue& clearValue, std::function<void(VkCommandBuffer&)> cmdFunc);
 
+	virtual void OnResize(int width, int height) override;
 private:
 	// Vulkan Objects that needs to be destroyed with VulkanContext
 	VkCommandPool commandPool;
