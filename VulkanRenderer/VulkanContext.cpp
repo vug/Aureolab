@@ -36,16 +36,14 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     std::vector<const char*> requiredExtensions;
     std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(instance, surface);
     std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, validation, vulkanLayers);
-    VkSurfaceFormatKHR swapchainSurfaceFormat;
-    VkExtent2D swapchainExtent;
-    std::tie(swapchain, swapchainSurfaceFormat, swapchainExtent, swapchainImageViews) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
+    std::tie(swapchain, swapchainInfo.surfaceFormat, swapchainInfo.extent, swapchainInfo.imageViews) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
     commandPool = CreateGraphicsCommandPool(device, queueIndices.graphicsFamily.value());
 }
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
     vkDestroyCommandPool(device, commandPool, nullptr);
-    for (auto imageView : swapchainImageViews) {
+    for (auto imageView : swapchainInfo.imageViews) {
         vkDestroyImageView(device, imageView, nullptr);
     }
     vkDestroySwapchainKHR(device, swapchain, nullptr);
@@ -498,8 +496,8 @@ VkCommandPool& VulkanContext::CreateGraphicsCommandPool(VkDevice& device, uint32
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
-    // Not changing commands for now. so no flags.
-    poolInfo.flags = 0; // Optional
+    // Expect to reset buffers spawned from this pool.
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
         Log::Debug("failed to create command pool!");

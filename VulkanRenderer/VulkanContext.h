@@ -28,6 +28,12 @@ struct SwapChainSupportDetails {
 	}
 };
 
+struct SwapchainInfo {
+	VkSurfaceFormatKHR surfaceFormat;
+	VkExtent2D extent;
+	std::vector<VkImageView> imageViews;
+};
+
 class VulkanContext {
 public:
 	VulkanContext(VulkanWindow& win, bool validation = true);
@@ -47,13 +53,16 @@ public:
 	static std::tuple<VkSwapchainKHR&, VkSurfaceFormatKHR&, VkExtent2D&, std::vector<VkImageView>> CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapChainSupportDetails);
 	static VkCommandPool& CreateGraphicsCommandPool(VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 
+	const VkDevice& GetDevice() const { return device; }
+	const VkCommandPool& GetCommandPool() const{ return commandPool; }
 	const VkQueue& GetGraphicsQueue() const { return graphicsQueue; }
 	const VkQueue& GetPresentationQueue() const { return presentQueue; }
+	const SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
 
 private:
 	// Vulkan Objects that needs to be destroyed with VulkanContext
 	VkCommandPool commandPool;
-	std::vector<VkImageView> swapchainImageViews;
+	// VkSwapchainImageView's are stored in swapchainInfo
 	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 	VkDevice device = VK_NULL_HANDLE;
 	VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -61,6 +70,7 @@ private:
 	VkInstance instance = VK_NULL_HANDLE;
 	bool shouldDestroyDebugUtils = false;
 
+	SwapchainInfo swapchainInfo;
 	// Queues into which commands will be submitted by client app
 	VkQueue graphicsQueue = VK_NULL_HANDLE;
 	VkQueue presentQueue = VK_NULL_HANDLE;
