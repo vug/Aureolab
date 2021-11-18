@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cassert>
 #include <fstream>
 #include <set>
 
@@ -22,6 +23,20 @@ VulkanRenderer::~VulkanRenderer() {
 void VulkanRenderer::OnResize(int width, int height) {
     Log::Debug("Framebuffer resized: ({}, {})", width, height);
     // TODO: resize logic will come here
+}
+
+VkCommandBuffer VulkanRenderer::CreateCommandBuffer(VkCommandBufferLevel level) {
+    Log::Debug("Creating main, graphics Command Buffer...");
+    VkCommandBuffer cmdBuf;
+    VkCommandBufferAllocateInfo cmdAllocInfo = {};
+    cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmdAllocInfo.pNext = nullptr;
+    cmdAllocInfo.commandPool = vc.GetCommandPool();
+    cmdAllocInfo.commandBufferCount = 1;
+    // Primary commands are directly sent to queues. Secondary ones are subcommands (used in multi-threaded scenarios)
+    cmdAllocInfo.level = level;
+    assert(vkAllocateCommandBuffers(vc.GetDevice(), &cmdAllocInfo, &cmdBuf) == VK_SUCCESS);
+    return cmdBuf;
 }
 
 void VulkanRenderer::CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename) {

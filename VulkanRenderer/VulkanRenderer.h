@@ -13,6 +13,7 @@ public:
 
 	virtual void OnResize(int width, int height) override;
 
+	VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	void CreateExampleGraphicsPipeline(const std::string& vertFilename, const std::string& fragFilename);
 
 private:
