@@ -8,6 +8,7 @@
 #include "Core/Log.h"
 
 #include <cassert>
+#include <functional>
 #include <set>
 #include <string>
 
@@ -525,7 +526,7 @@ VkCommandPool& VulkanContext::CreateGraphicsCommandPool(VkDevice& device, uint32
     return commandPool;
 }
 
-void VulkanContext::drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const VkClearValue& clearValue) {
+void VulkanContext::drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const VkClearValue& clearValue, std::function<void(VkCommandBuffer&)> cmdFunc) {
     // Vulkan executes commands asynchroniously/independently. 
     // Need explicit dependency declaration for correct order of execution, i.e. synchronization
     // use fences to sync main app with command queue ops, use semaphors to sync operations within/across command queues
@@ -566,7 +567,8 @@ void VulkanContext::drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& 
     // Will bind the Framebuffer, clear the Image, put the Image in the layout specified at RenderPass creation
     vkCmdBeginRenderPass(cmdBuf, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    // TODO: Commands here! Nothing to render yet. Will just see the effect of clear color. Take a function and call it with cmdBuf
+    // Populate command buffer with the calls provided in the function
+    cmdFunc(cmdBuf);
 
     // finishes rendering and transition image to "ready to be displayed" state that we specified
     vkCmdEndRenderPass(cmdBuf);

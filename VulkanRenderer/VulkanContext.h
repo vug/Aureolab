@@ -63,7 +63,7 @@ public:
 	// 2) execute command buffer in given RenderPass with that image as attachment in the framebuffer
 	// 3) return the image to the swapchain for presentation
 	// Blocked means acquisition, queue processing and presentation happens sequentially
-	void drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const VkClearValue& clearValue);
+	void drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const VkClearValue& clearValue, std::function<void(VkCommandBuffer&)> cmdFunc);
 
 private:
 	// Vulkan Objects that needs to be destroyed with VulkanContext

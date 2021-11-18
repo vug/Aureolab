@@ -30,7 +30,11 @@ int main() {
         static int frameNumber = 0;
         float flash = abs(sin(frameNumber / 2400.f));
         clearValue.color = { { 0.0f, 0.0f, flash, 1.0f } };
-        vc.drawFrameBlocked(renderPass, cmdBuf, presentFramebuffers, vc.GetSwapchainInfo(), clearValue);
+        vc.drawFrameBlocked(renderPass, cmdBuf, presentFramebuffers, vc.GetSwapchainInfo(), clearValue,
+            [&](VkCommandBuffer& cmd) {
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+            vkCmdDraw(cmd, 3, 1, 0, 0);
+        });
 
         frameNumber++;
     }
