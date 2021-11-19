@@ -3,27 +3,36 @@
 #include "VulkanWindow.h"
 #include "VulkanContext.h"
 #include "VulkanRenderer.h"
+#include "VulkanDestroyer.h"
 
 int main() {
     VulkanWindow win;
     VulkanContext vc = { win };
     VulkanRenderer vr = { vc };
 
+    VulkanDestroyer destroyer{ vc.GetDevice() };
+
     VkCommandBuffer cmdBuf = vr.CreateCommandBuffer();
     VkRenderPass renderPass = vr.CreateRenderPass();
+    destroyer.Add(renderPass);
     const auto& presentImageViews = vc.GetSwapchainInfo().imageViews;
     std::vector<VkFramebuffer> presentFramebuffers(presentImageViews.size());
     for (size_t i = 0; i < presentImageViews.size(); i++) {
         presentFramebuffers[i] = vr.CreateFramebuffer(renderPass, presentImageViews[i], vc.GetSwapchainInfo().extent);
+        destroyer.Add(presentFramebuffers[i]);
     }
 
     VkShaderModule vertShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-vert.spv"));
     VkShaderModule fragShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-frag.spv"));
+    destroyer.Add(vertShader1); destroyer.Add(fragShader1);
     auto [pipeline1, pipelineLayout1] = vr.CreateSinglePassGraphicsPipeline(vertShader1, fragShader1, renderPass);
+    destroyer.Add(pipelineLayout1); destroyer.Add(pipeline1);
 
     VkShaderModule vertShader2 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-square-vert.spv"));
     VkShaderModule fragShader2 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-square-frag.spv"));
+    destroyer.Add(vertShader2); destroyer.Add(fragShader2);
     auto [pipeline2, pipelineLayout2] = vr.CreateSinglePassGraphicsPipeline(vertShader2, fragShader2, renderPass);
+    destroyer.Add(pipelineLayout2); destroyer.Add(pipeline2);
 
     while (!win.ShouldClose()) {
         win.PollEvents();
@@ -50,20 +59,8 @@ int main() {
     // should finish them before starting cleanup while leaving the main loop
     vkDeviceWaitIdle(vc.GetDevice());
 
-    vkDestroyShaderModule(vc.GetDevice(), vertShader1, nullptr);
-    vkDestroyShaderModule(vc.GetDevice(), fragShader1, nullptr);
-    vkDestroyPipelineLayout(vc.GetDevice(), pipelineLayout1, nullptr);
-    vkDestroyPipeline(vc.GetDevice(), pipeline1, nullptr);
-
-    vkDestroyShaderModule(vc.GetDevice(), vertShader2, nullptr);
-    vkDestroyShaderModule(vc.GetDevice(), fragShader2, nullptr);
-    vkDestroyPipelineLayout(vc.GetDevice(), pipelineLayout2, nullptr);
-    vkDestroyPipeline(vc.GetDevice(), pipeline2, nullptr);
-
     vkFreeCommandBuffers(vc.GetDevice(), vc.GetCommandPool(), 1, &cmdBuf);
-    for (size_t i = 0; i < presentImageViews.size(); i++) {
-        vkDestroyFramebuffer(vc.GetDevice(), presentFramebuffers[i], nullptr);
-    }
-    vkDestroyRenderPass(vc.GetDevice(), renderPass, nullptr);
+
+    destroyer.DestroyAll();
     return 0;
 }

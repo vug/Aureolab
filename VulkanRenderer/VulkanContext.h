@@ -6,6 +6,7 @@
 
 #include <functional> // reference_wrapper
 #include <optional>
+#include <queue>
 #include <vector>
 #include <tuple>
 
