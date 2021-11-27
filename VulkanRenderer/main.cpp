@@ -18,7 +18,7 @@ int main() {
     const auto& presentImageViews = vc.GetSwapchainInfo().imageViews;
     std::vector<VkFramebuffer> presentFramebuffers(presentImageViews.size());
     for (size_t i = 0; i < presentImageViews.size(); i++) {
-        presentFramebuffers[i] = vr.CreateFramebuffer(renderPass, presentImageViews[i], vc.GetSwapchainInfo().extent);
+        presentFramebuffers[i] = vc.CreateFramebuffer(vc.GetDevice(), renderPass, presentImageViews[i], vc.GetSwapchainInfo().extent);
         destroyer.Add(presentFramebuffers[i]);
     }
 

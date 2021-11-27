@@ -423,7 +423,7 @@ std::tuple<VkSwapchainKHR&, VkSurfaceFormatKHR&, VkExtent2D&, std::vector<VkImag
         Log::Debug("\tSwapchain dimensions chosen in min-max image extend range: ({}, {})", swapExtent.width, swapExtent.height);
     }
 
-
+    // TODO: make this a parameter (to compare performance of swapchains of sizes 2/3/4 etc.)
     uint32_t imageCount = capabilities.minImageCount + 1;
     if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount) {
         imageCount = capabilities.maxImageCount;
@@ -528,6 +528,25 @@ VkCommandPool& VulkanContext::CreateGraphicsCommandPool(VkDevice& device, uint32
     }
 
     return commandPool;
+}
+
+VkFramebuffer& VulkanContext::CreateFramebuffer(const VkDevice& device, VkRenderPass& renderPass, const VkImageView& imageView, const VkExtent2D& extent) {
+    Log::Debug("Creating Framebuffer...");
+
+    VkFramebufferCreateInfo framebufferInfo{};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    // can only be used with compatible (same number and type of attachments) render passes
+    framebufferInfo.renderPass = renderPass;
+    framebufferInfo.attachmentCount = 1;
+    VkImageView attachments[] = { imageView };
+    framebufferInfo.pAttachments = attachments;
+    framebufferInfo.width = extent.width;
+    framebufferInfo.height = extent.height;
+    framebufferInfo.layers = 1;
+
+    VkFramebuffer framebuffer;
+    assert(vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffer) == VK_SUCCESS);
+    return framebuffer;
 }
 
 void VulkanContext::OnResize(int width, int height) {

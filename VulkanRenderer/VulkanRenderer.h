@@ -14,7 +14,6 @@ public:
 
 	VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	VkRenderPass CreateRenderPass();
-	VkFramebuffer CreateFramebuffer(VkRenderPass& renderPass, const VkImageView& imageView, const VkExtent2D& extent);
 	std::tuple<VkPipeline, VkPipelineLayout> CreateSinglePassGraphicsPipeline(VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule, VkRenderPass& renderPass);
 
 	static std::vector<char> ReadFile(const std::string& filename);

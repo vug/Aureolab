@@ -104,25 +104,6 @@ VkRenderPass VulkanRenderer::CreateRenderPass() {
     return renderPass;
 }
 
-VkFramebuffer VulkanRenderer::CreateFramebuffer(VkRenderPass& renderPass, const VkImageView& imageView, const VkExtent2D& extent) {
-    Log::Debug("Creating Framebuffer...");
-   
-    VkFramebufferCreateInfo framebufferInfo{};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    // can only be used with compatible (same number and type of attachments) render passes
-    framebufferInfo.renderPass = renderPass;
-    framebufferInfo.attachmentCount = 1;
-    VkImageView attachments[] = { imageView };
-    framebufferInfo.pAttachments = attachments;
-    framebufferInfo.width = extent.width;
-    framebufferInfo.height = extent.height;
-    framebufferInfo.layers = 1;
-
-    VkFramebuffer framebuffer;
-    assert(vkCreateFramebuffer(vc.GetDevice(), &framebufferInfo, nullptr, &framebuffer) == VK_SUCCESS);
-    return framebuffer;
-}
-
 std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphicsPipeline(VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule, VkRenderPass& renderPass) {
     Log::Debug("Creating Graphics Pipeline...");
     // optional parameters: shaders, Vertex class with binding and attribute descriptions,
