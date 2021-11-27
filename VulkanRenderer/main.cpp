@@ -15,12 +15,8 @@ int main() {
     VkCommandBuffer cmdBuf = vr.CreateCommandBuffer();
     VkRenderPass renderPass = vr.CreateRenderPass();
     destroyer.Add(renderPass);
-    const auto& presentImageViews = vc.GetSwapchainInfo().imageViews;
-    std::vector<VkFramebuffer> presentFramebuffers(presentImageViews.size());
-    for (size_t i = 0; i < presentImageViews.size(); i++) {
-        presentFramebuffers[i] = vc.CreateFramebuffer(vc.GetDevice(), renderPass, presentImageViews[i], vc.GetSwapchainInfo().extent);
-        destroyer.Add(presentFramebuffers[i]);
-    }
+    auto presentFramebuffers = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), renderPass, vc.GetSwapchainInfo());
+    for (const auto& fbo : presentFramebuffers) destroyer.Add(fbo);
 
     VkShaderModule vertShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-vert.spv"));
     VkShaderModule fragShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-frag.spv"));

@@ -530,7 +530,7 @@ VkCommandPool& VulkanContext::CreateGraphicsCommandPool(VkDevice& device, uint32
     return commandPool;
 }
 
-VkFramebuffer& VulkanContext::CreateFramebuffer(const VkDevice& device, VkRenderPass& renderPass, const VkImageView& imageView, const VkExtent2D& extent) {
+VkFramebuffer& VulkanContext::CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const VkImageView& imageView, const VkExtent2D& extent) {
     Log::Debug("Creating Framebuffer...");
 
     VkFramebufferCreateInfo framebufferInfo{};
@@ -547,6 +547,15 @@ VkFramebuffer& VulkanContext::CreateFramebuffer(const VkDevice& device, VkRender
     VkFramebuffer framebuffer;
     assert(vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffer) == VK_SUCCESS);
     return framebuffer;
+}
+
+std::vector<VkFramebuffer> VulkanContext::CreateSwapChainFrameBuffers(const VkDevice& device, const VkRenderPass& renderPass, const SwapchainInfo& swapchainInfo) {
+    const auto& presentImageViews = swapchainInfo.imageViews;
+    std::vector<VkFramebuffer> presentFramebuffers(presentImageViews.size());
+    for (size_t i = 0; i < presentImageViews.size(); i++) {
+        presentFramebuffers[i] = CreateFramebuffer(device, renderPass, presentImageViews[i], swapchainInfo.extent);
+    }
+    return presentFramebuffers;
 }
 
 void VulkanContext::OnResize(int width, int height) {
