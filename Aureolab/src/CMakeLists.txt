@@ -57,6 +57,7 @@ target_link_libraries(
 	imguizmo
 	vulkan
 	stb
+	vkmemalloc
 )
 
 target_compile_features(Aureolab PRIVATE cxx_std_20)
