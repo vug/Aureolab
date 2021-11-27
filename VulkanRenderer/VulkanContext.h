@@ -3,6 +3,7 @@
 #include "VulkanWindow.h"
 
 #include <vulkan/vulkan.h>
+#include "vk_mem_alloc.h"
 
 #include <functional> // reference_wrapper
 #include <optional>
@@ -77,6 +78,8 @@ private:
 	VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 	VkInstance instance = VK_NULL_HANDLE;
 	bool shouldDestroyDebugUtils = false;
+	//
+	VmaAllocator vmaAllocator; //vma lib allocator
 
 	SwapchainInfo swapchainInfo;
 	// Queues into which commands will be submitted by client app

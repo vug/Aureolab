@@ -1,11 +1,9 @@
 #include "VulkanContext.h"
-#include "VulkanContext.h"
-#include "VulkanContext.h"
-#include "VulkanContext.h"
-#include "VulkanContext.h"
-#include "VulkanContext.h"
 
 #include "Core/Log.h"
+
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
 
 #include <cassert>
 #include <functional>
@@ -54,6 +52,12 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     semaphoreCreateInfo.flags = 0;
     assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &presentSemaphore) == VK_SUCCESS);
     assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderSemaphore) == VK_SUCCESS);
+
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.physicalDevice = physicalDevice;
+    allocatorInfo.device = device;
+    allocatorInfo.instance = instance;
+    vmaCreateAllocator(&allocatorInfo, &vmaAllocator);
 }
 
 VulkanContext::~VulkanContext() {
