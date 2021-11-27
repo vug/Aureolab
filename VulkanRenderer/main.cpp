@@ -16,7 +16,7 @@ int main() {
     VkRenderPass renderPass = vr.CreateRenderPass();
     destroyer.Add(renderPass);
     auto presentFramebuffers = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), renderPass, vc.GetSwapchainInfo());
-    for (const auto& fbo : presentFramebuffers) destroyer.Add(fbo);
+    destroyer.Add(presentFramebuffers);
 
     VkShaderModule vertShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-vert.spv"));
     VkShaderModule fragShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-frag.spv"));

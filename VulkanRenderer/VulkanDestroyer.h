@@ -19,6 +19,12 @@ class VulkanDestroyer {
 public:
     VulkanDestroyer(const VkDevice& device) : destroy(device) {}
     void Add(VulkanObject obj) { objects.push_back(obj); }
+    template <typename T>
+    void Add(std::vector<T> objects) { 
+        for (auto& obj : objects) { 
+            Add(obj);
+        } 
+    }
     void DestroyAll() {
         for (auto& obj : objects) {
             std::visit(destroy, obj);
