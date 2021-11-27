@@ -6,7 +6,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
     GIT_TAG 3e401b55a4a9ebfc6344a8a2a698245e7d3fc09e # v2.0.0rc9 (Using hash skips connection to git server if downloaded)
 )
-#FetchContent_MakeAvailable(spdlog)
+#FetchContent_MakeAvailable(tinyobjloader)
 if(NOT tinyobjloader_POPULATED)
     FetchContent_Populate(tinyobjloader)
 
