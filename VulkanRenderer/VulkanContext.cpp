@@ -62,6 +62,7 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
+    vmaDestroyAllocator(vmaAllocator);
     vkDestroyFence(device, renderFence, nullptr);
     vkDestroySemaphore(device, presentSemaphore, nullptr);
     vkDestroySemaphore(device, renderSemaphore, nullptr);

@@ -62,6 +62,7 @@ public:
 	const VkQueue& GetGraphicsQueue() const { return graphicsQueue; }
 	const VkQueue& GetPresentationQueue() const { return presentQueue; }
 	const SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
+	const VmaAllocator& GetAllocator() const { return vmaAllocator; }
 
 	// 1) acquire (next available) image from swap chain
 	// 2) execute command buffer in given RenderPass with that image as attachment in the framebuffer
