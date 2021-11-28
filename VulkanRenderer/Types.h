@@ -8,3 +8,9 @@ struct AllocatedBuffer {
 	VkBuffer buffer;
 	VmaAllocation allocation;
 };
+
+// Helper to keep Vulkan handler to an image and it's allocation library state together
+struct AllocatedImage {
+	VkImage image;
+	VmaAllocation allocation;
+};
