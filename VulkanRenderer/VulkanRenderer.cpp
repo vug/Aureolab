@@ -105,7 +105,7 @@ VkRenderPass VulkanRenderer::CreateRenderPass() {
     return renderPass;
 }
 
-std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphicsPipeline(VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule, VkRenderPass& renderPass) {
+std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphicsPipeline(VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule, const VertexInputDescription& vertDesc, VkRenderPass& renderPass) {
     Log::Debug("Creating Graphics Pipeline...");
     // optional parameters: shaders, Vertex class with binding and attribute descriptions,
     // VkPrimitiveTopology topology, VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace
@@ -132,17 +132,10 @@ std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphic
     Log::Debug("\tVertex Input State Info...");
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    // TODO: Vertex descriptions will come later, first example does not use vertex input
-    //auto bindingDescription = Vertex::getBindingDescription();
-    //auto attributeDescriptions = Vertex::getAttributeDescriptions();
-    //vertexInputInfo.vertexBindingDescriptionCount = 1;
-    //vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    //vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    //vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-    // TODO: Have a BaseVertex class with getBindingDescription() and getAttributeDescriptions() virtual methods. Graphics Pipeline can take one.
-    // TODO: Or, it can be templated, and call static functions for binding description?
+    vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(vertDesc.bindings.size());
+    vertexInputInfo.pVertexBindingDescriptions = vertDesc.bindings.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertDesc.attributes.size());
+    vertexInputInfo.pVertexAttributeDescriptions = vertDesc.attributes.data();
 
     Log::Debug("\tInput Assembly State Info...");
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};

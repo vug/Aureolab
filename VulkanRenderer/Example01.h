@@ -37,7 +37,7 @@ public:
         VkShaderModule fragShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-frag.spv"));
         destroyer.Add(vertShader1); destroyer.Add(fragShader1);
         VkPipelineLayout pipelineLayout1;
-        std::tie(pipeline1, pipelineLayout1) = vr.CreateSinglePassGraphicsPipeline(vertShader1, fragShader1, renderPass);
+        std::tie(pipeline1, pipelineLayout1) = vr.CreateSinglePassGraphicsPipeline(vertShader1, fragShader1, {}, renderPass);
         destroyer.Add(pipelineLayout1);
         destroyer.Add(pipeline1);
 
@@ -46,7 +46,7 @@ public:
         destroyer.Add(vertShader2);
         destroyer.Add(fragShader2);
         VkPipelineLayout pipelineLayout2;
-        std::tie(pipeline2, pipelineLayout2) = vr.CreateSinglePassGraphicsPipeline(vertShader2, fragShader2, renderPass);
+        std::tie(pipeline2, pipelineLayout2) = vr.CreateSinglePassGraphicsPipeline(vertShader2, fragShader2, {}, renderPass);
         destroyer.Add(pipelineLayout2);
         destroyer.Add(pipeline2);
 
