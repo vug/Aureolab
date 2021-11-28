@@ -4,15 +4,35 @@
 #include "VulkanContext.h"
 #include "VulkanRenderer.h"
 #include "VulkanDestroyer.h"
+#include "Mesh.h"
 
 int main() {
     VulkanWindow win;
     VulkanContext vc = { win };
     VulkanRenderer vr = { vc };
+    VulkanDestroyer destroyer{ vc.GetDevice(), vc.GetAllocator() };
 
-    VulkanDestroyer destroyer{ vc.GetDevice() };
+    Mesh triangleMesh;
+    triangleMesh.vertices = {
+        { {  0.0f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 0.f, 0.0f, 1.0f } },
+        { {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 1.f, 0.0f, 1.0f } },
+        { { -0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 0.f, 1.0f, 1.0f } },
+    };
+    vr.UploadMesh(triangleMesh);
+    destroyer.Add(triangleMesh.vertexBuffer);
+    Mesh quadMesh;
+    quadMesh.vertices = {
+        { { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 0.f, 0.0f, 1.0f } },
+        { {  0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 1.f, 0.0f, 1.0f } },
+        { {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 0.f, 1.0f, 1.0f } },
 
-    VkCommandBuffer cmdBuf = vr.CreateCommandBuffer();
+        { { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 0.f, 0.0f, 1.0f } },
+        { {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 0.f, 1.0f, 1.0f } },
+        { { -0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 1.f, 1.0f, 1.0f } },
+    };
+    vr.UploadMesh(quadMesh);
+    destroyer.Add(quadMesh.vertexBuffer);
+
     VkRenderPass renderPass = vr.CreateRenderPass();
     destroyer.Add(renderPass);
     auto presentFramebuffers = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), renderPass, vc.GetSwapchainInfo());
@@ -30,6 +50,7 @@ int main() {
     auto [pipeline2, pipelineLayout2] = vr.CreateSinglePassGraphicsPipeline(vertShader2, fragShader2, renderPass);
     destroyer.Add(pipelineLayout2); destroyer.Add(pipeline2);
 
+    VkCommandBuffer cmdBuf = vr.CreateCommandBuffer();
     while (!win.ShouldClose()) {
         win.PollEvents();
 
