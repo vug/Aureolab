@@ -36,3 +36,13 @@ VertexInputDescription Vertex::GetVertexDescription() {
 	description.attributes.push_back(colorAttribute);
 	return description;
 }
+
+std::vector<VkPushConstantRange> MeshPushConstants::GetPushConstantRanges() {
+	std::vector<VkPushConstantRange> pushConstantRanges;
+	VkPushConstantRange pushConstant;
+	pushConstant.offset = 0;
+	pushConstant.size = sizeof(MeshPushConstants::PushConstant1);
+	pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushConstantRanges.push_back(pushConstant);
+	return pushConstantRanges;
+}

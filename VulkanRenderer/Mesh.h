@@ -26,3 +26,12 @@ struct Mesh {
 	std::vector<Vertex> vertices;
 	AllocatedBuffer vertexBuffer;
 };
+
+struct MeshPushConstants {
+	struct PushConstant1 {
+		glm::vec4 data;
+		glm::mat4 modelViewProjection;
+	};
+
+	static std::vector<VkPushConstantRange> GetPushConstantRanges();
+};
