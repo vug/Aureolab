@@ -1,6 +1,12 @@
 add_executable(VulkanRenderer 
 	main.cpp
- "VulkanRenderer.h" "VulkanRenderer.cpp" "VulkanWindow.h" "VulkanWindow.cpp" "IResizable.h" "VulkanContext.h" "VulkanContext.cpp" "VulkanDestroyer.h" "Mesh.h" "Types.h")
+ "VulkanRenderer.h" "VulkanRenderer.cpp" 
+ "VulkanWindow.h" "VulkanWindow.cpp" 
+ "IResizable.h" 
+ "VulkanContext.h" "VulkanContext.cpp" 
+ "VulkanDestroyer.h" 
+ "Mesh.h" "Mesh.cpp"
+ "Types.h")
 
 target_link_libraries(
 	VulkanRenderer PRIVATE 
