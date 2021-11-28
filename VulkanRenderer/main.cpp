@@ -7,8 +7,7 @@
 #include "Mesh.h"
 #include "Example.h"
 #include "Example01.h"
-
-#include <tuple>
+#include "Example02.h"
 
 
 int main() {
@@ -16,7 +15,9 @@ int main() {
     VulkanContext vc = { win };
     VulkanRenderer vr = { vc };
 ;
-    auto example = Ex01NoVertexInput(vc, vr);
+    auto ex01 = Ex01NoVertexInput(vc, vr);
+    auto ex02 = Ex02VertexBufferInput(vc, vr);
+    Example& example = ex02;
 
     while (!win.ShouldClose()) {
         win.PollEvents();

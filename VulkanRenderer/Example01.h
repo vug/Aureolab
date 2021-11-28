@@ -7,27 +7,6 @@ public:
     Ex01NoVertexInput(VulkanContext& vc, VulkanRenderer& vr) :
         Example(vc, vr) {
 
-        Mesh triangleMesh;
-        triangleMesh.vertices = {
-            { {  0.0f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 0.f, 0.0f, 1.0f } },
-            { {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 1.f, 0.0f, 1.0f } },
-            { { -0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 0.f, 1.0f, 1.0f } },
-        };
-        vr.UploadMesh(triangleMesh);
-        destroyer.Add(triangleMesh.vertexBuffer);
-        Mesh quadMesh;
-        quadMesh.vertices = {
-            { { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 0.f, 0.0f, 1.0f } },
-            { {  0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 1.f, 0.0f, 1.0f } },
-            { {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 0.f, 1.0f, 1.0f } },
-
-            { { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 0.f, 0.0f, 1.0f } },
-            { {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 0.f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 1.f, 1.0f, 1.0f } },
-        };
-        vr.UploadMesh(quadMesh);
-        destroyer.Add(quadMesh.vertexBuffer);
-
         renderPass = vr.CreateRenderPass();
         destroyer.Add(renderPass);
         presentFramebuffers = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), renderPass, vc.GetSwapchainInfo());

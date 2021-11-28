@@ -6,7 +6,7 @@ add_executable(VulkanRenderer
  "VulkanContext.h" "VulkanContext.cpp" 
  "VulkanDestroyer.h" 
  "Mesh.h" "Mesh.cpp"
- "Types.h" "Example.h" "Example01.h")
+ "Types.h" "Example.h" "Example01.h" "Example02.h")
 
 target_link_libraries(
 	VulkanRenderer PRIVATE 
