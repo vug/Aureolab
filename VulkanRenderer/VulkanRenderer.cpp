@@ -105,7 +105,12 @@ VkRenderPass VulkanRenderer::CreateRenderPass() {
     return renderPass;
 }
 
-std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphicsPipeline(VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule, const VertexInputDescription& vertDesc, VkRenderPass& renderPass) {
+std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphicsPipeline(
+    VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule, 
+    const VertexInputDescription& vertDesc, 
+    const std::vector<VkPushConstantRange>& pushConstantRanges,
+    VkRenderPass& renderPass
+) {
     Log::Debug("Creating Graphics Pipeline...");
     // optional parameters: shaders, Vertex class with binding and attribute descriptions,
     // VkPrimitiveTopology topology, VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace
@@ -246,12 +251,11 @@ std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphic
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
+    pipelineLayoutInfo.pushConstantRangeCount = pushConstantRanges.size();
+    pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
     // TODO: will come when loading vertex data
     //pipelineLayoutInfo.setLayoutCount = 1;
     //pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-    //pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-    //pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
     if (vkCreatePipelineLayout(vc.GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         Log::Critical("failed to create pipeline layout!");

@@ -15,7 +15,12 @@ public:
 
 	VkCommandBuffer CreateCommandBuffer(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	VkRenderPass CreateRenderPass();
-	std::tuple<VkPipeline, VkPipelineLayout> CreateSinglePassGraphicsPipeline(VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule, const VertexInputDescription& vertDesc, VkRenderPass& renderPass);
+	std::tuple<VkPipeline, VkPipelineLayout> CreateSinglePassGraphicsPipeline(
+		VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule,
+		const VertexInputDescription& vertDesc,
+		const std::vector<VkPushConstantRange>& pushConstantRanges,
+		VkRenderPass& renderPass
+	);
 
 	static std::vector<char> ReadFile(const std::string& filename);
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);

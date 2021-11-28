@@ -2,6 +2,8 @@
 
 #include "Example.h"
 
+#include <glm/gtx/transform.hpp>
+
 class Ex02VertexBufferInput : public Example {
 public:
     Ex02VertexBufferInput(VulkanContext& vc, VulkanRenderer& vr) :
@@ -30,12 +32,11 @@ public:
         presentFramebuffers = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), renderPass, vc.GetSwapchainInfo());
         destroyer.Add(presentFramebuffers);
 
-        VkShaderModule vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-vertex-attr-vert.spv"));
-        VkShaderModule fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-vertex-attr-frag.spv"));
+        VkShaderModule vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-vert.spv"));
+        VkShaderModule fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-frag.spv"));
         destroyer.Add(vertShader);
         destroyer.Add(fragShader);
-        VkPipelineLayout pipelineLayout;
-        std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), renderPass);
+        std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderPass);
         destroyer.Add(pipelineLayout);
         destroyer.Add(pipeline);
 
@@ -54,6 +55,16 @@ public:
             VkDeviceSize offset = 0;
             vkCmdBindVertexBuffers(cmd, 0, 1, &mesh.vertexBuffer.buffer, &offset);
 
+            glm::vec3 camPos = { 0.f,0.f,-2.f };
+            glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
+            glm::mat4 projection = glm::perspective(glm::radians(70.f), 800.f / 600.f, 0.1f, 200.0f);
+            //projection[1][1] *= -1;
+            glm::mat4 model = glm::rotate(glm::mat4{ 1.0f }, glm::radians(frameNumber * 0.2f), glm::vec3(0, 1, 0));
+            glm::mat4 mvp = projection * view * model;
+            MeshPushConstants::PushConstant1 constants;
+            constants.modelViewProjection = mvp;
+            vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant1), &constants);
+
             vkCmdDraw(cmd, mesh.vertices.size(), 1, 0, 0);
         });
 
@@ -66,6 +77,7 @@ public:
 private:
     VkRenderPass renderPass;
     VkPipeline pipeline;
+    VkPipelineLayout pipelineLayout;
     VkCommandBuffer cmdBuf;
     std::vector<VkFramebuffer> presentFramebuffers;
 
