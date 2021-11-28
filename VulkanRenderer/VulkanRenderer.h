@@ -2,6 +2,7 @@
 #include "VulkanContext.h"
 
 #include "IResizable.h"
+#include "Mesh.h"
 
 #include <string>
 #include <tuple>
@@ -18,6 +19,8 @@ public:
 
 	static std::vector<char> ReadFile(const std::string& filename);
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
+
+	void UploadMesh(Mesh& mesh);
 
 private:
 	// declaring as reference prevents it from being destroyed with Renderer
