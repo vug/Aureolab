@@ -550,7 +550,7 @@ VkFramebuffer& VulkanContext::CreateFramebuffer(const VkDevice& device, const Vk
     return framebuffer;
 }
 
-std::tuple<std::vector<VkFramebuffer>, VkImageView&, AllocatedImage&> VulkanContext::CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const SwapchainInfo& swapchainInfo) {
+std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> VulkanContext::CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const SwapchainInfo& swapchainInfo) {
     Log::Debug("Creating Framebuffers for Swapchain...");
     // SwapChain creates images for color attachments automatically. 
     // If we want a depth attachment we need to create it manually.
@@ -596,8 +596,7 @@ std::tuple<std::vector<VkFramebuffer>, VkImageView&, AllocatedImage&> VulkanCont
     std::vector<VkFramebuffer> presentFramebuffers(presentImageViews.size());
     for (size_t i = 0; i < presentImageViews.size(); i++) {
         // The swapchain framebuffers will share the same depth image
-        //std::vector<VkImageView> attachments = { presentImageViews[i], depthImageView };
-        std::vector<VkImageView> attachments = { presentImageViews[i] }; // TODO: add depth attachment after making RenderPass compatible
+        std::vector<VkImageView> attachments = { presentImageViews[i], depthImageView };
         presentFramebuffers[i] = CreateFramebuffer(device, renderPass, attachments, swapchainInfo.extent);
     }
     return { presentFramebuffers, depthImageView, depthImage };
@@ -608,7 +607,7 @@ void VulkanContext::OnResize(int width, int height) {
     // TODO: resize logic will come here
 }
 
-void VulkanContext::drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const VkClearValue& clearValue, std::function<void(VkCommandBuffer&)> cmdFunc) {
+void VulkanContext::drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(VkCommandBuffer&)> cmdFunc) {
     // Vulkan executes commands asynchroniously/independently. 
     // Need explicit dependency declaration for correct order of execution, i.e. synchronization
     // use fences to sync main app with command queue ops, use semaphors to sync operations within/across command queues
@@ -644,8 +643,8 @@ void VulkanContext::drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& 
     rpInfo.renderArea.offset = { 0, 0 };
     rpInfo.renderArea.extent = swapchainInfo.extent;
     rpInfo.framebuffer = swapchainFramebuffers[swapchainImageIndex];
-    rpInfo.clearValueCount = 1;
-    rpInfo.pClearValues = &clearValue;
+    rpInfo.clearValueCount = clearValues.size();
+    rpInfo.pClearValues = clearValues.data();
     // Will bind the Framebuffer, clear the Image, put the Image in the layout specified at RenderPass creation
     vkCmdBeginRenderPass(cmdBuf, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 

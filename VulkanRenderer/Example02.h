@@ -2,6 +2,7 @@
 
 #include "Example.h"
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtx/transform.hpp>
 
 class Ex02VertexBufferInput : public Example {
@@ -41,11 +42,13 @@ public:
     void OnRender() {
         static int frameNumber = 0;
 
-        VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
-        vc.drawFrameBlocked(renderPass, cmdBuf, presentFramebuffers, vc.GetSwapchainInfo(), clearValue, [&](VkCommandBuffer& cmd) {
+        std::vector<VkClearValue> clearValues(2);
+        clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+        clearValues[1].depthStencil.depth = 1.0f;
+        vc.drawFrameBlocked(renderPass, cmdBuf, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](VkCommandBuffer& cmd) {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-            Mesh mesh = int(frameNumber / 3000.0f) % 2 == 0 ? monkeyMesh : quadMesh;
+            Mesh mesh = int(frameNumber / 500.0f) % 2 == 0 ? monkeyMesh : quadMesh;
 
             VkDeviceSize offset = 0;
             vkCmdBindVertexBuffers(cmd, 0, 1, &mesh.vertexBuffer.buffer, &offset);
@@ -54,7 +57,7 @@ public:
             glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
             glm::mat4 projection = glm::perspective(glm::radians(70.f), 800.f / 600.f, 0.1f, 200.0f);
             projection[1][1] *= -1;
-            glm::mat4 model = glm::rotate(glm::mat4{ 1.0f }, glm::radians(frameNumber * 0.1f), glm::vec3(0, 1, 0));
+            glm::mat4 model = glm::rotate(glm::mat4{ 1.0f }, glm::radians(frameNumber * 0.2f), glm::vec3(0, 1, 0));
             glm::mat4 mvp = projection * view * model;
             MeshPushConstants::PushConstant1 constants;
             constants.modelViewProjection = mvp;

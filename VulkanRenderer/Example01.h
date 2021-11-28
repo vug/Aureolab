@@ -37,11 +37,12 @@ public:
     }
 
     void OnRender() {
-        VkClearValue clearValue;
+        std::vector<VkClearValue> clearValues(2);
         static int frameNumber = 0;
         float flash = abs(sin(frameNumber / 2400.f));
-        clearValue.color = { { 0.0f, 0.0f, flash, 1.0f } };
-        vc.drawFrameBlocked(renderPass, cmdBuf, presentFramebuffers, vc.GetSwapchainInfo(), clearValue, [&](VkCommandBuffer& cmd) {
+        clearValues[0].color = { { 0.0f, 0.0f, flash, 1.0f } };
+        clearValues[1].depthStencil.depth = 1.0f;
+        vc.drawFrameBlocked(renderPass, cmdBuf, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](VkCommandBuffer& cmd) {
             if (int(frameNumber / 4000.0f) % 2 == 0) {
                 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline1);
                 vkCmdDraw(cmd, 3, 1, 0, 0);

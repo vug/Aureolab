@@ -91,6 +91,7 @@ VkRenderPass VulkanRenderer::CreateRenderPass() {
     // index in this "array" is directly referenced in fragment shader, say `layout(location = 0) out vec4 outColor`
     subpass.pColorAttachments = &colorAttachmentRef;
     // Life of an image: UNDEFINED -> RenderPass Begins -> Subpass 0 begins (Transition to Attachment Optimal) -> Subpass 0 renders -> Subpass 0 ends -> Renderpass Ends (Transitions to Present Source)
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
     // specify memory and execution dependencies between subpasses
     // We want our only single subpass to happen after swap chain image is acquired
@@ -105,9 +106,7 @@ VkRenderPass VulkanRenderer::CreateRenderPass() {
     //dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     // Renderpass is created by providing attachments, subpasses that use them, and the dependency relationship between subpasses
-    //std::vector<VkAttachmentDescription> attachments = { colorAttachment, depthAttachment };
-    std::vector<VkAttachmentDescription> attachments = { colorAttachment }; // TODO: turn on depthAttachment after making GraphicsPipeline Depth compatible
-    //subpass.pDepthStencilAttachment = &depthAttachmentRef; // TODO: move up
+    std::vector<VkAttachmentDescription> attachments = { colorAttachment, depthAttachment };
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = attachments.size();
@@ -226,12 +225,14 @@ std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphic
     Log::Debug("\tDepth Stencil State Info...");
     VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
     depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilInfo.pNext = nullptr;
     depthStencilInfo.depthTestEnable = VK_TRUE;
     depthStencilInfo.depthWriteEnable = VK_TRUE;
     depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
     depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
+    depthStencilInfo.minDepthBounds = 0.0f; // Optional
+    depthStencilInfo.maxDepthBounds = 1.0f; // Optional
     depthStencilInfo.stencilTestEnable = VK_FALSE;
-    //depthStencilInfo.front. ...
 
     Log::Debug("\tColor Blend State Info...");
     // About combining fragment shader color with the color already in Framebuffer
@@ -293,7 +294,7 @@ std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphic
     pipelineInfo.pViewportState = &viewportStateInfo;
     pipelineInfo.pRasterizationState = &rasterizerInfo;
     pipelineInfo.pMultisampleState = &multisamplingInfo;
-    pipelineInfo.pDepthStencilState = nullptr; // 
+    pipelineInfo.pDepthStencilState = &depthStencilInfo;
     pipelineInfo.pColorBlendState = &colorBlendingInfo;
     pipelineInfo.pDynamicState = nullptr;
     // 3) Pipeline Layout

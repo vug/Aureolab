@@ -57,7 +57,7 @@ public:
 	static std::tuple<VkSwapchainKHR&, SwapchainInfo> CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapChainSupportDetails);
 	static VkCommandPool& CreateGraphicsCommandPool(VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 	static VkFramebuffer& CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent);
-	static std::tuple<std::vector<VkFramebuffer>, VkImageView&, AllocatedImage&> CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const SwapchainInfo&);
+	static std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const SwapchainInfo&);
 
 	const VkDevice& GetDevice() const { return device; }
 	const VkCommandPool& GetCommandPool() const{ return commandPool; }
@@ -70,7 +70,7 @@ public:
 	// 2) execute command buffer in given RenderPass with that image as attachment in the framebuffer
 	// 3) return the image to the swapchain for presentation
 	// Blocked means acquisition, queue processing and presentation happens sequentially
-	void drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const VkClearValue& clearValue, std::function<void(VkCommandBuffer&)> cmdFunc);
+	void drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(VkCommandBuffer&)> cmdFunc);
 
 	virtual void OnResize(int width, int height) override;
 private:
