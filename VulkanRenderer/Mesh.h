@@ -27,6 +27,8 @@ struct Mesh {
 	AllocatedBuffer vertexBuffer;
 
 	bool LoadFromOBJ(const char* filename);
+	void MakeTriangle();
+	void MakeQuad();
 };
 
 struct MeshPushConstants {
