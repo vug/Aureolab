@@ -9,8 +9,12 @@ public:
 
         renderPass = vr.CreateRenderPass();
         destroyer.Add(renderPass);
-        presentFramebuffers = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), renderPass, vc.GetSwapchainInfo());
+        AllocatedImage depthImage;
+        VkImageView depthImageView;
+        std::tie(presentFramebuffers, depthImageView, depthImage) = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), vc.GetAllocator(), renderPass, vc.GetSwapchainInfo());
         destroyer.Add(presentFramebuffers);
+        destroyer.Add(depthImageView);
+        destroyer.Add(depthImage);
 
         VkShaderModule vertShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-vert.spv"));
         VkShaderModule fragShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-frag.spv"));

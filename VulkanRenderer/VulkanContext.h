@@ -1,9 +1,10 @@
 #pragma once
 
 #include "VulkanWindow.h"
+#include "Types.h"
 
 #include <vulkan/vulkan.h>
-#include "vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 
 #include <functional> // reference_wrapper
 #include <optional>
@@ -54,8 +55,8 @@ public:
 	static std::tuple<VkDevice&, VkQueue, VkQueue> CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers);
 	static std::tuple<VkSwapchainKHR&, VkSurfaceFormatKHR&, VkExtent2D&, std::vector<VkImageView>> CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapChainSupportDetails);
 	static VkCommandPool& CreateGraphicsCommandPool(VkDevice& device, uint32_t graphicsQueueFamilyIndex);
-	static VkFramebuffer& CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const VkImageView& imageView, const VkExtent2D& extent);
-	static std::vector<VkFramebuffer> CreateSwapChainFrameBuffers(const VkDevice& device, const VkRenderPass& renderPass, const SwapchainInfo&);
+	static VkFramebuffer& CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent);
+	static std::tuple<std::vector<VkFramebuffer>, VkImageView&, AllocatedImage&> CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const SwapchainInfo&);
 
 	const VkDevice& GetDevice() const { return device; }
 	const VkCommandPool& GetCommandPool() const{ return commandPool; }

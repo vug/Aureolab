@@ -20,8 +20,12 @@ public:
 
         renderPass = vr.CreateRenderPass();
         destroyer.Add(renderPass);
-        presentFramebuffers = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), renderPass, vc.GetSwapchainInfo());
+        AllocatedImage depthImage;
+        VkImageView depthImageView;
+        std::tie(presentFramebuffers, depthImageView, depthImage) = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), vc.GetAllocator(), renderPass, vc.GetSwapchainInfo());
         destroyer.Add(presentFramebuffers);
+        destroyer.Add(depthImageView);
+        destroyer.Add(depthImage);
 
         VkShaderModule vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-vert.spv"));
         VkShaderModule fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-frag.spv"));
