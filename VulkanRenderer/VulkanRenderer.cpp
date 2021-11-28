@@ -251,7 +251,7 @@ std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphic
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.pushConstantRangeCount = pushConstantRanges.size();
+    pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
     pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
     // TODO: will come when loading vertex data
     //pipelineLayoutInfo.setLayoutCount = 1;

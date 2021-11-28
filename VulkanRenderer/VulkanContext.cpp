@@ -36,7 +36,7 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     std::vector<const char*> requiredExtensions;
     std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(instance, surface);
     std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, validation, vulkanLayers);
-    std::tie(swapchain, swapchainInfo.surfaceFormat, swapchainInfo.extent, swapchainInfo.imageViews) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
+    std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
     commandPool = CreateGraphicsCommandPool(device, queueIndices.graphicsFamily.value());
 
     // Initialize synchronization objects
@@ -383,7 +383,7 @@ std::tuple<VkDevice&, VkQueue, VkQueue> VulkanContext::CreateLogicalDevice(VkPhy
     return { device, graphicsQueue, presentQueue };
 }
 
-std::tuple<VkSwapchainKHR&, VkSurfaceFormatKHR&, VkExtent2D&, std::vector<VkImageView>> VulkanContext::CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapchainSupportDetails) {
+std::tuple<VkSwapchainKHR&, SwapchainInfo> VulkanContext::CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapchainSupportDetails) {
     Log::Debug("Creating Swapchain...");
     VkSwapchainKHR swapchain;
 
@@ -509,7 +509,8 @@ std::tuple<VkSwapchainKHR&, VkSurfaceFormatKHR&, VkExtent2D&, std::vector<VkImag
     }
 
     //std::vector<std::reference_wrapper<VkImageView>> ret(swapchainImages.begin(), swapchainImages.end());
-    return { swapchain, surfaceFormat, swapExtent, swapchainImageViews };
+    SwapchainInfo swapchainInfo = { surfaceFormat, swapExtent, swapchainImageViews, VK_FORMAT_D32_SFLOAT };
+    return { swapchain, swapchainInfo };
 }
 
 VkCommandPool& VulkanContext::CreateGraphicsCommandPool(VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
@@ -538,7 +539,7 @@ VkFramebuffer& VulkanContext::CreateFramebuffer(const VkDevice& device, const Vk
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     // can only be used with compatible (same number and type of attachments) render passes
     framebufferInfo.renderPass = renderPass;
-    framebufferInfo.attachmentCount = attachments.size();
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     framebufferInfo.pAttachments = attachments.data();
     framebufferInfo.width = extent.width;
     framebufferInfo.height = extent.height;
@@ -553,13 +554,11 @@ std::tuple<std::vector<VkFramebuffer>, VkImageView&, AllocatedImage&> VulkanCont
     Log::Debug("Creating Framebuffers for Swapchain...");
     // SwapChain creates images for color attachments automatically. 
     // If we want a depth attachment we need to create it manually.
-    VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
-
     VkImageCreateInfo depthImageInfo = {};
     depthImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     depthImageInfo.pNext = nullptr;
     depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
-    depthImageInfo.format = depthFormat;
+    depthImageInfo.format = swapchainInfo.depthFormat;
     depthImageInfo.extent = { swapchainInfo.extent.width, swapchainInfo.extent.height, 1u }; // Depth extent is 3D
     depthImageInfo.mipLevels = 1;
     depthImageInfo.arrayLayers = 1;
@@ -582,7 +581,7 @@ std::tuple<std::vector<VkFramebuffer>, VkImageView&, AllocatedImage&> VulkanCont
     depthImageViewInfo.pNext = nullptr;
     depthImageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     depthImageViewInfo.image = depthImage.image;
-    depthImageViewInfo.format = depthFormat;
+    depthImageViewInfo.format = swapchainInfo.depthFormat;
     depthImageViewInfo.subresourceRange.baseMipLevel = 0;
     depthImageViewInfo.subresourceRange.levelCount = 1;
     depthImageViewInfo.subresourceRange.baseArrayLayer = 0;
