@@ -713,6 +713,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::DebugCallback(
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
         Log::Error("[ValidationLayer, {}] {}", msgType, pCallbackData->pMessage);
+        __debugbreak();
         break;
     }
 
