@@ -28,14 +28,21 @@ VertexInputDescription Vertex::GetVertexDescription() {
 	normalAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
 	normalAttribute.offset = offsetof(Vertex, normal);
 
+	VkVertexInputAttributeDescription texCoordAttribute = {};
+	texCoordAttribute.binding = mainBinding.binding;
+	texCoordAttribute.location = 2;
+	texCoordAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
+	texCoordAttribute.offset = offsetof(Vertex, texCoord);
+
 	VkVertexInputAttributeDescription colorAttribute = {};
 	colorAttribute.binding = mainBinding.binding;
-	colorAttribute.location = 2;
+	colorAttribute.location = 3;
 	colorAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
 	colorAttribute.offset = offsetof(Vertex, color);
 
 	description.attributes.push_back(positionAttribute);
 	description.attributes.push_back(normalAttribute);
+	description.attributes.push_back(texCoordAttribute);
 	description.attributes.push_back(colorAttribute);
 	return description;
 }
@@ -125,20 +132,20 @@ bool Mesh::LoadFromOBJ(const char* filename) {
 
 void Mesh::MakeTriangle() {
 	vertices = {
-		{ { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 0.f, 0.0f, 1.0f } },
-		{ {  0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 1.f, 0.0f, 1.0f } },
-		{ {  0.0f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 0.f, 1.0f, 1.0f } },
+		{ { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.0f, 0.0f }, { 1.f, 0.f, 0.0f, 1.0f } },
+		{ {  0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.0f, 0.0f }, { 0.f, 1.f, 0.0f, 1.0f } },
+		{ {  0.0f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.5f, 1.0f }, { 0.f, 0.f, 1.0f, 1.0f } },
 	};
 }
 
 void Mesh::MakeQuad() {
 	vertices = {
-		{ { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 0.f, 0.0f, 1.0f } },
-		{ {  0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 1.f, 0.0f, 1.0f } },
-		{ {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 0.f, 1.0f, 1.0f } },
+		{ { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.0f, 0.0f }, { 1.f, 0.f, 0.0f, 1.0f } },
+		{ {  0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.0f, 0.0f }, { 0.f, 1.f, 0.0f, 1.0f } },
+		{ {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.0f, 1.0f }, { 0.f, 0.f, 1.0f, 1.0f } },
 
-		{ { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 0.f, 0.0f, 1.0f } },
-		{ {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.f, 0.f, 1.0f, 1.0f } },
-		{ { -0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.f, 1.f, 1.0f, 1.0f } },
+		{ { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.0f, 0.0f }, { 1.f, 0.f, 0.0f, 1.0f } },
+		{ {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 1.0f, 1.0f }, { 0.f, 0.f, 1.0f, 1.0f } },
+		{ { -0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 0.0f}, { 0.0f, 1.0f }, { 1.f, 1.f, 1.0f, 1.0f } },
 	};
 }
