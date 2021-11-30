@@ -67,7 +67,8 @@ public:
 	const VmaAllocator& GetAllocator() const { return vmaAllocator; }
 
 	// 1) acquire (next available) image from swap chain
-	// 2) execute command buffer in given RenderPass with that image as attachment in the framebuffer
+	// 2) clears command buffer, records into it via cmdFunc with "one-time" option
+	// 2.5) executes it in given RenderPass with that image as attachment in the framebuffer
 	// 3) return the image to the swapchain for presentation
 	// Blocked means acquisition, queue processing and presentation happens sequentially
 	void drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(VkCommandBuffer&)> cmdFunc);
