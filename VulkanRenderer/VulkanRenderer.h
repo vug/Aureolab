@@ -38,6 +38,7 @@ public:
 
 	void UploadMesh(Mesh& mesh);
 
+	static glm::mat4 MakeTransform(const glm::vec3& translate, const glm::vec3& axis, float angle, const glm::vec3& scale);
 private:
 	// declaring as reference prevents it from being destroyed with Renderer
 	VulkanContext& vc;

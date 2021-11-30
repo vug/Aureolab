@@ -4,6 +4,8 @@
 
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/gtx/transform.hpp>
 
 #include <cassert>
 #include <fstream>
@@ -371,3 +373,12 @@ void VulkanRenderer::UploadMesh(Mesh& mesh) {
     memcpy(data, mesh.vertices.data(), bufferInfo.size);
     vmaUnmapMemory(allocator, mesh.vertexBuffer.allocation);
 }
+
+glm::mat4 VulkanRenderer::MakeTransform(const glm::vec3& translate, const glm::vec3& axis, float angle, const glm::vec3& scale) {
+    glm::mat4 transform = glm::mat4(1.0f);
+    transform = glm::translate(transform, translate);
+    transform = glm::scale(transform, scale);
+    transform = glm::rotate(transform, angle, axis);
+    return transform;
+}
+
