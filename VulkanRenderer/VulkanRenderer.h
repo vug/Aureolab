@@ -8,6 +8,17 @@
 #include <tuple>
 #include <vector>
 
+struct Material {
+	VkPipeline pipeline;
+	VkPipelineLayout pipelineLayout;
+};
+
+struct RenderObject {
+	Mesh* mesh;
+	Material* material;
+	glm::mat4 transform;
+};
+
 class VulkanRenderer {
 public:
 	VulkanRenderer(VulkanContext& context);
