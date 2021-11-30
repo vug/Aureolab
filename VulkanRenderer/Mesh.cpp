@@ -59,6 +59,8 @@ std::vector<VkPushConstantRange> MeshPushConstants::GetPushConstantRanges() {
 
 bool Mesh::LoadFromOBJ(const char* filename) {
 	Log::Debug("Loading OBJ file: {}...", filename);
+	vertices.clear();
+
 	//attrib will contain the vertex arrays of the file
 	tinyobj::attrib_t attrib;
 	//shapes contains the info for each separate object in the file
