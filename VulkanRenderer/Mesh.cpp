@@ -97,29 +97,38 @@ bool Mesh::LoadFromOBJ(const char* filename) {
 				// access to vertex
 				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
 
+				Vertex new_vert;
+
 				//vertex position
 				tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
 				tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
 				tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
+				new_vert.position = { vx, vy, vz };
 
 				//vertex normal
-				tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
-				tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
-				tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
+				if (idx.normal_index >= 0) {
+					tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
+					tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
+					tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
+					new_vert.normal = { nx, ny, nz };
+				}
 
-				//copy it into our vertex
-				Vertex new_vert;
-				new_vert.position.x = vx;
-				new_vert.position.y = vy;
-				new_vert.position.z = vz;
+				// Check if `texcoord_index` is zero or positive. negative = no texcoord data
+				if (idx.texcoord_index >= 0) {
+					tinyobj::real_t tx = attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
+					tinyobj::real_t ty = attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
+					new_vert.texCoord = { tx, ty };
+				}
 
-				new_vert.normal.x = nx;
-				new_vert.normal.y = ny;
-				new_vert.normal.z = nz;
-
-				//we are setting the vertex color as the vertex normal. This is just for display purposes
-				new_vert.color = { new_vert.normal.x, new_vert.normal.y, new_vert.normal.z, 1.0f };
-
+				// OBJ format does not have color information in it (it relies on accompanying MTL files to assign diffuse and specular colors to faces)
+				// However, some software extends OBJ format by adding 3 more floats per vertex (next to position).
+				// I tested that if color info is not there, vertex color becomes white.
+				{
+					tinyobj::real_t red = attrib.colors[3 * size_t(idx.vertex_index) + 0];
+					tinyobj::real_t green = attrib.colors[3 * size_t(idx.vertex_index) + 1];
+					tinyobj::real_t blue = attrib.colors[3 * size_t(idx.vertex_index) + 2];
+					new_vert.color = { red, green, blue, 1.0f };
+				}
 
 				vertices.push_back(new_vert);
 			}
