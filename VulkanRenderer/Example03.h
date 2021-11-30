@@ -8,63 +8,62 @@
 
 class Ex03SceneManagement : public Example {
 public:
-    Ex03SceneManagement(VulkanContext& vc, VulkanRenderer& vr) :
-        Example(vc, vr) {
-            // Mesh Assets
-            {
-                Mesh mesh;
-                mesh.MakeTriangle();
-                vr.UploadMesh(mesh);
-                vr.meshes["triangle"] = mesh; // copy operation
+    Ex03SceneManagement(VulkanContext& vc, VulkanRenderer& vr) : Example(vc, vr) {
+        // Mesh Assets
+        {
+            Mesh mesh;
+            mesh.MakeTriangle();
+            vr.UploadMesh(mesh);
+            vr.meshes["triangle"] = mesh; // copy operation
 
-                mesh.MakeQuad();
-                vr.UploadMesh(mesh);
-                vr.meshes["quad"] = mesh;
+            mesh.MakeQuad();
+            vr.UploadMesh(mesh);
+            vr.meshes["quad"] = mesh;
 
-                mesh.LoadFromOBJ("assets/models/suzanne.obj");
-                vr.UploadMesh(mesh);
-                vr.meshes["monkey_flat"] = mesh;
+            mesh.LoadFromOBJ("assets/models/suzanne.obj");
+            vr.UploadMesh(mesh);
+            vr.meshes["monkey_flat"] = mesh;
 
-                destroyer.Add(std::vector{ vr.meshes["triangle"].vertexBuffer, vr.meshes["quad"].vertexBuffer, vr.meshes["monkey_flat"].vertexBuffer });
-            }
+            destroyer.Add(std::vector{ vr.meshes["triangle"].vertexBuffer, vr.meshes["quad"].vertexBuffer, vr.meshes["monkey_flat"].vertexBuffer });
+        }
 
-            renderPass = vr.CreateRenderPass();
-            destroyer.Add(renderPass);
-            AllocatedImage depthImage;
-            VkImageView depthImageView;
-            std::tie(presentFramebuffers, depthImageView, depthImage) = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), vc.GetAllocator(), renderPass, vc.GetSwapchainInfo());
-            destroyer.Add(presentFramebuffers);
-            destroyer.Add(depthImageView);
-            destroyer.Add(depthImage);
+        renderPass = vr.CreateRenderPass();
+        destroyer.Add(renderPass);
+        AllocatedImage depthImage;
+        VkImageView depthImageView;
+        std::tie(presentFramebuffers, depthImageView, depthImage) = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), vc.GetAllocator(), renderPass, vc.GetSwapchainInfo());
+        destroyer.Add(presentFramebuffers);
+        destroyer.Add(depthImageView);
+        destroyer.Add(depthImage);
 
-            // Material Assets (aka pipelines and pipeline layouts)
-            {
-                VkShaderModule vertShader, fragShader;
-                VkPipeline pipeline;
-                VkPipelineLayout pipelineLayout;
+        // Material Assets (aka pipelines and pipeline layouts)
+        {
+            VkShaderModule vertShader, fragShader;
+            VkPipeline pipeline;
+            VkPipelineLayout pipelineLayout;
 
-                vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/default-vert.spv"));
-                fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-normal-frag.spv"));
-                std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderPass);
-                vr.materials["vizNormal"] = Material{ pipeline, pipelineLayout };
-                destroyer.Add(std::vector{ vertShader, fragShader });
-                destroyer.Add(pipelineLayout);
-                destroyer.Add(pipeline);
+            vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/default-vert.spv"));
+            fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-normal-frag.spv"));
+            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderPass);
+            vr.materials["vizNormal"] = Material{ pipeline, pipelineLayout };
+            destroyer.Add(std::vector{ vertShader, fragShader });
+            destroyer.Add(pipelineLayout);
+            destroyer.Add(pipeline);
 
-                vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/default-vert.spv"));
-                fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-uv-frag.spv"));
-                std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderPass);
-                vr.materials["vizUV"] = Material{ pipeline, pipelineLayout };
-                destroyer.Add(std::vector{ vertShader, fragShader });
-                destroyer.Add(pipelineLayout);
-                destroyer.Add(pipeline);
-            }
+            vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/default-vert.spv"));
+            fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-uv-frag.spv"));
+            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderPass);
+            vr.materials["vizUV"] = Material{ pipeline, pipelineLayout };
+            destroyer.Add(std::vector{ vertShader, fragShader });
+            destroyer.Add(pipelineLayout);
+            destroyer.Add(pipeline);
+        }
             
-            cmdBuf = vr.CreateCommandBuffer();
-            objects = {
-                { &vr.meshes["monkey_flat"], &vr.materials["vizNormal"], glm::translate(glm::mat4(1.0f), { -1.0f, 0.0, 0.0 }) },
-                { &vr.meshes["quad"], &vr.materials["vizUV"], glm::translate(glm::mat4(1.0f), { 1.0f, 0.0, 0.0 }) },
-            };
+        cmdBuf = vr.CreateCommandBuffer();
+        objects = {
+            { &vr.meshes["monkey_flat"], &vr.materials["vizNormal"], glm::translate(glm::mat4(1.0f), { -1.0f, 0.0, 0.0 }) },
+            { &vr.meshes["quad"], &vr.materials["vizUV"], glm::translate(glm::mat4(1.0f), { 1.0f, 0.0, 0.0 }) },
+        };
     }
 
     void OnRender() {
