@@ -8,6 +8,7 @@
 #include "Example.h"
 #include "Example01.h"
 #include "Example02.h"
+#include "Example03.h"
 
 
 int main() {
@@ -17,7 +18,8 @@ int main() {
 ;
     auto ex01 = Ex01NoVertexInput(vc, vr);
     auto ex02 = Ex02VertexBufferInput(vc, vr);
-    Example& example = ex02;
+    auto ex03 = Ex03SceneManagement(vc, vr);
+    Example& example = ex03;
 
     while (!win.ShouldClose()) {
         win.PollEvents();
