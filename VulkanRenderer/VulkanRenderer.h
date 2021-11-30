@@ -7,6 +7,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <unordered_map>
 
 struct Material {
 	VkPipeline pipeline;
@@ -17,6 +18,11 @@ struct RenderObject {
 	Mesh* mesh;
 	Material* material;
 	glm::mat4 transform;
+};
+
+struct RenderView {
+	glm::mat4 view;
+	glm::mat4 projection;
 };
 
 class VulkanRenderer {
@@ -38,7 +44,12 @@ public:
 
 	void UploadMesh(Mesh& mesh);
 
+	std::unordered_map<std::string, Material> materials;
+	std::unordered_map<std::string, Mesh> meshes;
+
 	static glm::mat4 MakeTransform(const glm::vec3& translate, const glm::vec3& axis, float angle, const glm::vec3& scale);
+	void DrawObjects(VkCommandBuffer cmd, RenderView& renderView, std::vector<RenderObject> objects);
+
 private:
 	// declaring as reference prevents it from being destroyed with Renderer
 	VulkanContext& vc;

@@ -382,3 +382,28 @@ glm::mat4 VulkanRenderer::MakeTransform(const glm::vec3& translate, const glm::v
     return transform;
 }
 
+void VulkanRenderer::DrawObjects(VkCommandBuffer cmd, RenderView& renderView, std::vector<RenderObject> objects) {
+    Mesh* lastMesh = nullptr;
+    Material* lastMaterial = nullptr;
+    for (const auto& obj : objects) {
+        // Only bind pipeline if it changes while looping over objects
+        if (obj.material != lastMaterial) {
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, obj.material->pipeline);
+            lastMaterial = obj.material;
+        }
+
+        glm::mat4 MVP = renderView.projection * renderView.view * obj.transform;
+        MeshPushConstants::PushConstant1 constants;
+        constants.modelViewProjection = MVP;
+        vkCmdPushConstants(cmd, obj.material->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant1), &constants);
+
+        // Similarly, don't bind vertex buffer if we are repeating meshes
+        if (obj.mesh != lastMesh) {
+            VkDeviceSize offset = 0;
+            vkCmdBindVertexBuffers(cmd, 0, 1, &obj.mesh->vertexBuffer.buffer, &offset);
+            lastMesh = obj.mesh;
+        }
+
+        vkCmdDraw(cmd, obj.mesh->vertices.size(), 1, 0, 0);
+    }
+}
