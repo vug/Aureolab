@@ -13,13 +13,7 @@
 
 VulkanRenderer::VulkanRenderer(VulkanContext& context) : vc(context) {}
 
-VulkanRenderer::~VulkanRenderer() {
-    //for (auto framebuffer : swapChainFramebuffers) {
-    //    vkDestroyFramebuffer(vc.GetDevice(), framebuffer, nullptr);
-    //}
-    //vkDestroyPipeline(vc.GetDevice(), graphicsPipeline, nullptr);
-    //vkDestroyPipelineLayout(vc.GetDevice(), pipelineLayout, nullptr);
-}
+VulkanRenderer::~VulkanRenderer() {}
 
 VkCommandBuffer VulkanRenderer::CreateCommandBuffer(VkCommandBufferLevel level) {
     Log::Debug("Creating main, graphics Command Buffer...");

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanWindow.h"
+#include "VulkanDestroyer.h"
 #include "Types.h"
 
 #include <vulkan/vulkan.h>
@@ -11,6 +12,7 @@
 #include <queue>
 #include <vector>
 #include <tuple>
+#include <memory>
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
@@ -65,6 +67,7 @@ public:
 	const VkQueue& GetPresentationQueue() const { return presentQueue; }
 	const SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
 	const VmaAllocator& GetAllocator() const { return vmaAllocator; }
+	const VulkanDestroyer& GetDestroyer() const { return *destroyer; }
 
 	// 1) acquire (next available) image from swap chain
 	// 2) clears command buffer, records into it via cmdFunc with "one-time" option
@@ -86,6 +89,7 @@ private:
 	bool shouldDestroyDebugUtils = false;
 	//
 	VmaAllocator vmaAllocator; //vma lib allocator
+	std::unique_ptr<VulkanDestroyer> destroyer;
 
 	SwapchainInfo swapchainInfo;
 	// Queues into which commands will be submitted by client app

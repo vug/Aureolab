@@ -36,7 +36,16 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     std::vector<const char*> requiredExtensions;
     std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(instance, surface);
     std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, validation, vulkanLayers);
+
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.physicalDevice = physicalDevice;
+    allocatorInfo.device = device;
+    allocatorInfo.instance = instance;
+    vmaCreateAllocator(&allocatorInfo, &vmaAllocator);
+    destroyer = std::make_unique<VulkanDestroyer>(device, vmaAllocator);
+
     std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
+    destroyer->Add(swapchainInfo.imageViews);
     commandPool = CreateGraphicsCommandPool(device, queueIndices.graphicsFamily.value());
 
     // Initialize synchronization objects
@@ -52,24 +61,16 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     semaphoreCreateInfo.flags = 0;
     assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &presentSemaphore) == VK_SUCCESS);
     assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderSemaphore) == VK_SUCCESS);
-
-    VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.physicalDevice = physicalDevice;
-    allocatorInfo.device = device;
-    allocatorInfo.instance = instance;
-    vmaCreateAllocator(&allocatorInfo, &vmaAllocator);
 }
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
     vmaDestroyAllocator(vmaAllocator);
+    destroyer->DestroyAll();
     vkDestroyFence(device, renderFence, nullptr);
     vkDestroySemaphore(device, presentSemaphore, nullptr);
     vkDestroySemaphore(device, renderSemaphore, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
-    for (auto imageView : swapchainInfo.imageViews) {
-        vkDestroyImageView(device, imageView, nullptr);
-    }
     vkDestroySwapchainKHR(device, swapchain, nullptr);
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
