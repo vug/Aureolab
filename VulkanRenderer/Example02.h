@@ -30,6 +30,11 @@ public:
         destroyer.Add(depthImageView);
         destroyer.Add(depthImage);
 
+        frameSyncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
+        destroyer.Add(frameSyncCmd.commandPool);
+        destroyer.Add(frameSyncCmd.renderFence);
+        destroyer.Add(std::vector{ frameSyncCmd.presentSemaphore, frameSyncCmd.renderSemaphore });
+
         VkShaderModule vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-vert.spv"));
         VkShaderModule fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-frag.spv"));
         destroyer.Add(vertShader);
@@ -37,8 +42,6 @@ public:
         std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderPass);
         destroyer.Add(pipelineLayout);
         destroyer.Add(pipeline);
-
-        cmdBuf = vc.CreateCommandBuffer(vc.GetDevice(), vc.GetCommandPool());
     }
 
     void OnRender() {
@@ -48,7 +51,7 @@ public:
         std::vector<VkClearValue> clearValues(2);
         clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
         clearValues[1].depthStencil.depth = 1.0f;
-        vc.drawFrameBlocked(renderPass, cmdBuf, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](VkCommandBuffer& cmd) {
+        vc.drawFrameBlocked(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmd, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd) {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
             Mesh mesh = int(time.count() / 2.0f) % 2 == 0 ? monkeyMesh : quadMesh;
@@ -71,13 +74,13 @@ public:
     }
 
     ~Ex02VertexBufferInput() {
-        vkFreeCommandBuffers(vc.GetDevice(), vc.GetCommandPool(), 1, &cmdBuf);
+        vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.commandPool, 1, &frameSyncCmd.mainCommandBuffer);
     }
 private:
     VkRenderPass renderPass;
+    FrameSyncCmd frameSyncCmd;
     VkPipeline pipeline;
     VkPipelineLayout pipelineLayout;
-    VkCommandBuffer cmdBuf;
     std::vector<VkFramebuffer> presentFramebuffers;
 
     Mesh triangleMesh, quadMesh, monkeyMesh;

@@ -74,9 +74,10 @@ public:
 	static std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const SwapchainInfo&);
 
 	const VkDevice& GetDevice() const { return device; }
-	const VkCommandPool& GetCommandPool() const{ return frameSyncCmd.commandPool; }
 	const VkQueue& GetGraphicsQueue() const { return graphicsQueue; }
 	const VkQueue& GetPresentationQueue() const { return presentQueue; }
+	const QueueFamilyIndices& GetQueueFamilyIndices() const { return queueIndices; }
+	const VkSwapchainKHR& GetSwapchain() const { return swapchain; }
 	const SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
 	const VmaAllocator& GetAllocator() const { return vmaAllocator; }
 	const VulkanDestroyer& GetDestroyer() const { return *destroyer; }
@@ -86,7 +87,7 @@ public:
 	// 2.5) executes it in given RenderPass with that image as attachment in the framebuffer
 	// 3) return the image to the swapchain for presentation
 	// Blocked means acquisition, queue processing and presentation happens sequentially
-	void drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& cmdBuf, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(VkCommandBuffer&)> cmdFunc);
+	static void drawFrameBlocked(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const FrameSyncCmd& frame, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&)> cmdFunc);
 
 	virtual void OnResize(int width, int height) override;
 private:
@@ -105,8 +106,7 @@ private:
 	// Queues into which commands will be submitted by client app
 	VkQueue graphicsQueue = VK_NULL_HANDLE;
 	VkQueue presentQueue = VK_NULL_HANDLE;
-	//
-	FrameSyncCmd frameSyncCmd;
+	QueueFamilyIndices queueIndices;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,

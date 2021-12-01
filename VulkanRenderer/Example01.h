@@ -16,6 +16,11 @@ public:
         destroyer.Add(depthImageView);
         destroyer.Add(depthImage);
 
+        frameSyncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
+        destroyer.Add(frameSyncCmd.commandPool);
+        destroyer.Add(frameSyncCmd.renderFence);
+        destroyer.Add(std::vector{ frameSyncCmd.presentSemaphore, frameSyncCmd.renderSemaphore });
+
         VkShaderModule vertShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-vert.spv"));
         VkShaderModule fragShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-frag.spv"));
         destroyer.Add(vertShader1); destroyer.Add(fragShader1);
@@ -32,8 +37,6 @@ public:
         std::tie(pipeline2, pipelineLayout2) = vr.CreateSinglePassGraphicsPipeline(vertShader2, fragShader2, {}, {}, renderPass);
         destroyer.Add(pipelineLayout2);
         destroyer.Add(pipeline2);
-
-        cmdBuf = vc.CreateCommandBuffer(vc.GetDevice(), vc.GetCommandPool());
     }
 
     void OnRender() {
@@ -42,7 +45,7 @@ public:
         float flash = abs(sin(frameNumber / 2400.f));
         clearValues[0].color = { { 0.0f, 0.0f, flash, 1.0f } };
         clearValues[1].depthStencil.depth = 1.0f;
-        vc.drawFrameBlocked(renderPass, cmdBuf, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](VkCommandBuffer& cmd) {
+        vc.drawFrameBlocked(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmd, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd) {
             if (int(frameNumber / 4000.0f) % 2 == 0) {
                 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline1);
                 vkCmdDraw(cmd, 3, 1, 0, 0);
@@ -57,10 +60,11 @@ public:
     }
 
     ~Ex01NoVertexInput() {
-        vkFreeCommandBuffers(vc.GetDevice(), vc.GetCommandPool(), 1, &cmdBuf);
+        vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.commandPool, 1, &frameSyncCmd.mainCommandBuffer);
     }
 private:
     VkRenderPass renderPass;
+    FrameSyncCmd frameSyncCmd;
     VkPipeline pipeline1, pipeline2;
     VkCommandBuffer cmdBuf;
     std::vector<VkFramebuffer> presentFramebuffers;

@@ -36,6 +36,11 @@ public:
         destroyer.Add(depthImageView);
         destroyer.Add(depthImage);
 
+        frameSyncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
+        destroyer.Add(frameSyncCmd.commandPool);
+        destroyer.Add(frameSyncCmd.renderFence);
+        destroyer.Add(std::vector{ frameSyncCmd.presentSemaphore, frameSyncCmd.renderSemaphore });
+
         // Material Assets (aka pipelines and pipeline layouts)
         {
             VkShaderModule vertShader, fragShader;
@@ -59,7 +64,6 @@ public:
             destroyer.Add(pipeline);
         }
             
-        cmdBuf = vc.CreateCommandBuffer(vc.GetDevice(), vc.GetCommandPool());
         objects = {
             { &vr.meshes["monkey_flat"], &vr.materials["vizNormal"], glm::translate(glm::mat4(1.0f), { -1.0f, 0.0, 0.0 }) },
             { &vr.meshes["quad"], &vr.materials["vizUV"], glm::translate(glm::mat4(1.0f), { 1.0f, 0.0, 0.0 }) },
@@ -88,17 +92,17 @@ public:
             obj.transform = glm::rotate(obj.transform, delta.count(), { 0, 1, 0 }); 
         }
 
-        vc.drawFrameBlocked(renderPass, cmdBuf, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](VkCommandBuffer& cmd) {
+        vc.drawFrameBlocked(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmd, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd) {
             vr.DrawObjects(cmd, renderView, objects);
         });
     }
 
     ~Ex03SceneManagement() {
-        vkFreeCommandBuffers(vc.GetDevice(), vc.GetCommandPool(), 1, &cmdBuf);
+        vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.commandPool, 1, &frameSyncCmd.mainCommandBuffer);
     }
 private:
     VkRenderPass renderPass;
-    VkCommandBuffer cmdBuf;
+    FrameSyncCmd frameSyncCmd;
     std::vector<VkFramebuffer> presentFramebuffers;
 
     std::vector<RenderObject> objects;
