@@ -40,24 +40,24 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
     destroyer->Add(swapchainInfo.imageViews);
     destroyer->Add(swapchain);
-    commandPool = CreateGraphicsCommandPool(device, queueIndices.graphicsFamily.value());
-    destroyer->Add(commandPool);
+    frameSyncCmd.commandPool = CreateGraphicsCommandPool(device, queueIndices.graphicsFamily.value());
+    destroyer->Add(frameSyncCmd.commandPool);
 
     // Initialize synchronization objects
     VkFenceCreateInfo fenceCreateInfo = {};
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     // otherwise we'll wait for the fence to signal for the first frame eternally
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    assert(vkCreateFence(device, &fenceCreateInfo, nullptr, &renderFence) == VK_SUCCESS);
-    destroyer->Add(renderFence);
+    assert(vkCreateFence(device, &fenceCreateInfo, nullptr, &frameSyncCmd.renderFence) == VK_SUCCESS);
+    destroyer->Add(frameSyncCmd.renderFence);
 
     //for the semaphores we don't need any flags
     VkSemaphoreCreateInfo semaphoreCreateInfo = {};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphoreCreateInfo.flags = 0;
-    assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &presentSemaphore) == VK_SUCCESS);
-    assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderSemaphore) == VK_SUCCESS);
-    destroyer->Add(std::vector{ presentSemaphore, renderSemaphore });
+    assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &frameSyncCmd.presentSemaphore) == VK_SUCCESS);
+    assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &frameSyncCmd.renderSemaphore) == VK_SUCCESS);
+    destroyer->Add(std::vector{ frameSyncCmd.presentSemaphore, frameSyncCmd.renderSemaphore });
 }
 
 VulkanContext::~VulkanContext() {
@@ -619,12 +619,12 @@ void VulkanContext::drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& 
     // use fences to sync main app with command queue ops, use semaphors to sync operations within/across command queues
 
     // wait until the GPU has finished rendering the last frame. Timeout of 1 second
-    assert(vkWaitForFences(device, 1, &renderFence, true, 1000000000) == VK_SUCCESS); // 1sec = 1000000000
-    assert(vkResetFences(device, 1, &renderFence) == VK_SUCCESS);
+    assert(vkWaitForFences(device, 1, &frameSyncCmd.renderFence, true, 1000000000) == VK_SUCCESS); // 1sec = 1000000000
+    assert(vkResetFences(device, 1, &frameSyncCmd.renderFence) == VK_SUCCESS);
 
     uint32_t swapchainImageIndex;
     // Request an imaage and wait until it's acquired (or timeout)
-    VkResult result = vkAcquireNextImageKHR(device, swapchain, 1000000000, presentSemaphore, nullptr, &swapchainImageIndex);
+    VkResult result = vkAcquireNextImageKHR(device, swapchain, 1000000000, frameSyncCmd.presentSemaphore, nullptr, &swapchainImageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         // recreateSwapChain();
         assert(false);
@@ -668,21 +668,21 @@ void VulkanContext::drawFrameBlocked(VkRenderPass& renderPass, VkCommandBuffer& 
     submit.pWaitDstStageMask = &waitStage;
     submit.waitSemaphoreCount = 1;
     // Queue will wait until when the Swapchain is ready
-    submit.pWaitSemaphores = &presentSemaphore;
+    submit.pWaitSemaphores = &frameSyncCmd.presentSemaphore;
     submit.signalSemaphoreCount = 1;
     // When Queue processing is done on GPU it'll signal that rendering has finished
-    submit.pSignalSemaphores = &renderSemaphore;
+    submit.pSignalSemaphores = &frameSyncCmd.renderSemaphore;
     submit.commandBufferCount = 1;
     submit.pCommandBuffers = &cmdBuf;
     // CPU submission will wait for GPU rendering to complete
-    assert(vkQueueSubmit(graphicsQueue, 1, &submit, renderFence) == VK_SUCCESS);
+    assert(vkQueueSubmit(graphicsQueue, 1, &submit, frameSyncCmd.renderFence) == VK_SUCCESS);
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.pSwapchains = &swapchain;
     presentInfo.swapchainCount = 1;
     // Present after GPU rendering is completed
-    presentInfo.pWaitSemaphores = &renderSemaphore;
+    presentInfo.pWaitSemaphores = &frameSyncCmd.renderSemaphore;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pImageIndices = &swapchainImageIndex;
     assert(vkQueuePresentKHR(graphicsQueue, &presentInfo) == VK_SUCCESS);

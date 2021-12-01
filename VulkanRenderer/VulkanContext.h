@@ -40,6 +40,15 @@ struct SwapchainInfo {
 	VkFormat depthFormat;
 };
 
+// Keeps objects together that are required for queueing up draw commands in a synchronized way per frame
+struct FrameSyncCmd {
+	VkSemaphore presentSemaphore, renderSemaphore;
+	VkFence renderFence;
+	
+	VkCommandPool commandPool;
+	VkCommandBuffer mainCommandBuffer;
+};
+
 class VulkanContext : public IResizable {
 public:
 	VulkanContext(VulkanWindow& win, bool validation = true);
@@ -63,7 +72,7 @@ public:
 	static std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const SwapchainInfo&);
 
 	const VkDevice& GetDevice() const { return device; }
-	const VkCommandPool& GetCommandPool() const{ return commandPool; }
+	const VkCommandPool& GetCommandPool() const{ return frameSyncCmd.commandPool; }
 	const VkQueue& GetGraphicsQueue() const { return graphicsQueue; }
 	const VkQueue& GetPresentationQueue() const { return presentQueue; }
 	const SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
@@ -80,8 +89,6 @@ public:
 	virtual void OnResize(int width, int height) override;
 private:
 	// Vulkan Objects that needs to be destroyed with VulkanContext
-	VkCommandPool commandPool;
-	// VkSwapchainImageView's are stored in swapchainInfo
 	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 	VkDevice device = VK_NULL_HANDLE;
 	VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -97,8 +104,7 @@ private:
 	VkQueue graphicsQueue = VK_NULL_HANDLE;
 	VkQueue presentQueue = VK_NULL_HANDLE;
 	//
-	VkSemaphore presentSemaphore, renderSemaphore;
-	VkFence renderFence;
+	FrameSyncCmd frameSyncCmd;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
