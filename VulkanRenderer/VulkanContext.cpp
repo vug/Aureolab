@@ -46,7 +46,9 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
 
     std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
     destroyer->Add(swapchainInfo.imageViews);
+    destroyer->Add(swapchain);
     commandPool = CreateGraphicsCommandPool(device, queueIndices.graphicsFamily.value());
+    destroyer->Add(commandPool);
 
     // Initialize synchronization objects
     VkFenceCreateInfo fenceCreateInfo = {};
@@ -54,6 +56,7 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     // otherwise we'll wait for the fence to signal for the first frame eternally
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     assert(vkCreateFence(device, &fenceCreateInfo, nullptr, &renderFence) == VK_SUCCESS);
+    destroyer->Add(renderFence);
 
     //for the semaphores we don't need any flags
     VkSemaphoreCreateInfo semaphoreCreateInfo = {};
@@ -61,17 +64,13 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     semaphoreCreateInfo.flags = 0;
     assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &presentSemaphore) == VK_SUCCESS);
     assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &renderSemaphore) == VK_SUCCESS);
+    destroyer->Add(std::vector{ presentSemaphore, renderSemaphore });
 }
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
     vmaDestroyAllocator(vmaAllocator);
     destroyer->DestroyAll();
-    vkDestroyFence(device, renderFence, nullptr);
-    vkDestroySemaphore(device, presentSemaphore, nullptr);
-    vkDestroySemaphore(device, renderSemaphore, nullptr);
-    vkDestroyCommandPool(device, commandPool, nullptr);
-    vkDestroySwapchainKHR(device, swapchain, nullptr);
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     if (shouldDestroyDebugUtils) {
