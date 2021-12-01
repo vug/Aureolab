@@ -16,10 +16,13 @@ public:
         destroyer.Add(depthImageView);
         destroyer.Add(depthImage);
 
-        frameSyncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
-        destroyer.Add(frameSyncCmd.commandPool);
-        destroyer.Add(frameSyncCmd.renderFence);
-        destroyer.Add(std::vector{ frameSyncCmd.presentSemaphore, frameSyncCmd.renderSemaphore });
+        for (int i = 0; i < 1; i++) {
+            FrameSyncCmd frame = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
+            frameSyncCmds.push_back(frame);
+            destroyer.Add(frameSyncCmds[i].commandPool);
+            destroyer.Add(frameSyncCmds[i].renderFence);
+            destroyer.Add(std::vector{ frameSyncCmds[i].presentSemaphore, frameSyncCmds[i].renderSemaphore });
+        }
 
         VkShaderModule vertShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-vert.spv"));
         VkShaderModule fragShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-frag.spv"));
@@ -45,7 +48,7 @@ public:
         float flash = abs(sin(frameNumber / 2400.f));
         clearValues[0].color = { { 0.0f, 0.0f, flash, 1.0f } };
         clearValues[1].depthStencil.depth = 1.0f;
-        vc.drawFrameBlocked(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmd, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd) {
+        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmds, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd) {
             if (int(frameNumber / 4000.0f) % 2 == 0) {
                 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline1);
                 vkCmdDraw(cmd, 3, 1, 0, 0);
@@ -60,11 +63,13 @@ public:
     }
 
     ~Ex01NoVertexInput() {
-        vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.commandPool, 1, &frameSyncCmd.mainCommandBuffer);
+        for (auto& frameSyncCmd : frameSyncCmds) {
+            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.commandPool, 1, &frameSyncCmd.mainCommandBuffer);
+        }
     }
 private:
     VkRenderPass renderPass;
-    FrameSyncCmd frameSyncCmd;
+    std::vector<FrameSyncCmd> frameSyncCmds;
     VkPipeline pipeline1, pipeline2;
     VkCommandBuffer cmdBuf;
     std::vector<VkFramebuffer> presentFramebuffers;

@@ -69,7 +69,7 @@ public:
 	static std::tuple<VkSwapchainKHR&, SwapchainInfo> CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapChainSupportDetails);
 	static FrameSyncCmd& CreateFrameSyncCmd(const VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 	static VkCommandPool& CreateGraphicsCommandPool(const VkDevice& device, uint32_t graphicsQueueFamilyIndex);
-	static VkCommandBuffer& CreateCommandBuffer(const VkDevice& device, const VkCommandPool& cmdPool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	static VkCommandBuffer CreateCommandBuffer(const VkDevice& device, const VkCommandPool& cmdPool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	static VkFramebuffer& CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent);
 	static std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const SwapchainInfo&);
 
@@ -86,8 +86,8 @@ public:
 	// 2) clears command buffer, records into it via cmdFunc with "one-time" option
 	// 2.5) executes it in given RenderPass with that image as attachment in the framebuffer
 	// 3) return the image to the swapchain for presentation
-	// Blocked means acquisition, queue processing and presentation happens sequentially
-	static void drawFrameBlocked(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const FrameSyncCmd& frame, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&)> cmdFunc);
+	// If there is only one FrameSyncCmd it'll be blocked, i.e. acquisition, queue processing and presentation happens sequentially. CPU will wait for GPU to finish before creating commands for the next frame.
+	static void drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<FrameSyncCmd>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&)> cmdFunc);
 
 	virtual void OnResize(int width, int height) override;
 private:

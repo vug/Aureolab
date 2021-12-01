@@ -36,10 +36,14 @@ public:
         destroyer.Add(depthImageView);
         destroyer.Add(depthImage);
 
-        frameSyncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
-        destroyer.Add(frameSyncCmd.commandPool);
-        destroyer.Add(frameSyncCmd.renderFence);
-        destroyer.Add(std::vector{ frameSyncCmd.presentSemaphore, frameSyncCmd.renderSemaphore });
+        int framesInFlight = 2;
+        for (int i = 0; i < framesInFlight; i++) {
+            FrameSyncCmd frame = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
+            frameSyncCmds.push_back(frame);
+            destroyer.Add(frameSyncCmds[i].commandPool);
+            destroyer.Add(frameSyncCmds[i].renderFence);
+            destroyer.Add(std::vector{ frameSyncCmds[i].presentSemaphore, frameSyncCmds[i].renderSemaphore });
+        }
 
         // Material Assets (aka pipelines and pipeline layouts)
         {
@@ -92,17 +96,19 @@ public:
             obj.transform = glm::rotate(obj.transform, delta.count(), { 0, 1, 0 }); 
         }
 
-        vc.drawFrameBlocked(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmd, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd) {
+        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmds, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd) {
             vr.DrawObjects(cmd, renderView, objects);
         });
     }
 
     ~Ex03SceneManagement() {
-        vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.commandPool, 1, &frameSyncCmd.mainCommandBuffer);
+        for (auto& frameSyncCmd : frameSyncCmds) {
+            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.commandPool, 1, &frameSyncCmd.mainCommandBuffer);
+        }
     }
 private:
     VkRenderPass renderPass;
-    FrameSyncCmd frameSyncCmd;
+    std::vector<FrameSyncCmd> frameSyncCmds;
     std::vector<VkFramebuffer> presentFramebuffers;
 
     std::vector<RenderObject> objects;

@@ -541,7 +541,7 @@ VkCommandPool& VulkanContext::CreateGraphicsCommandPool(const VkDevice& device, 
     return commandPool;
 }
 
-VkCommandBuffer& VulkanContext::CreateCommandBuffer(const VkDevice& device, const VkCommandPool& cmdPool, VkCommandBufferLevel level) {
+VkCommandBuffer VulkanContext::CreateCommandBuffer(const VkDevice& device, const VkCommandPool& cmdPool, VkCommandBufferLevel level) {
     Log::Debug("Creating Graphics Command Buffer...");
     VkCommandBuffer cmdBuf;
     VkCommandBufferAllocateInfo cmdAllocInfo = {};
@@ -630,10 +630,13 @@ void VulkanContext::OnResize(int width, int height) {
     // TODO: resize logic will come here
 }
 
-void VulkanContext::drawFrameBlocked(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const FrameSyncCmd& frame, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&)> cmdFunc) {
+void VulkanContext::drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<FrameSyncCmd>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&)> cmdFunc) {
     // Vulkan executes commands asynchroniously/independently. 
     // Need explicit dependency declaration for correct order of execution, i.e. synchronization
     // use fences to sync main app with command queue ops, use semaphors to sync operations within/across command queues
+    static uint32_t frameNo = 0;
+    uint32_t frameOverlap = frames.size();
+    const FrameSyncCmd& frame = frames[frameNo % frameOverlap];
 
     // wait until the GPU has finished rendering the last frame. Timeout of 1 second
     assert(vkWaitForFences(device, 1, &frame.renderFence, true, 1000000000) == VK_SUCCESS); // 1sec = 1000000000
@@ -703,6 +706,8 @@ void VulkanContext::drawFrameBlocked(const VkDevice& device, const VkSwapchainKH
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pImageIndices = &swapchainImageIndex;
     assert(vkQueuePresentKHR(graphicsQueue, &presentInfo) == VK_SUCCESS);
+
+    frameNo++;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::DebugCallback(
