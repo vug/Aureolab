@@ -40,23 +40,9 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
     destroyer->Add(swapchainInfo.imageViews);
     destroyer->Add(swapchain);
-    frameSyncCmd.commandPool = CreateGraphicsCommandPool(device, queueIndices.graphicsFamily.value());
+    frameSyncCmd = CreateFrameSyncCmd(device, queueIndices.graphicsFamily.value());
     destroyer->Add(frameSyncCmd.commandPool);
-
-    // Initialize synchronization objects
-    VkFenceCreateInfo fenceCreateInfo = {};
-    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    // otherwise we'll wait for the fence to signal for the first frame eternally
-    fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    assert(vkCreateFence(device, &fenceCreateInfo, nullptr, &frameSyncCmd.renderFence) == VK_SUCCESS);
     destroyer->Add(frameSyncCmd.renderFence);
-
-    //for the semaphores we don't need any flags
-    VkSemaphoreCreateInfo semaphoreCreateInfo = {};
-    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphoreCreateInfo.flags = 0;
-    assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &frameSyncCmd.presentSemaphore) == VK_SUCCESS);
-    assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &frameSyncCmd.renderSemaphore) == VK_SUCCESS);
     destroyer->Add(std::vector{ frameSyncCmd.presentSemaphore, frameSyncCmd.renderSemaphore });
 }
 
@@ -519,7 +505,28 @@ std::tuple<VkSwapchainKHR&, SwapchainInfo> VulkanContext::CreateSwapChain(VkDevi
     return { swapchain, swapchainInfo };
 }
 
-VkCommandPool& VulkanContext::CreateGraphicsCommandPool(VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
+FrameSyncCmd& VulkanContext::CreateFrameSyncCmd(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
+    FrameSyncCmd frame;
+    frame.commandPool = CreateGraphicsCommandPool(device, graphicsQueueFamilyIndex);
+
+    // Initialize synchronization objects
+    VkFenceCreateInfo fenceCreateInfo = {};
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    // otherwise we'll wait for the fence to signal for the first frame eternally
+    fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    assert(vkCreateFence(device, &fenceCreateInfo, nullptr, &frame.renderFence) == VK_SUCCESS);
+
+    //for the semaphores we don't need any flags
+    VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphoreCreateInfo.flags = 0;
+    assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &frame.presentSemaphore) == VK_SUCCESS);
+    assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &frame.renderSemaphore) == VK_SUCCESS);
+
+    return frame;
+}
+
+VkCommandPool& VulkanContext::CreateGraphicsCommandPool(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
     Log::Debug("Creating Command Pool...");
     VkCommandPool commandPool;
 
