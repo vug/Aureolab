@@ -56,6 +56,7 @@ public:
 	// Search and pick a suitable GPU with needed properties. Also returns the queue families on that device
 	static std::tuple<VkPhysicalDevice&, QueueFamilyIndices, SwapChainSupportDetails, std::vector<const char*>> CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface);
 	static std::tuple<VkDevice&, VkQueue, VkQueue> CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers);
+	static std::tuple<VmaAllocator, std::unique_ptr<VulkanDestroyer>> CreateAllocatorAndDestroyer(const VkInstance& instance, const VkPhysicalDevice& physicalDevice, const VkDevice& device);
 	static std::tuple<VkSwapchainKHR&, SwapchainInfo> CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapChainSupportDetails);
 	static VkCommandPool& CreateGraphicsCommandPool(VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 	static VkFramebuffer& CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent);

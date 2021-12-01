@@ -36,14 +36,7 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     std::vector<const char*> requiredExtensions;
     std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(instance, surface);
     std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, validation, vulkanLayers);
-
-    VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.physicalDevice = physicalDevice;
-    allocatorInfo.device = device;
-    allocatorInfo.instance = instance;
-    vmaCreateAllocator(&allocatorInfo, &vmaAllocator);
-    destroyer = std::make_unique<VulkanDestroyer>(device, vmaAllocator);
-
+    std::tie(vmaAllocator, destroyer) = CreateAllocatorAndDestroyer(instance, physicalDevice, device);
     std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
     destroyer->Add(swapchainInfo.imageViews);
     destroyer->Add(swapchain);
@@ -381,6 +374,19 @@ std::tuple<VkDevice&, VkQueue, VkQueue> VulkanContext::CreateLogicalDevice(VkPhy
     vkGetDeviceQueue(device, queueIndices.presentFamily.value(), 0, &presentQueue);
 
     return { device, graphicsQueue, presentQueue };
+}
+
+std::tuple<VmaAllocator, std::unique_ptr<VulkanDestroyer>> VulkanContext::CreateAllocatorAndDestroyer(const VkInstance& instance, const VkPhysicalDevice& physicalDevice, const VkDevice& device) {
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.physicalDevice = physicalDevice;
+    allocatorInfo.device = device;
+    allocatorInfo.instance = instance;
+
+    VmaAllocator allocator;
+    vmaCreateAllocator(&allocatorInfo, &allocator);
+
+    std::unique_ptr<VulkanDestroyer> destroyer = std::make_unique<VulkanDestroyer>(device, allocator);
+    return { allocator, std::move(destroyer) };
 }
 
 std::tuple<VkSwapchainKHR&, SwapchainInfo> VulkanContext::CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapchainSupportDetails) {
