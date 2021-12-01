@@ -33,7 +33,7 @@ public:
         destroyer.Add(pipelineLayout2);
         destroyer.Add(pipeline2);
 
-        cmdBuf = vr.CreateCommandBuffer();
+        cmdBuf = vc.CreateCommandBuffer(vc.GetDevice(), vc.GetCommandPool());
     }
 
     void OnRender() {

@@ -59,7 +59,7 @@ public:
             destroyer.Add(pipeline);
         }
             
-        cmdBuf = vr.CreateCommandBuffer();
+        cmdBuf = vc.CreateCommandBuffer(vc.GetDevice(), vc.GetCommandPool());
         objects = {
             { &vr.meshes["monkey_flat"], &vr.materials["vizNormal"], glm::translate(glm::mat4(1.0f), { -1.0f, 0.0, 0.0 }) },
             { &vr.meshes["quad"], &vr.materials["vizUV"], glm::translate(glm::mat4(1.0f), { 1.0f, 0.0, 0.0 }) },

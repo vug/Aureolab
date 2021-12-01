@@ -545,6 +545,20 @@ VkCommandPool& VulkanContext::CreateGraphicsCommandPool(const VkDevice& device, 
     return commandPool;
 }
 
+VkCommandBuffer& VulkanContext::CreateCommandBuffer(const VkDevice& device, const VkCommandPool& cmdPool, VkCommandBufferLevel level) {
+    Log::Debug("Creating Graphics Command Buffer...");
+    VkCommandBuffer cmdBuf;
+    VkCommandBufferAllocateInfo cmdAllocInfo = {};
+    cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmdAllocInfo.pNext = nullptr;
+    cmdAllocInfo.commandPool = cmdPool;
+    cmdAllocInfo.commandBufferCount = 1;
+    // Primary commands are directly sent to queues. Secondary ones are subcommands (used in multi-threaded scenarios)
+    cmdAllocInfo.level = level;
+    assert(vkAllocateCommandBuffers(device, &cmdAllocInfo, &cmdBuf) == VK_SUCCESS);
+    return cmdBuf;
+}
+
 VkFramebuffer& VulkanContext::CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent) {
     Log::Debug("Creating Framebuffer...");
 
