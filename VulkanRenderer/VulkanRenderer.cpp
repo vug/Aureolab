@@ -91,7 +91,7 @@ VkRenderPass VulkanRenderer::CreateRenderPass() {
     std::vector<VkAttachmentDescription> attachments = { colorAttachment, depthAttachment };
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = attachments.size();
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
@@ -384,6 +384,6 @@ void VulkanRenderer::DrawObjects(VkCommandBuffer cmd, RenderView& renderView, st
             lastMesh = obj.mesh;
         }
 
-        vkCmdDraw(cmd, obj.mesh->vertices.size(), 1, 0, 0);
+        vkCmdDraw(cmd, static_cast<uint32_t>(obj.mesh->vertices.size()), 1, 0, 0);
     }
 }

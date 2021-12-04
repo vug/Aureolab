@@ -500,6 +500,25 @@ std::tuple<VkSwapchainKHR&, SwapchainInfo> VulkanContext::CreateSwapChain(VkDevi
     return { swapchain, swapchainInfo };
 }
 
+VkCommandPool& VulkanContext::CreateGraphicsCommandPool(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
+    Log::Debug("Creating Command Pool...");
+    VkCommandPool commandPool;
+
+    // Rendering draw commands will go to graphics queue
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
+    // Expect to reset buffers spawned from this pool.
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+        Log::Debug("failed to create command pool!");
+        exit(EXIT_FAILURE);
+    }
+
+    return commandPool;
+}
+
 FrameSyncCmd& VulkanContext::CreateFrameSyncCmd(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
     FrameSyncCmd frame;
     frame.commandPool = CreateGraphicsCommandPool(device, graphicsQueueFamilyIndex);
@@ -520,25 +539,6 @@ FrameSyncCmd& VulkanContext::CreateFrameSyncCmd(const VkDevice& device, uint32_t
     assert(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &frame.renderSemaphore) == VK_SUCCESS);
 
     return frame;
-}
-
-VkCommandPool& VulkanContext::CreateGraphicsCommandPool(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
-    Log::Debug("Creating Command Pool...");
-    VkCommandPool commandPool;
-
-    // Rendering draw commands will go to graphics queue
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
-    // Expect to reset buffers spawned from this pool.
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-        Log::Debug("failed to create command pool!");
-        exit(EXIT_FAILURE);
-    }
-
-    return commandPool;
 }
 
 VkCommandBuffer VulkanContext::CreateCommandBuffer(const VkDevice& device, const VkCommandPool& cmdPool, VkCommandBufferLevel level) {
