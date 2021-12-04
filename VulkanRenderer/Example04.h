@@ -6,6 +6,12 @@
 
 #include <chrono>
 
+struct GPUCameraData {
+    glm::mat4 view;
+    glm::mat4 projection;
+    glm::mat4 viewProjection;
+};
+
 class FrameData04 : public IFrameData {
 public:
     AllocatedBuffer cameraBuffer;
@@ -46,11 +52,12 @@ public:
         for (int i = 0; i < framesInFlight; i++) {
             FrameSyncCmd syncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
             FrameData04 frame{ syncCmd };
-            //frame.cameraBuffer = FOO;
+            frame.cameraBuffer = vc.CreateAllocatedBuffer(vc.GetAllocator(), sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
             frameDatas.push_back(frame);
             destroyer.Add(syncCmd.commandPool);
             destroyer.Add(syncCmd.renderFence);
             destroyer.Add(std::vector{ syncCmd.presentSemaphore, syncCmd.renderSemaphore });
+            destroyer.Add(frame.cameraBuffer);
         }
 
         // Material Assets (aka pipelines and pipeline layouts)
