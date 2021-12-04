@@ -334,23 +334,13 @@ VkShaderModule VulkanRenderer::CreateShaderModule(const std::vector<char>& code)
 void VulkanRenderer::UploadMesh(Mesh& mesh) {
     const auto& allocator = vc.GetAllocator();
 
-    // Allocate vertex buffer
-    VkBufferCreateInfo bufferInfo = {};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = mesh.vertices.size() * sizeof(Vertex); // total buffer size in bytes
-    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    Log::Debug("Allocating Vertex Buffer of size {} for mesh...", bufferInfo.size);
-    VmaAllocationCreateInfo vmaallocInfo = {};
-    vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; // Writeable by CPU, but also readable by GPU
+    size_t size = mesh.vertices.size() * sizeof(Vertex);
+    mesh.vertexBuffer = vc.CreateAllocatedBuffer(allocator, size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-    VkResult result = vmaCreateBuffer(allocator, &bufferInfo, &vmaallocInfo, &mesh.vertexBuffer.buffer, &mesh.vertexBuffer.allocation, nullptr);
-    assert(result == VK_SUCCESS);
-
-    // Copy/Upload vertex data into vertex buffer
-    Log::Debug("\tUploading mesh data...", bufferInfo.size);
+    Log::Debug("\tUploading mesh data (copy mesh's vertex data into allocated vertex buffer) of size {}...", size);
     void* data;
     vmaMapMemory(allocator, mesh.vertexBuffer.allocation, &data);
-    memcpy(data, mesh.vertices.data(), bufferInfo.size);
+    memcpy(data, mesh.vertices.data(), size);
     vmaUnmapMemory(allocator, mesh.vertexBuffer.allocation);
 }
 

@@ -625,6 +625,22 @@ std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> VulkanConte
     return { presentFramebuffers, depthImageView, depthImage };
 }
 
+AllocatedBuffer& VulkanContext::CreateAllocatedBuffer(const VmaAllocator& allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage) {
+    VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = allocSize;
+    bufferInfo.usage = usage;
+
+    VmaAllocationCreateInfo vmaallocInfo = {};
+    vmaallocInfo.usage = memoryUsage;
+
+    AllocatedBuffer newBuffer;
+    VkResult result = vmaCreateBuffer(allocator, &bufferInfo, &vmaallocInfo, &newBuffer.buffer, &newBuffer.allocation, nullptr);
+    assert(result == VK_SUCCESS);
+
+    return newBuffer;
+}
+
 void VulkanContext::OnResize(int width, int height) {
     Log::Debug("Framebuffer resized: ({}, {})", width, height);
     // TODO: resize logic will come here
