@@ -49,6 +49,17 @@ struct FrameSyncCmd {
 	VkCommandBuffer mainCommandBuffer;
 };
 
+class IFrameData {
+public:
+	IFrameData(const FrameSyncCmd& syncCmd1) : syncCmd(syncCmd1) {}
+
+	const FrameSyncCmd& GetFrameSyncCmdData() const {
+		return syncCmd;
+	}
+private:
+	FrameSyncCmd syncCmd;
+};
+
 class VulkanContext : public IResizable {
 public:
 	VulkanContext(VulkanWindow& win, bool validation = true);
@@ -87,7 +98,7 @@ public:
 	// 2.5) executes it in given RenderPass with that image as attachment in the framebuffer
 	// 3) return the image to the swapchain for presentation
 	// If there is only one FrameSyncCmd it'll be blocked, i.e. acquisition, queue processing and presentation happens sequentially. CPU will wait for GPU to finish before creating commands for the next frame.
-	static void drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<FrameSyncCmd>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&)> cmdFunc);
+	static void drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<IFrameData>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&)> cmdFunc);
 
 	virtual void OnResize(int width, int height) override;
 private:

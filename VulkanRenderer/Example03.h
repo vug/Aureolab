@@ -6,6 +6,8 @@
 
 #include <chrono>
 
+class FrameData03 : public IFrameData {};
+
 class Ex03SceneManagement : public Example {
 public:
     Ex03SceneManagement(VulkanContext& vc, VulkanRenderer& vr) : Example(vc, vr) {
@@ -38,11 +40,12 @@ public:
 
         int framesInFlight = 2;
         for (int i = 0; i < framesInFlight; i++) {
-            FrameSyncCmd frame = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
+            FrameSyncCmd syncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
+            FrameData03 frame{ syncCmd };
             frameSyncCmds.push_back(frame);
-            destroyer.Add(frameSyncCmds[i].commandPool);
-            destroyer.Add(frameSyncCmds[i].renderFence);
-            destroyer.Add(std::vector{ frameSyncCmds[i].presentSemaphore, frameSyncCmds[i].renderSemaphore });
+            destroyer.Add(syncCmd.commandPool);
+            destroyer.Add(syncCmd.renderFence);
+            destroyer.Add(std::vector{ syncCmd.presentSemaphore, syncCmd.renderSemaphore });
         }
 
         // Material Assets (aka pipelines and pipeline layouts)
@@ -103,12 +106,12 @@ public:
 
     ~Ex03SceneManagement() {
         for (auto& frameSyncCmd : frameSyncCmds) {
-            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.commandPool, 1, &frameSyncCmd.mainCommandBuffer);
+            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.GetFrameSyncCmdData().commandPool, 1, &frameSyncCmd.GetFrameSyncCmdData().mainCommandBuffer);
         }
     }
 private:
     VkRenderPass renderPass;
-    std::vector<FrameSyncCmd> frameSyncCmds;
+    std::vector<IFrameData> frameSyncCmds;
     std::vector<VkFramebuffer> presentFramebuffers;
 
     std::vector<RenderObject> objects;

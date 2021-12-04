@@ -2,6 +2,8 @@
 
 #include "Example.h"
 
+class FrameData01 : public IFrameData {};
+
 class Ex01NoVertexInput : public Example {
 public:
     Ex01NoVertexInput(VulkanContext& vc, VulkanRenderer& vr) :
@@ -17,11 +19,12 @@ public:
         destroyer.Add(depthImage);
 
         for (int i = 0; i < 1; i++) {
-            FrameSyncCmd frame = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
+            FrameSyncCmd syncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
+            FrameData01 frame{ syncCmd };
             frameSyncCmds.push_back(frame);
-            destroyer.Add(frameSyncCmds[i].commandPool);
-            destroyer.Add(frameSyncCmds[i].renderFence);
-            destroyer.Add(std::vector{ frameSyncCmds[i].presentSemaphore, frameSyncCmds[i].renderSemaphore });
+            destroyer.Add(syncCmd.commandPool);
+            destroyer.Add(syncCmd.renderFence);
+            destroyer.Add(std::vector{ syncCmd.presentSemaphore, syncCmd.renderSemaphore });
         }
 
         VkShaderModule vertShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-vert.spv"));
@@ -64,12 +67,12 @@ public:
 
     ~Ex01NoVertexInput() {
         for (auto& frameSyncCmd : frameSyncCmds) {
-            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.commandPool, 1, &frameSyncCmd.mainCommandBuffer);
+            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.GetFrameSyncCmdData().commandPool, 1, &frameSyncCmd.GetFrameSyncCmdData().mainCommandBuffer);
         }
     }
 private:
     VkRenderPass renderPass;
-    std::vector<FrameSyncCmd> frameSyncCmds;
+    std::vector<IFrameData> frameSyncCmds;
     VkPipeline pipeline1, pipeline2;
     VkCommandBuffer cmdBuf;
     std::vector<VkFramebuffer> presentFramebuffers;

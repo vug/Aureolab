@@ -7,6 +7,8 @@
 
 #include <chrono>
 
+class FrameData02 : public IFrameData {};
+
 class Ex02VertexBufferInput : public Example {
 public:
     Ex02VertexBufferInput(VulkanContext& vc, VulkanRenderer& vr) :
@@ -31,11 +33,12 @@ public:
         destroyer.Add(depthImage);
 
         for (int i = 0; i < 1; i++) {
-            FrameSyncCmd frame = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
+            FrameSyncCmd syncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
+            FrameData02 frame{ syncCmd };
             frameSyncCmds.push_back(frame);
-            destroyer.Add(frameSyncCmds[i].commandPool);
-            destroyer.Add(frameSyncCmds[i].renderFence);
-            destroyer.Add(std::vector{ frameSyncCmds[i].presentSemaphore, frameSyncCmds[i].renderSemaphore });
+            destroyer.Add(syncCmd.commandPool);
+            destroyer.Add(syncCmd.renderFence);
+            destroyer.Add(std::vector{ syncCmd.presentSemaphore, syncCmd.renderSemaphore });
         }
 
         VkShaderModule vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-vert.spv"));
@@ -72,18 +75,18 @@ public:
             constants.modelViewProjection = mvp;
             vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant1), &constants);
 
-            vkCmdDraw(cmd, mesh.vertices.size(), 1, 0, 0);
+            vkCmdDraw(cmd, (uint32_t)mesh.vertices.size(), 1, 0, 0);
         });
     }
 
     ~Ex02VertexBufferInput() {
         for (auto& frameSyncCmd : frameSyncCmds) {
-            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.commandPool, 1, &frameSyncCmd.mainCommandBuffer);
+            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.GetFrameSyncCmdData().commandPool, 1, &frameSyncCmd.GetFrameSyncCmdData().mainCommandBuffer);
         }
     }
 private:
     VkRenderPass renderPass;
-    std::vector<FrameSyncCmd> frameSyncCmds;
+    std::vector<IFrameData> frameSyncCmds;
     VkPipeline pipeline;
     VkPipelineLayout pipelineLayout;
     std::vector<VkFramebuffer> presentFramebuffers;
