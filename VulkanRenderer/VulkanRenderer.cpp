@@ -11,6 +11,27 @@
 #include <fstream>
 #include <set>
 
+std::vector<VkDescriptorSetLayout> RenderView::CreateDescriptorSetLayouts(const VkDevice& device, VulkanDestroyer& destroyer) {
+    std::vector<VkDescriptorSetLayout> layouts;
+
+    VkDescriptorSetLayoutBinding camBufferBinding = {};
+    camBufferBinding.binding = 0;
+    camBufferBinding.descriptorCount = 1;
+    camBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    camBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // used by the vertex shader
+    VkDescriptorSetLayoutCreateInfo setInfo = {};
+    setInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    setInfo.bindingCount = 1;
+    setInfo.flags = 0;
+    setInfo.pBindings = &camBufferBinding;
+    VkDescriptorSetLayout globalSetLayout;
+    vkCreateDescriptorSetLayout(device, &setInfo, nullptr, &globalSetLayout);
+    layouts.push_back(globalSetLayout);
+    destroyer.Add(globalSetLayout);
+
+    return layouts;
+}
+
 VulkanRenderer::VulkanRenderer(VulkanContext& context) : vc(context) {}
 
 VulkanRenderer::~VulkanRenderer() {}
@@ -107,6 +128,7 @@ std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphic
     VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule, 
     const VertexInputDescription& vertDesc, 
     const std::vector<VkPushConstantRange>& pushConstantRanges,
+    const std::vector<VkDescriptorSetLayout>& descSetLayouts,
     VkRenderPass& renderPass
 ) {
     Log::Debug("Creating Graphics Pipeline...");
@@ -250,12 +272,10 @@ std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphic
     VkPipelineLayout pipelineLayout;
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;
     pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
     pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
-    // TODO: will come when loading vertex data
-    //pipelineLayoutInfo.setLayoutCount = 1;
-    //pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+    pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descSetLayouts.size());
+    pipelineLayoutInfo.pSetLayouts = descSetLayouts.data();
 
     if (vkCreatePipelineLayout(vc.GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         Log::Critical("failed to create pipeline layout!");
@@ -360,11 +380,11 @@ void VulkanRenderer::DrawObjects(VkCommandBuffer cmd, RenderView& renderView, st
         if (obj.material != lastMaterial) {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, obj.material->pipeline);
             lastMaterial = obj.material;
+            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, obj.material->pipelineLayout, 0, 1, &renderView.descriptorSet, 0, nullptr);
         }
 
-        glm::mat4 MVP = renderView.projection * renderView.view * obj.transform;
         MeshPushConstants::PushConstant1 constants;
-        constants.modelViewProjection = MVP;
+        constants.modelViewProjection = obj.transform;
         vkCmdPushConstants(cmd, obj.material->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant1), &constants);
 
         // Similarly, don't bind vertex buffer if we are repeating meshes

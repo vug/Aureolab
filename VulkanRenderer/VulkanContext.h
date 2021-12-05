@@ -95,14 +95,14 @@ public:
 	const VkSwapchainKHR& GetSwapchain() const { return swapchain; }
 	const SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
 	const VmaAllocator& GetAllocator() const { return vmaAllocator; }
-	const VulkanDestroyer& GetDestroyer() const { return *destroyer; }
+	VulkanDestroyer& GetDestroyer() const { return *destroyer; }
 
 	// 1) acquire (next available) image from swap chain
 	// 2) clears command buffer, records into it via cmdFunc with "one-time" option
 	// 2.5) executes it in given RenderPass with that image as attachment in the framebuffer
 	// 3) return the image to the swapchain for presentation
 	// If there is only one FrameSyncCmd it'll be blocked, i.e. acquisition, queue processing and presentation happens sequentially. CPU will wait for GPU to finish before creating commands for the next frame.
-	static void drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<IFrameData>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&)> cmdFunc);
+	static void drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<std::shared_ptr<IFrameData>>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&, uint32_t frameNo)> cmdFunc);
 
 	virtual void OnResize(int width, int height) override;
 private:

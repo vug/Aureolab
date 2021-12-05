@@ -646,13 +646,13 @@ void VulkanContext::OnResize(int width, int height) {
     // TODO: resize logic will come here
 }
 
-void VulkanContext::drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<IFrameData>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&)> cmdFunc) {
+void VulkanContext::drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<std::shared_ptr<IFrameData>>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&, uint32_t frameNo)> cmdFunc) {
     // Vulkan executes commands asynchroniously/independently. 
     // Need explicit dependency declaration for correct order of execution, i.e. synchronization
     // use fences to sync main app with command queue ops, use semaphors to sync operations within/across command queues
     static uint32_t frameNo = 0;
     uint32_t frameOverlap = frames.size();
-    FrameSyncCmd frame = frames[frameNo % frameOverlap].GetFrameSyncCmdData();
+    FrameSyncCmd frame = frames[frameNo % frameOverlap]->GetFrameSyncCmdData();
 
     // wait until the GPU has finished rendering the last frame. Timeout of 1 second
     assert(vkWaitForFences(device, 1, &frame.renderFence, true, 1000000000) == VK_SUCCESS); // 1sec = 1000000000
@@ -691,7 +691,7 @@ void VulkanContext::drawFrame(const VkDevice& device, const VkSwapchainKHR& swap
     vkCmdBeginRenderPass(frame.mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     // Populate command buffer with the calls provided in the function
-    cmdFunc(frame.mainCommandBuffer);
+    cmdFunc(frame.mainCommandBuffer, frameNo % frameOverlap);
 
     // finishes rendering and transition image to "ready to be displayed" state that we specified
     vkCmdEndRenderPass(frame.mainCommandBuffer);

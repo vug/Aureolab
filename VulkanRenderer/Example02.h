@@ -7,8 +7,6 @@
 
 #include <chrono>
 
-class FrameData02 : public IFrameData {};
-
 class Ex02VertexBufferInput : public Example {
 public:
     Ex02VertexBufferInput(VulkanContext& vc, VulkanRenderer& vr) :
@@ -34,8 +32,7 @@ public:
 
         for (int i = 0; i < 1; i++) {
             FrameSyncCmd syncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
-            FrameData02 frame{ syncCmd };
-            frameSyncCmds.push_back(frame);
+            frameSyncCmds.push_back(std::make_shared<IFrameData>(syncCmd));
             destroyer.Add(syncCmd.commandPool);
             destroyer.Add(syncCmd.renderFence);
             destroyer.Add(std::vector{ syncCmd.presentSemaphore, syncCmd.renderSemaphore });
@@ -45,7 +42,7 @@ public:
         VkShaderModule fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-frag.spv"));
         destroyer.Add(vertShader);
         destroyer.Add(fragShader);
-        std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderPass);
+        std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), {}, renderPass);
         destroyer.Add(pipelineLayout);
         destroyer.Add(pipeline);
     }
@@ -57,7 +54,7 @@ public:
         std::vector<VkClearValue> clearValues(2);
         clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
         clearValues[1].depthStencil.depth = 1.0f;
-        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmds, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd) {
+        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmds, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd, uint32_t frameNo) {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
             Mesh mesh = int(time.count() / 2.0f) % 2 == 0 ? monkeyMesh : quadMesh;
@@ -81,12 +78,12 @@ public:
 
     ~Ex02VertexBufferInput() {
         for (auto& frameSyncCmd : frameSyncCmds) {
-            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.GetFrameSyncCmdData().commandPool, 1, &frameSyncCmd.GetFrameSyncCmdData().mainCommandBuffer);
+            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd->GetFrameSyncCmdData().commandPool, 1, &frameSyncCmd->GetFrameSyncCmdData().mainCommandBuffer);
         }
     }
 private:
     VkRenderPass renderPass;
-    std::vector<IFrameData> frameSyncCmds;
+    std::vector<std::shared_ptr<IFrameData>> frameSyncCmds;
     VkPipeline pipeline;
     VkPipelineLayout pipelineLayout;
     std::vector<VkFramebuffer> presentFramebuffers;

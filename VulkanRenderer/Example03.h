@@ -6,8 +6,6 @@
 
 #include <chrono>
 
-class FrameData03 : public IFrameData {};
-
 class Ex03SceneManagement : public Example {
 public:
     Ex03SceneManagement(VulkanContext& vc, VulkanRenderer& vr) : Example(vc, vr) {
@@ -41,8 +39,7 @@ public:
         int framesInFlight = 2;
         for (int i = 0; i < framesInFlight; i++) {
             FrameSyncCmd syncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
-            FrameData03 frame{ syncCmd };
-            frameSyncCmds.push_back(frame);
+            frameSyncCmds.push_back(std::make_shared<IFrameData>(syncCmd));
             destroyer.Add(syncCmd.commandPool);
             destroyer.Add(syncCmd.renderFence);
             destroyer.Add(std::vector{ syncCmd.presentSemaphore, syncCmd.renderSemaphore });
@@ -56,7 +53,7 @@ public:
 
             vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/default-vert.spv"));
             fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-normal-frag.spv"));
-            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderPass);
+            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), {}, renderPass);
             vr.materials["vizNormal"] = Material{ pipeline, pipelineLayout };
             destroyer.Add(std::vector{ vertShader, fragShader });
             destroyer.Add(pipelineLayout);
@@ -64,7 +61,7 @@ public:
 
             vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/default-vert.spv"));
             fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-uv-frag.spv"));
-            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderPass);
+            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), {}, renderPass);
             vr.materials["vizUV"] = Material{ pipeline, pipelineLayout };
             destroyer.Add(std::vector{ vertShader, fragShader });
             destroyer.Add(pipelineLayout);
@@ -93,25 +90,25 @@ public:
             glm::translate(glm::mat4(1.f), camPos),
             glm::perspective(glm::radians(70.f), 800.f / 600.f, 0.1f, 200.0f),
         };
-        renderView.projection[1][1] *= -1;
+        renderView.camera.projection[1][1] *= -1;
 
         for (auto& obj : objects) { 
             obj.transform = glm::rotate(obj.transform, delta.count(), { 0, 1, 0 }); 
         }
 
-        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmds, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd) {
+        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmds, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd, uint32_t frameNo) {
             vr.DrawObjects(cmd, renderView, objects);
         });
     }
 
     ~Ex03SceneManagement() {
         for (auto& frameSyncCmd : frameSyncCmds) {
-            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd.GetFrameSyncCmdData().commandPool, 1, &frameSyncCmd.GetFrameSyncCmdData().mainCommandBuffer);
+            vkFreeCommandBuffers(vc.GetDevice(), frameSyncCmd->GetFrameSyncCmdData().commandPool, 1, &frameSyncCmd->GetFrameSyncCmdData().mainCommandBuffer);
         }
     }
 private:
     VkRenderPass renderPass;
-    std::vector<IFrameData> frameSyncCmds;
+    std::vector<std::shared_ptr<IFrameData>> frameSyncCmds;
     std::vector<VkFramebuffer> presentFramebuffers;
 
     std::vector<RenderObject> objects;

@@ -21,8 +21,16 @@ struct RenderObject {
 };
 
 struct RenderView {
-	glm::mat4 view;
-	glm::mat4 projection;
+public:
+	struct Camera {
+		glm::mat4 view;
+		glm::mat4 projection;
+	};
+
+	Camera camera;
+	VkDescriptorSet descriptorSet;
+
+	static std::vector<VkDescriptorSetLayout> CreateDescriptorSetLayouts(const VkDevice& device, VulkanDestroyer& destroyer);
 };
 
 class VulkanRenderer {
@@ -35,6 +43,7 @@ public:
 		VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule,
 		const VertexInputDescription& vertDesc,
 		const std::vector<VkPushConstantRange>& pushConstantRanges,
+		const std::vector<VkDescriptorSetLayout>& descSetLayouts,
 		VkRenderPass& renderPass
 	);
 
