@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Example.h"
+#include "Mesh.h"
+#include "Texture.h"
 
 #include <glm/gtx/transform.hpp>
 
@@ -32,6 +34,13 @@ public:
             vr.meshes["monkey_flat"] = mesh;
 
             destroyer.Add(std::vector{ vr.meshes["triangle"].vertexBuffer, vr.meshes["quad"].vertexBuffer, vr.meshes["monkey_flat"].vertexBuffer });
+        }
+
+        // Texture Assets
+        {
+            Texture texture;
+            texture.LoadImageFromFile("assets/textures/lost_empire-RGBA.png");
+            texture.pixels;
         }
 
         renderPass = vr.CreateRenderPass();
