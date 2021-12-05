@@ -12,6 +12,11 @@
 #include <set>
 
 // RenderView
+void RenderView::Init(const VkDevice& device, const VmaAllocator& allocator, const VkDescriptorPool& pool, VulkanDestroyer& destroyer) {
+    cameraBuffer = VulkanContext::CreateAllocatedBuffer(allocator, sizeof(RenderView::Camera), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    descriptorSetLayouts = CreateDescriptorSetLayouts(device, destroyer);
+    descriptorSet = AllocateAndUpdateDescriptorSet(device, pool, descriptorSetLayouts, cameraBuffer);
+}
 
 std::vector<VkDescriptorSetLayout> RenderView::CreateDescriptorSetLayouts(const VkDevice& device, VulkanDestroyer& destroyer) {
     std::vector<VkDescriptorSetLayout> layouts;

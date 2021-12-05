@@ -28,12 +28,7 @@ public:
 	};
 
 	// Create DescriptorSetLayouts, allocate and update DescriptorSets
-	void Init(const VkDevice& device, const VmaAllocator& allocator, const VkDescriptorPool& pool, VulkanDestroyer& destroyer) {
-		cameraBuffer = VulkanContext::CreateAllocatedBuffer(allocator, sizeof(RenderView::Camera), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-		descriptorSetLayouts = CreateDescriptorSetLayouts(device, destroyer);
-		descriptorSet = AllocateAndUpdateDescriptorSet(device, pool, descriptorSetLayouts, cameraBuffer);
-	}
-
+	void Init(const VkDevice& device, const VmaAllocator& allocator, const VkDescriptorPool& pool, VulkanDestroyer& destroyer);
 	const std::vector<VkDescriptorSetLayout>& GetDescriptorSetLayouts() const { return descriptorSetLayouts; }
 	const VkDescriptorSet& GetDescriptorSet() const { return descriptorSet; }
 	const AllocatedBuffer& GetCameraBuffer() const { return cameraBuffer; }
