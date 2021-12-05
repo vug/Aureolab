@@ -27,7 +27,7 @@ void ImmediateCommandSubmitter::Submit(std::function<void(VkCommandBuffer cmd)>&
 
     VkCommandBufferBeginInfo cmdBeginInfo = {};
     cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    // We'll use this buffer only once per frame
+    // We'll use this buffer only once for uploading a mesh and be done with it
     cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
     assert(vkBeginCommandBuffer(cmdBuf, &cmdBeginInfo) == VK_SUCCESS);

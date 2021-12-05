@@ -63,6 +63,8 @@ public:
 
 	// Uses VMA_MEMORY_USAGE_CPU_TO_GPU type of memory which is relatively slow
 	void UploadMeshCpuToGpu(Mesh& mesh);
+	// Uses VMA_MEMORY_USAGE_GPU_ONLY memory via an intermediate staging buffer
+	void UploadMesh(Mesh& mesh);
 
 	std::unordered_map<std::string, Material> materials;
 	std::unordered_map<std::string, Mesh> meshes;
@@ -73,6 +75,8 @@ public:
 private:
 	// declaring as reference prevents it from being destroyed with Renderer
 	VulkanContext& vc;
+
+	ImmediateCommandSubmitter imCmdSubmitter;
 
 	// Resources that needs to be destroyed at the end
 	std::vector<VkFramebuffer> swapChainFramebuffers;

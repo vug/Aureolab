@@ -67,7 +67,9 @@ VkDescriptorSet RenderView::AllocateAndUpdateDescriptorSet(const VkDevice& devic
 
 // VulkanRenderer
 
-VulkanRenderer::VulkanRenderer(VulkanContext& context) : vc(context) {}
+VulkanRenderer::VulkanRenderer(VulkanContext& context) :
+    vc(context),
+    imCmdSubmitter(vc.GetDevice(), vc.GetGraphicsQueue(), vc.GetQueueFamilyIndices().graphicsFamily.value(), vc.GetDestroyer()) {}
 
 VulkanRenderer::~VulkanRenderer() {}
 
@@ -392,11 +394,38 @@ void VulkanRenderer::UploadMeshCpuToGpu(Mesh& mesh) {
     size_t size = mesh.vertices.size() * sizeof(Vertex);
     mesh.vertexBuffer = vc.CreateAllocatedBuffer(allocator, size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-    Log::Debug("\tUploading mesh data (copy mesh's vertex data into allocated vertex buffer) of size {}...", size);
+    Log::Debug("\tUploading mesh data (copy mesh's vertex data into allocated CPU_TO_GPU vertex buffer) of size {}...", size);
     void* data;
     vmaMapMemory(allocator, mesh.vertexBuffer.allocation, &data);
     memcpy(data, mesh.vertices.data(), size);
     vmaUnmapMemory(allocator, mesh.vertexBuffer.allocation);
+}
+
+void VulkanRenderer::UploadMesh(Mesh& mesh) {
+    const auto& allocator = vc.GetAllocator();
+
+    size_t size = mesh.vertices.size() * sizeof(Vertex);
+    AllocatedBuffer stagingBuffer = vc.CreateAllocatedBuffer(allocator, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+
+    Log::Debug("\tUploading mesh data (copy mesh's vertex data into allocated CPU_ONLY staging buffer) of size {}...", size);
+    void* data;
+    vmaMapMemory(allocator, stagingBuffer.allocation, &data);
+    memcpy(data, mesh.vertices.data(), size);
+    vmaUnmapMemory(allocator, stagingBuffer.allocation);
+
+    mesh.vertexBuffer = vc.CreateAllocatedBuffer(allocator, size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+
+    Log::Debug("\tUploading mesh data (submit a command to transfer staging buffer to GPU_ONLY VRAM) of size {}...", size);
+    imCmdSubmitter.Submit([=](VkCommandBuffer cmd) {
+        VkBufferCopy copy;
+        copy.dstOffset = 0;
+        copy.srcOffset = 0;
+        copy.size = size;
+        vkCmdCopyBuffer(cmd, stagingBuffer.buffer, mesh.vertexBuffer.buffer, 1, &copy);
+    });
+
+    // vc.GetDestroyer().Add(mesh.vertexBuffer); // for some reason adding vertexBuffer to deletion queue here does not free it in time at VulkanContext destructor DestroyAll call
+    vmaDestroyBuffer(allocator, stagingBuffer.buffer, stagingBuffer.allocation);
 }
 
 glm::mat4 VulkanRenderer::MakeTransform(const glm::vec3& translate, const glm::vec3& axis, float angle, const glm::vec3& scale) {
