@@ -9,7 +9,7 @@ add_executable(VulkanRenderer
  "Types.h" 
  "Example.h" 
  "Example01.h" "Example02.h" "Example03.h" "Example04.h"
-)
+ "Example05.h")
 
 target_link_libraries(
 	VulkanRenderer PRIVATE 
