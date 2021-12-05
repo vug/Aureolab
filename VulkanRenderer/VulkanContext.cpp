@@ -641,6 +641,20 @@ AllocatedBuffer& VulkanContext::CreateAllocatedBuffer(const VmaAllocator& alloca
     return newBuffer;
 }
 
+VkDescriptorPool VulkanContext::CreateDescriptorPool(const VkDevice& device, const std::vector<VkDescriptorPoolSize>& sizes) {
+    VkDescriptorPoolCreateInfo pool_info = {};
+    uint32_t maxSets = 0;
+    for (const auto& size : sizes) { maxSets += size.descriptorCount; }
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.maxSets = maxSets;
+    pool_info.poolSizeCount = (uint32_t)sizes.size();
+    pool_info.pPoolSizes = sizes.data();
+
+    VkDescriptorPool descriptorPool;
+    vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptorPool);
+    return descriptorPool;
+}
+
 void VulkanContext::OnResize(int width, int height) {
     Log::Debug("Framebuffer resized: ({}, {})", width, height);
     // TODO: resize logic will come here

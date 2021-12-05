@@ -87,6 +87,7 @@ public:
 	static VkFramebuffer& CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent);
 	static std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const SwapchainInfo&);
 	static AllocatedBuffer& CreateAllocatedBuffer(const VmaAllocator& allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage); 
+	static VkDescriptorPool CreateDescriptorPool(const VkDevice& device, const std::vector<VkDescriptorPoolSize>& sizes);
 
 	const VkDevice& GetDevice() const { return device; }
 	const VkQueue& GetGraphicsQueue() const { return graphicsQueue; }

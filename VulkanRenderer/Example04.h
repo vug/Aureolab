@@ -45,22 +45,12 @@ public:
         destroyer.Add(depthImage);
 
         // Descriptors
-        std::vector<VkDescriptorSetLayout> descriptorSetLayouts = RenderView::CreateDescriptorSetLayouts(vc.GetDevice(), vc.GetDestroyer());
-        VkDescriptorPool descriptorPool;
-        {
-            //create a descriptor pool that will hold 10 uniform buffers
-            std::vector<VkDescriptorPoolSize> sizes = {
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 }
-            };
-            VkDescriptorPoolCreateInfo pool_info = {};
-            pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-            pool_info.maxSets = 10;
-            pool_info.poolSizeCount = (uint32_t)sizes.size();
-            pool_info.pPoolSizes = sizes.data();
-            vkCreateDescriptorPool(vc.GetDevice(), &pool_info, nullptr, &descriptorPool);
-            destroyer.Add(descriptorPool);
-        }
+        VkDescriptorPool descriptorPool = vc.CreateDescriptorPool(
+            vc.GetDevice(), { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 } }
+        );
+        destroyer.Add(descriptorPool);
 
+        std::vector<VkDescriptorSetLayout> descriptorSetLayouts = RenderView::CreateDescriptorSetLayouts(vc.GetDevice(), vc.GetDestroyer());
         int framesInFlight = 2;
         for (int i = 0; i < framesInFlight; i++) {
             FrameSyncCmd syncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
