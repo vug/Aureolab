@@ -10,6 +10,43 @@
 #include <set>
 #include <string>
 
+ImmediateCommandSubmitter::ImmediateCommandSubmitter(const VkDevice& device, const VkQueue& graphicsQueue, const uint32_t graphicsQueueFamilyIndex, VulkanDestroyer& destroyer)
+    : device(device), queue(graphicsQueue) {
+    VkFenceCreateInfo fenceCreateInfo = {};
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    // VK_FENCE_CREATE_SIGNALED_BIT flag is not needed because we won't wait for it before sending commands
+    assert(vkCreateFence(device, &fenceCreateInfo, nullptr, &uploadFence) == VK_SUCCESS);
+    destroyer.Add(uploadFence);
+
+    cmdPool = VulkanContext::CreateGraphicsCommandPool(device, graphicsQueueFamilyIndex);
+    destroyer.Add(cmdPool);
+}
+
+void ImmediateCommandSubmitter::Submit(std::function<void(VkCommandBuffer cmd)>&& function) {
+    VkCommandBuffer cmdBuf = VulkanContext::CreateCommandBuffer(device, cmdPool);
+
+    VkCommandBufferBeginInfo cmdBeginInfo = {};
+    cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    // We'll use this buffer only once per frame
+    cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    assert(vkBeginCommandBuffer(cmdBuf, &cmdBeginInfo) == VK_SUCCESS);
+    function(cmdBuf);
+    assert(vkEndCommandBuffer(cmdBuf) == VK_SUCCESS);
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = 0;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmdBuf;
+    submitInfo.signalSemaphoreCount = 0;
+    assert(vkQueueSubmit(queue, 1, &submitInfo, uploadFence) == VK_SUCCESS);
+
+    vkWaitForFences(device, 1, &uploadFence, true, 9999999999);
+    vkResetFences(device, 1, &uploadFence);
+    vkResetCommandPool(device, cmdPool, 0);
+}
+
 VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
     /* Potential configuration options:
     - Device features such as samplerAnisotropy
@@ -665,7 +702,7 @@ void VulkanContext::drawFrame(const VkDevice& device, const VkSwapchainKHR& swap
     // Need explicit dependency declaration for correct order of execution, i.e. synchronization
     // use fences to sync main app with command queue ops, use semaphors to sync operations within/across command queues
     static uint32_t frameNo = 0;
-    uint32_t frameOverlap = frames.size();
+    uint32_t frameOverlap = static_cast<uint32_t>(frames.size());
     FrameSyncCmd frame = frames[frameNo % frameOverlap]->GetFrameSyncCmdData();
 
     // wait until the GPU has finished rendering the last frame. Timeout of 1 second
@@ -699,7 +736,7 @@ void VulkanContext::drawFrame(const VkDevice& device, const VkSwapchainKHR& swap
     rpInfo.renderArea.offset = { 0, 0 };
     rpInfo.renderArea.extent = swapchainInfo.extent;
     rpInfo.framebuffer = swapchainFramebuffers[swapchainImageIndex];
-    rpInfo.clearValueCount = clearValues.size();
+    rpInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     rpInfo.pClearValues = clearValues.data();
     // Will bind the Framebuffer, clear the Image, put the Image in the layout specified at RenderPass creation
     vkCmdBeginRenderPass(frame.mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);

@@ -60,6 +60,18 @@ private:
 	FrameSyncCmd syncCmd;
 };
 
+class ImmediateCommandSubmitter {
+public:
+	ImmediateCommandSubmitter(const VkDevice& device, const VkQueue& graphicsQueue, const uint32_t graphicsQueueFamilyIndex, VulkanDestroyer& destroyer);
+	void Submit(std::function<void(VkCommandBuffer cmd)>&& function);
+private:
+	VkFence uploadFence;
+	VkCommandPool cmdPool;
+	VkDevice device;
+	VkQueue queue;
+};
+
+
 class VulkanContext : public IResizable {
 public:
 	VulkanContext(VulkanWindow& win, bool validation = true);
