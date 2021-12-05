@@ -8,7 +8,7 @@
 #include <vector>
 
 class VulkanDestroyer {
-    using VulkanObject = std::variant<VkRenderPass, VkFramebuffer, VkImageView, VkPipeline, VkPipelineLayout, VkShaderModule, VkCommandPool, VkSwapchainKHR, VkFence, VkSemaphore, AllocatedBuffer, AllocatedImage>;
+    using VulkanObject = std::variant<VkRenderPass, VkFramebuffer, VkImageView, VkPipeline, VkPipelineLayout, VkDescriptorSetLayout, VkDescriptorPool, VkShaderModule, VkCommandPool, VkSwapchainKHR, VkFence, VkSemaphore, AllocatedBuffer, AllocatedImage>;
     struct Destroy {
         Destroy(const VkDevice& dev, const VmaAllocator& alloc) : device(dev), allocator(alloc) {}
         void operator()(VkRenderPass obj) { vkDestroyRenderPass(device, obj, nullptr); }
@@ -16,6 +16,8 @@ class VulkanDestroyer {
         void operator()(VkImageView obj) { vkDestroyImageView(device, obj, nullptr); }
         void operator()(VkPipeline obj) { vkDestroyPipeline(device, obj, nullptr); }
         void operator()(VkPipelineLayout obj) { vkDestroyPipelineLayout(device, obj, nullptr); }
+        void operator()(VkDescriptorSetLayout obj) { vkDestroyDescriptorSetLayout(device, obj, nullptr); }
+        void operator()(VkDescriptorPool obj) { vkDestroyDescriptorPool(device, obj, nullptr); }
         void operator()(VkShaderModule obj) { vkDestroyShaderModule(device, obj, nullptr); }
         void operator()(VkCommandPool obj) { vkDestroyCommandPool(device, obj, nullptr); }
         void operator()(VkSwapchainKHR obj) { vkDestroySwapchainKHR(device, obj, nullptr); }
