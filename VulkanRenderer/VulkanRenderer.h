@@ -27,10 +27,26 @@ public:
 		glm::mat4 projection;
 	};
 
+	// Create DescriptorSetLayouts, allocate and update DescriptorSets
+	void Init(const VkDevice& device, const VmaAllocator& allocator, const VkDescriptorPool& pool, VulkanDestroyer& destroyer) {
+		cameraBuffer = VulkanContext::CreateAllocatedBuffer(allocator, sizeof(RenderView::Camera), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		descriptorSetLayouts = CreateDescriptorSetLayouts(device, destroyer);
+		descriptorSet = AllocateAndUpdateDescriptorSet(device, pool, descriptorSetLayouts, cameraBuffer);
+	}
+
+	const std::vector<VkDescriptorSetLayout>& GetDescriptorSetLayouts() const { return descriptorSetLayouts; }
+	const VkDescriptorSet& GetDescriptorSet() const { return descriptorSet; }
+	const AllocatedBuffer& GetCameraBuffer() const { return cameraBuffer; }
+
 	Camera camera;
+
+private:
+	AllocatedBuffer cameraBuffer;
 	VkDescriptorSet descriptorSet;
+	std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
 
 	static std::vector<VkDescriptorSetLayout> CreateDescriptorSetLayouts(const VkDevice& device, VulkanDestroyer& destroyer);
+	static VkDescriptorSet AllocateAndUpdateDescriptorSet(const VkDevice& device, const VkDescriptorPool& pool, const std::vector<VkDescriptorSetLayout>& layouts, const AllocatedBuffer& cameraBuffer);
 };
 
 class VulkanRenderer {

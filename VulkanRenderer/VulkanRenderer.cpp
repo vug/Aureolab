@@ -11,6 +11,8 @@
 #include <fstream>
 #include <set>
 
+// RenderView
+
 std::vector<VkDescriptorSetLayout> RenderView::CreateDescriptorSetLayouts(const VkDevice& device, VulkanDestroyer& destroyer) {
     std::vector<VkDescriptorSetLayout> layouts;
 
@@ -31,6 +33,34 @@ std::vector<VkDescriptorSetLayout> RenderView::CreateDescriptorSetLayouts(const 
 
     return layouts;
 }
+
+VkDescriptorSet RenderView::AllocateAndUpdateDescriptorSet(const VkDevice& device, const VkDescriptorPool& pool, const std::vector<VkDescriptorSetLayout>& layouts, const AllocatedBuffer& cameraBuffer) {
+    VkDescriptorSet set;
+
+    VkDescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = pool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(layouts.size());
+    allocInfo.pSetLayouts = layouts.data();
+    vkAllocateDescriptorSets(device, &allocInfo, &set);
+
+    VkDescriptorBufferInfo bufInfo;
+    bufInfo.buffer = cameraBuffer.buffer;
+    bufInfo.offset = 0;
+    bufInfo.range = sizeof(RenderView::Camera);
+    VkWriteDescriptorSet setWrite = {};
+    setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    setWrite.dstBinding = 0;
+    setWrite.dstSet = set;
+    setWrite.descriptorCount = 1;
+    setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    setWrite.pBufferInfo = &bufInfo;
+    vkUpdateDescriptorSets(device, 1, &setWrite, 0, nullptr);
+
+    return set;
+}
+
+// VulkanRenderer
 
 VulkanRenderer::VulkanRenderer(VulkanContext& context) : vc(context) {}
 
@@ -380,7 +410,7 @@ void VulkanRenderer::DrawObjects(VkCommandBuffer cmd, RenderView& renderView, st
         if (obj.material != lastMaterial) {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, obj.material->pipeline);
             lastMaterial = obj.material;
-            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, obj.material->pipelineLayout, 0, 1, &renderView.descriptorSet, 0, nullptr);
+            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, obj.material->pipelineLayout, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
         }
 
         MeshPushConstants::PushConstant1 constants;

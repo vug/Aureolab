@@ -86,7 +86,8 @@ public:
         clearValues[1].depthStencil.depth = 1.0f;
 
         glm::vec3 camPos = { 0.f, 0.f, -2.f };
-        RenderView renderView = {
+        RenderView renderView;
+        renderView.camera = {
             glm::translate(glm::mat4(1.f), camPos),
             glm::perspective(glm::radians(70.f), 800.f / 600.f, 0.1f, 200.0f),
         };

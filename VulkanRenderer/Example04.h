@@ -10,7 +10,6 @@
 class FrameData04 : public IFrameData {
 public:
     //FrameData04(const FrameSyncCmd& syncCmd1) : IFrameData(syncCmd1) {} // implied default constructor
-    AllocatedBuffer cameraBuffer;
     RenderView renderView;
 };
 
@@ -50,42 +49,23 @@ public:
         );
         destroyer.Add(descriptorPool);
 
-        std::vector<VkDescriptorSetLayout> descriptorSetLayouts = RenderView::CreateDescriptorSetLayouts(vc.GetDevice(), vc.GetDestroyer());
         int framesInFlight = 2;
         for (int i = 0; i < framesInFlight; i++) {
             FrameSyncCmd syncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
             FrameData04 frame{ syncCmd };
 
-            frame.cameraBuffer = vc.CreateAllocatedBuffer(vc.GetAllocator(), sizeof(RenderView::Camera), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-            VkDescriptorSetAllocateInfo allocInfo = {};
-            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            allocInfo.descriptorPool = descriptorPool;
-            allocInfo.descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size());
-            allocInfo.pSetLayouts = descriptorSetLayouts.data();
-            vkAllocateDescriptorSets(vc.GetDevice(), &allocInfo, &frame.renderView.descriptorSet);
-
-            VkDescriptorBufferInfo binfo;
-            binfo.buffer = frame.cameraBuffer.buffer;
-            binfo.offset = 0;
-            binfo.range = sizeof(RenderView::Camera);
-            VkWriteDescriptorSet setWrite = {};
-            setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            setWrite.dstBinding = 0;
-            setWrite.dstSet = frame.renderView.descriptorSet;
-            setWrite.descriptorCount = 1;
-            setWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            setWrite.pBufferInfo = &binfo;
-            vkUpdateDescriptorSets(vc.GetDevice(), 1, &setWrite, 0, nullptr);
+            frame.renderView.Init(vc.GetDevice(), vc.GetAllocator(), descriptorPool, vc.GetDestroyer());
+            frame.renderView.GetDescriptorSetLayouts();
 
             frameDatas.push_back(std::make_shared<FrameData04>(frame));
 
             destroyer.Add(syncCmd.commandPool);
             destroyer.Add(syncCmd.renderFence);
             destroyer.Add(std::vector{ syncCmd.presentSemaphore, syncCmd.renderSemaphore });
-            destroyer.Add(frame.cameraBuffer);
+            destroyer.Add(frame.renderView.GetCameraBuffer());
         }
 
+        auto& descriptorSetLayouts = std::static_pointer_cast<FrameData04>(frameDatas[0])->renderView.GetDescriptorSetLayouts();
         // Material Assets (aka pipelines and pipeline layouts)
         {
             VkShaderModule vertShader, fragShader;
@@ -146,7 +126,7 @@ public:
             camData.projection = renderView.camera.projection;
             camData.view = renderView.camera.view;
 
-            const AllocatedBuffer& camBuf = frameData->cameraBuffer;
+            const AllocatedBuffer& camBuf = frameData->renderView.GetCameraBuffer();
             void* data;
             vmaMapMemory(vc.GetAllocator(), camBuf.allocation, &data);
             memcpy(data, &camData, sizeof(RenderView::Camera));
