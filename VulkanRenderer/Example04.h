@@ -20,15 +20,15 @@ public:
         {
             Mesh mesh;
             mesh.MakeTriangle();
-            vr.UploadMesh(mesh);
+            vr.UploadMeshCpuToGpu(mesh);
             vr.meshes["triangle"] = mesh; // copy operation
 
             mesh.MakeQuad();
-            vr.UploadMesh(mesh);
+            vr.UploadMeshCpuToGpu(mesh);
             vr.meshes["quad"] = mesh;
 
             mesh.LoadFromOBJ("assets/models/suzanne.obj");
-            vr.UploadMesh(mesh);
+            vr.UploadMeshCpuToGpu(mesh);
             vr.meshes["monkey_flat"] = mesh;
 
             destroyer.Add(std::vector{ vr.meshes["triangle"].vertexBuffer, vr.meshes["quad"].vertexBuffer, vr.meshes["monkey_flat"].vertexBuffer });

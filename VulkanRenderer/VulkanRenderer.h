@@ -61,7 +61,8 @@ public:
 	static std::vector<char> ReadFile(const std::string& filename);
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
-	void UploadMesh(Mesh& mesh);
+	// Uses VMA_MEMORY_USAGE_CPU_TO_GPU type of memory which is relatively slow
+	void UploadMeshCpuToGpu(Mesh& mesh);
 
 	std::unordered_map<std::string, Material> materials;
 	std::unordered_map<std::string, Mesh> meshes;

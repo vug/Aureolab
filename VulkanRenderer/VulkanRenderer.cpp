@@ -386,7 +386,7 @@ VkShaderModule VulkanRenderer::CreateShaderModule(const std::vector<char>& code)
     return shaderModule;
 }
 
-void VulkanRenderer::UploadMesh(Mesh& mesh) {
+void VulkanRenderer::UploadMeshCpuToGpu(Mesh& mesh) {
     const auto& allocator = vc.GetAllocator();
 
     size_t size = mesh.vertices.size() * sizeof(Vertex);

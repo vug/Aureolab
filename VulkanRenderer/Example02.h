@@ -12,13 +12,13 @@ public:
     Ex02VertexBufferInput(VulkanContext& vc, VulkanRenderer& vr) :
         Example(vc, vr) {
         triangleMesh.MakeTriangle();
-        vr.UploadMesh(triangleMesh);
+        vr.UploadMeshCpuToGpu(triangleMesh);
         destroyer.Add(triangleMesh.vertexBuffer);
         quadMesh.MakeQuad();
-        vr.UploadMesh(quadMesh);
+        vr.UploadMeshCpuToGpu(quadMesh);
         destroyer.Add(quadMesh.vertexBuffer);
         monkeyMesh.LoadFromOBJ("assets/models/suzanne.obj");
-        vr.UploadMesh(monkeyMesh);
+        vr.UploadMeshCpuToGpu(monkeyMesh);
         destroyer.Add(monkeyMesh.vertexBuffer);
 
         renderPass = vr.CreateRenderPass();
