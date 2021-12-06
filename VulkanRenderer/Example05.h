@@ -140,6 +140,11 @@ public:
             destroyer.Add(std::vector{ vertShader, fragShader });
             destroyer.Add(pipelineLayout);
             destroyer.Add(pipeline);
+
+            vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-vert.spv"));
+            fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-frag.spv"));
+            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), texturedMaterialSetLayouts, renderPass);
+            vr.materials["textured"] = Material{ pipeline, pipelineLayout };
         }
 
         objects = {
