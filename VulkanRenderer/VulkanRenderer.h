@@ -3,6 +3,7 @@
 
 #include "IResizable.h"
 #include "Mesh.h"
+#include "Texture.h"
 
 #include <string>
 #include <tuple>
@@ -65,6 +66,7 @@ public:
 	void UploadMeshCpuToGpu(Mesh& mesh);
 	// Uses VMA_MEMORY_USAGE_GPU_ONLY memory via an intermediate staging buffer
 	void UploadMesh(Mesh& mesh);
+	void UploadTexture(Texture& texture);
 
 	std::unordered_map<std::string, Material> materials;
 	std::unordered_map<std::string, Mesh> meshes;

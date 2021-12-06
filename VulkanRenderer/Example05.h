@@ -40,7 +40,9 @@ public:
         {
             Texture texture;
             texture.LoadImageFromFile("assets/textures/lost_empire-RGBA.png");
-            texture.pixels;
+            vr.UploadTexture(texture);
+            // TODO figure out how to add image to deletion queue from UploadTexture. Observe how texture's and newImage's addresses change etc.
+            destroyer.Add(texture.newImage);
         }
 
         renderPass = vr.CreateRenderPass();

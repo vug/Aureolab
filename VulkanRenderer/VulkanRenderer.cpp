@@ -428,6 +428,91 @@ void VulkanRenderer::UploadMesh(Mesh& mesh) {
     vmaDestroyBuffer(allocator, stagingBuffer.buffer, stagingBuffer.allocation);
 }
 
+void VulkanRenderer::UploadTexture(Texture& tex) {
+    Log::Debug("Uploading pixels into an Image/Texture...");
+    const auto& allocator = vc.GetAllocator();
+    auto& destroyer = vc.GetDestroyer();
+
+    Log::Debug("\tCopying pixel data into a staging buffer as TRANSFER_SRC and CPU_ONLY...");
+    void* pixel_ptr = tex.pixels;
+    // assuming all loaded images are converted into 32-bit RBGA format
+    VkDeviceSize imageSize = 4ULL * tex.width * tex.height;
+    // the format R8G8B8A8 matches exactly with the pixels loaded from stb_image lib
+    VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+
+    AllocatedBuffer stagingBuffer = vc.CreateAllocatedBuffer(allocator, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    void* data;
+    vmaMapMemory(allocator, stagingBuffer.allocation, &data);
+    memcpy(data, pixel_ptr, static_cast<size_t>(imageSize));
+    vmaUnmapMemory(allocator, stagingBuffer.allocation);
+    
+    stbi_image_free(tex.pixels); // data in CPU mem no longer needed
+
+    Log::Debug("\tCreating and Allocating an Image as TRANSFER_DST and GPU_ONLY...");
+    VkExtent3D imageExtent;
+    imageExtent.width = static_cast<uint32_t>(tex.width);
+    imageExtent.height = static_cast<uint32_t>(tex.height);
+    imageExtent.depth = 1;
+    VkImageCreateInfo imageInfo = {};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.format = format;
+    imageInfo.extent = imageExtent;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    vmaCreateImage(allocator, &imageInfo, &allocInfo, &tex.newImage.image, &tex.newImage.allocation, nullptr);
+
+    Log::Debug("\tChanging the layout of the image from UNDEFINED to TRANSFER_DST_OPTIMAL via a pipeline barrier...");
+    // before copying staging buffer into it do it by submitting pipeline barrier command
+    imCmdSubmitter.Submit([&](VkCommandBuffer cmdBuf) {
+        // simplest possible image, only transform the single layer/level, no mip-map...
+        VkImageSubresourceRange range;
+        range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        range.baseMipLevel = 0;
+        range.levelCount = 1;
+        range.baseArrayLayer = 0;
+        range.layerCount = 1;
+
+        VkImageMemoryBarrier imageBarrier_toTransfer = {};
+        imageBarrier_toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED; // from
+        imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL; // to
+        imageBarrier_toTransfer.image = tex.newImage.image;
+        imageBarrier_toTransfer.subresourceRange = range;
+        imageBarrier_toTransfer.srcAccessMask = 0;
+        imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        // Barrier the image into the transfer-receive layout
+        vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
+
+        Log::Debug("\tCopying staging buffer into image...");
+        VkBufferImageCopy copyRegion = {};
+        copyRegion.bufferOffset = 0;
+        copyRegion.bufferRowLength = 0;
+        copyRegion.bufferImageHeight = 0;
+        copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.imageSubresource.mipLevel = 0;
+        copyRegion.imageSubresource.baseArrayLayer = 0;
+        copyRegion.imageSubresource.layerCount = 1;
+        copyRegion.imageExtent = imageExtent;
+        vkCmdCopyBufferToImage(cmdBuf, stagingBuffer.buffer, tex.newImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+
+        Log::Debug("\tChanging the layout of the image from TRANSFER_DST_OPTIMAL into a shader readable format SHADER_READ_ONLY_OPTIMAL via a pipeline barrier...");
+        VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
+        imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL; // from
+        imageBarrier_toReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // to
+        imageBarrier_toReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
+    });
+
+    vmaDestroyBuffer(allocator, stagingBuffer.buffer, stagingBuffer.allocation);
+}
+
 glm::mat4 VulkanRenderer::MakeTransform(const glm::vec3& translate, const glm::vec3& axis, float angle, const glm::vec3& scale) {
     glm::mat4 transform = glm::mat4(1.0f);
     transform = glm::translate(transform, translate);

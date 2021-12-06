@@ -11,6 +11,8 @@ public:
 	int numChannels;
 	stbi_uc* pixels;
 
+	// TODO: to make it deletable from outside of Texture scope. should not be needed.
+	AllocatedImage newImage;
 public:
 	bool LoadImageFromFile(const char* file);
 };
