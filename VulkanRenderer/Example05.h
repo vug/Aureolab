@@ -65,6 +65,20 @@ public:
             destroyer.Add(texture.newImage);
         }
 
+        // Samplers
+        VkSampler blockySampler;
+        {
+            VkSamplerCreateInfo samplerInfo = {};
+            samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+            samplerInfo.magFilter = VK_FILTER_NEAREST;
+            samplerInfo.minFilter = VK_FILTER_NEAREST;
+            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            vkCreateSampler(vc.GetDevice(), &samplerInfo, nullptr, &blockySampler);
+            destroyer.Add(blockySampler);
+        }
+
         renderPass = vr.CreateRenderPass();
         destroyer.Add(renderPass);
         AllocatedImage depthImage;
