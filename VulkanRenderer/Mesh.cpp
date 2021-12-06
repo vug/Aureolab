@@ -119,7 +119,7 @@ bool Mesh::LoadFromOBJ(const char* filename) {
 				if (idx.texcoord_index >= 0) {
 					tinyobj::real_t tx = attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
 					tinyobj::real_t ty = attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
-					new_vert.texCoord = { tx, ty };
+					new_vert.texCoord = { tx, 1.0 - ty }; // Vulkan's way for y-coordinates
 				}
 
 				// OBJ format does not have color information in it (it relies on accompanying MTL files to assign diffuse and specular colors to faces)
@@ -151,12 +151,12 @@ void Mesh::MakeTriangle() {
 
 void Mesh::MakeQuad() {
 	vertices = {
-		{ { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 0.0f, 0.0f }, { 1.f, 0.f, 0.0f, 1.0f } },
-		{ {  0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 1.0f, 0.0f }, { 0.f, 1.f, 0.0f, 1.0f } },
-		{ {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 1.0f, 1.0f }, { 0.f, 0.f, 1.0f, 1.0f } },
+		{ { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 0.0f, 1.0f }, { 1.f, 0.f, 0.0f, 1.0f } },
+		{ {  0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 1.0f, 1.0f }, { 0.f, 1.f, 0.0f, 1.0f } },
+		{ {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 1.0f, 0.0f }, { 0.f, 0.f, 1.0f, 1.0f } },
 
-		{ { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 0.0f, 0.0f }, { 1.f, 0.f, 0.0f, 1.0f } },
-		{ {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 1.0f, 1.0f }, { 0.f, 0.f, 1.0f, 1.0f } },
-		{ { -0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 0.0f, 1.0f }, { 1.f, 1.f, 1.0f, 1.0f } },
+		{ { -0.5f, -0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 0.0f, 1.0f }, { 1.f, 0.f, 0.0f, 1.0f } },
+		{ {  0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 1.0f, 0.0f }, { 0.f, 0.f, 1.0f, 1.0f } },
+		{ { -0.5f,  0.5f, 0.0f }, {0.0f, 0.0f, 1.0f}, { 0.0f, 0.0f }, { 1.f, 1.f, 1.0f, 1.0f } },
 	};
 }
