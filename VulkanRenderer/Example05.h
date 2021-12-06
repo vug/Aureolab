@@ -90,7 +90,12 @@ public:
 
         // Descriptors
         VkDescriptorPool descriptorPool = vc.CreateDescriptorPool(
-            vc.GetDevice(), { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 } }
+            vc.GetDevice(), { 
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 },
+                //{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10 }, // Pool size allocations for examples from "Vulkan Guide"
+                //{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10 },
+                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 },
+            }
         );
         destroyer.Add(descriptorPool);
 
