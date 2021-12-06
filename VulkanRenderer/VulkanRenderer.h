@@ -66,10 +66,12 @@ public:
 	void UploadMeshCpuToGpu(Mesh& mesh);
 	// Uses VMA_MEMORY_USAGE_GPU_ONLY memory via an intermediate staging buffer
 	void UploadMesh(Mesh& mesh);
+	// Upload pixels into shader readable GPU memory and create an imageview
 	void UploadTexture(Texture& texture);
 
 	std::unordered_map<std::string, Material> materials;
 	std::unordered_map<std::string, Mesh> meshes;
+	std::unordered_map<std::string, Texture> textures;
 
 	static glm::mat4 MakeTransform(const glm::vec3& translate, const glm::vec3& axis, float angle, const glm::vec3& scale);
 	void DrawObjects(VkCommandBuffer cmd, RenderView& renderView, std::vector<RenderObject> objects);

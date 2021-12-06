@@ -13,6 +13,7 @@ public:
 
 	// TODO: to make it deletable from outside of Texture scope. should not be needed.
 	AllocatedImage newImage;
+	VkImageView imageView;
 public:
 	bool LoadImageFromFile(const char* file);
 };

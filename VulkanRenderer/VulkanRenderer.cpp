@@ -511,6 +511,18 @@ void VulkanRenderer::UploadTexture(Texture& tex) {
     });
 
     vmaDestroyBuffer(allocator, stagingBuffer.buffer, stagingBuffer.allocation);
+
+    VkImageViewCreateInfo imageViewInfo = {};
+    imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageViewInfo.image = tex.newImage.image;
+    imageViewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+    imageViewInfo.subresourceRange.baseMipLevel = 0;
+    imageViewInfo.subresourceRange.levelCount = 1;
+    imageViewInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewInfo.subresourceRange.layerCount = 1;
+    imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkCreateImageView(vc.GetDevice(), &imageViewInfo, nullptr, &tex.imageView);
 }
 
 glm::mat4 VulkanRenderer::MakeTransform(const glm::vec3& translate, const glm::vec3& axis, float angle, const glm::vec3& scale) {
