@@ -145,11 +145,39 @@ public:
             fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-frag.spv"));
             std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), texturedMaterialSetLayouts, renderPass);
             vr.materials["textured"] = Material{ pipeline, pipelineLayout };
+
+            // TODO: Hide descriptor set image write stuff behind an abstraction
+            // TODO: Also an abstraction for combining varius descriptor sets in various shaders
+            VkDescriptorSetAllocateInfo allocInfo = {};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = descriptorPool;
+            allocInfo.descriptorSetCount = 1;
+            allocInfo.pSetLayouts = &singleTextureSetLayout;
+            vkAllocateDescriptorSets(vc.GetDevice(), &allocInfo, &vr.materials["textured"].textureSet);
+
+            //write to the descriptor set so that it points to our empire_diffuse texture
+            VkDescriptorImageInfo imageBufferInfo;
+            imageBufferInfo.sampler = blockySampler;
+            imageBufferInfo.imageView = vr.textures["sculpture"].imageView;
+            imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            VkWriteDescriptorSet writeSetTexture = {};
+            writeSetTexture.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writeSetTexture.dstBinding = 0;
+            writeSetTexture.dstSet = vr.materials["textured"].textureSet;
+            writeSetTexture.descriptorCount = 1;
+            writeSetTexture.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            writeSetTexture.pImageInfo = &imageBufferInfo;
+            vkUpdateDescriptorSets(vc.GetDevice(), 1, &writeSetTexture, 0, nullptr);
+
+            destroyer.Add(std::vector{ vertShader, fragShader });
+            destroyer.Add(pipelineLayout);
+            destroyer.Add(pipeline);
         }
 
         objects = {
             { &vr.meshes["monkey_flat"], &vr.materials["vizNormal"], glm::translate(glm::mat4(1.0f), { -1.0f, 0.0, 0.0 }) },
-            { &vr.meshes["quad"], &vr.materials["vizUV"], glm::translate(glm::mat4(1.0f), { 1.0f, 0.0, 0.0 }) },
+            { &vr.meshes["quad"], &vr.materials["textured"], glm::translate(glm::mat4(1.0f), { 1.0f, 0.0, 0.0 }) },
         };
     }
 
