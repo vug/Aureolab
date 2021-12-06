@@ -115,7 +115,10 @@ public:
             destroyer.Add(frame.renderView.GetCameraBuffer());
         }
 
-        auto& descriptorSetLayouts = std::static_pointer_cast<FrameData04>(frameDatas[0])->renderView.GetDescriptorSetLayouts();
+        std::vector<VkDescriptorSetLayout> texturedMaterialSetLayouts = {};
+        auto& renderViewSetLayouts = std::static_pointer_cast<FrameData04>(frameDatas[0])->renderView.GetDescriptorSetLayouts();
+        texturedMaterialSetLayouts.insert(texturedMaterialSetLayouts.end(), renderViewSetLayouts.begin(), renderViewSetLayouts.end());
+        texturedMaterialSetLayouts.push_back(singleTextureSetLayout);
         // Material Assets (aka pipelines and pipeline layouts)
         {
             VkShaderModule vertShader, fragShader;
@@ -124,7 +127,7 @@ public:
 
             vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-04-desc-set-vert.spv"));
             fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-normal-frag.spv"));
-            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), descriptorSetLayouts, renderPass);
+            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderViewSetLayouts, renderPass);
             vr.materials["vizNormal"] = Material{ pipeline, pipelineLayout };
             destroyer.Add(std::vector{ vertShader, fragShader });
             destroyer.Add(pipelineLayout);
@@ -132,7 +135,7 @@ public:
 
             vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-04-desc-set-vert.spv"));
             fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-uv-frag.spv"));
-            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), descriptorSetLayouts, renderPass);
+            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderViewSetLayouts, renderPass);
             vr.materials["vizUV"] = Material{ pipeline, pipelineLayout };
             destroyer.Add(std::vector{ vertShader, fragShader });
             destroyer.Add(pipelineLayout);
