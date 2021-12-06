@@ -540,8 +540,18 @@ void VulkanRenderer::DrawObjects(VkCommandBuffer cmd, RenderView& renderView, st
         // Only bind pipeline if it changes while looping over objects
         if (obj.material != lastMaterial) {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, obj.material->pipeline);
-            lastMaterial = obj.material;
+
+            // "scene data descriptor" is here in Vulkan Guide. A uniform based descriptor binding for scene data other than camera.
+
+            // object data descriptor
             vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, obj.material->pipelineLayout, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
+
+            if (obj.material->textureSet != VK_NULL_HANDLE) {
+                //texture descriptor
+                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, obj.material->pipelineLayout, 1, 1, &obj.material->textureSet, 0, nullptr);
+            }
+
+            lastMaterial = obj.material;
         }
 
         MeshPushConstants::PushConstant1 constants;
