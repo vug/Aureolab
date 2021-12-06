@@ -36,12 +36,29 @@ public:
             destroyer.Add(std::vector{ vr.meshes["triangle"].vertexBuffer, vr.meshes["quad"].vertexBuffer, vr.meshes["monkey_flat"].vertexBuffer });
         }
 
+        VkDescriptorSetLayout singleTextureSetLayout;
         // Texture Assets
         {
+            // TODO: Hide texture related DescriptorSetLayout creation behind an abstraction
+            VkDescriptorSetLayoutBinding texSetBind = {};
+            texSetBind.binding = 0;
+            texSetBind.descriptorCount = 1;
+            texSetBind.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            texSetBind.pImmutableSamplers = nullptr;
+            texSetBind.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+            VkDescriptorSetLayoutCreateInfo set3info = {};
+            set3info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            set3info.bindingCount = 1;
+            set3info.flags = 0;
+            set3info.pBindings = &texSetBind;
+            vkCreateDescriptorSetLayout(vc.GetDevice(), &set3info, nullptr, &singleTextureSetLayout);
+            destroyer.Add(singleTextureSetLayout);
+
             Texture texture;
-            texture.LoadImageFromFile("assets/textures/lost_empire-RGBA.png");
+            texture.LoadImageFromFile("assets/textures/texture.jpg");
             vr.UploadTexture(texture);
-            vr.textures["lost_empire"] = texture;
+            vr.textures["sculpture"] = texture;
 
             destroyer.Add(texture.imageView);
             // TODO figure out how to add image to deletion queue from UploadTexture. Observe how texture's and newImage's addresses change etc.
