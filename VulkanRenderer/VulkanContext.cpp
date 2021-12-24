@@ -5,6 +5,7 @@
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
 
+#include <array>
 #include <cassert>
 #include <functional>
 #include <set>
@@ -93,7 +94,7 @@ VulkanContext::~VulkanContext() {
     vkDestroyInstance(instance, nullptr);
 }
 
-std::tuple<VkInstance&, VkDebugUtilsMessengerEXT&, std::vector<const char*>&> VulkanContext::CreateInstance(uint32_t requestedExtensionCount, const char** requestedExtensions, bool enableValidationLayers) {
+std::tuple<VkInstance, VkDebugUtilsMessengerEXT, std::vector<const char*>> VulkanContext::CreateInstance(uint32_t requestedExtensionCount, const char** requestedExtensions, bool enableValidationLayers) {
     /* Potential Configuration Options:
     - Whole VkApplicationInfo (API version, App Name/Version etc)
     - Debug
@@ -196,7 +197,7 @@ std::tuple<VkInstance&, VkDebugUtilsMessengerEXT&, std::vector<const char*>&> Vu
     return { instance, debugMessenger, layers };
 }
 
-VkSurfaceKHR& VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instance) {
+VkSurfaceKHR VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instance) {
     Log::Debug("Creating Surface...");
     VkSurfaceKHR surface;
     if (win.CreateSurface(instance, &surface) != VK_SUCCESS) {
@@ -206,7 +207,7 @@ VkSurfaceKHR& VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instan
     return surface;
 }
 
-std::tuple<VkPhysicalDevice&, QueueFamilyIndices, SwapChainSupportDetails, std::vector<const char*>> VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface) {
+std::tuple<VkPhysicalDevice, QueueFamilyIndices, SwapChainSupportDetails, std::vector<const char*>> VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface) {
     /* Potential Configuration Options:
     - Queues to request (to get a compute queue)
     - Device features to query
@@ -345,7 +346,7 @@ std::tuple<VkPhysicalDevice&, QueueFamilyIndices, SwapChainSupportDetails, std::
     return { physicalDevice, indices, swapchainSupportDetails, requiredExtensions };
 }
 
-std::tuple<VkDevice&, VkQueue, VkQueue> VulkanContext::CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers) {
+std::tuple<VkDevice, VkQueue, VkQueue> VulkanContext::CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers) {
     Log::Debug("Creating Logical Device...");
     VkDevice device;
     
@@ -407,7 +408,7 @@ std::tuple<VmaAllocator, std::unique_ptr<VulkanDestroyer>> VulkanContext::Create
     return { allocator, std::move(destroyer) };
 }
 
-std::tuple<VkSwapchainKHR&, SwapchainInfo> VulkanContext::CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapchainSupportDetails) {
+std::tuple<VkSwapchainKHR, SwapchainInfo> VulkanContext::CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapchainSupportDetails) {
     Log::Debug("Creating Swapchain...");
     VkSwapchainKHR swapchain;
 
@@ -537,7 +538,7 @@ std::tuple<VkSwapchainKHR&, SwapchainInfo> VulkanContext::CreateSwapChain(VkDevi
     return { swapchain, swapchainInfo };
 }
 
-VkCommandPool& VulkanContext::CreateGraphicsCommandPool(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
+VkCommandPool VulkanContext::CreateGraphicsCommandPool(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
     Log::Debug("Creating Command Pool...");
     VkCommandPool commandPool;
 
@@ -556,7 +557,7 @@ VkCommandPool& VulkanContext::CreateGraphicsCommandPool(const VkDevice& device, 
     return commandPool;
 }
 
-FrameSyncCmd& VulkanContext::CreateFrameSyncCmd(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
+FrameSyncCmd VulkanContext::CreateFrameSyncCmd(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
     FrameSyncCmd frame = {};
     frame.commandPool = CreateGraphicsCommandPool(device, graphicsQueueFamilyIndex);
     frame.mainCommandBuffer = CreateCommandBuffer(device, frame.commandPool);
@@ -592,7 +593,7 @@ VkCommandBuffer VulkanContext::CreateCommandBuffer(const VkDevice& device, const
     return cmdBuf;
 }
 
-VkFramebuffer& VulkanContext::CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent) {
+VkFramebuffer VulkanContext::CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent) {
     Log::Debug("Creating Framebuffer...");
 
     VkFramebufferCreateInfo framebufferInfo{};
@@ -629,7 +630,7 @@ std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> VulkanConte
     VmaAllocationCreateInfo depthImageAllocationInfo = {};
     depthImageAllocationInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     depthImageAllocationInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    AllocatedImage depthImage;
+    AllocatedImage depthImage = {};
     if (vmaCreateImage(allocator, &depthImageInfo, &depthImageAllocationInfo, &depthImage.image, &depthImage.allocation, nullptr) != VK_SUCCESS) {
         Log::Error("Cannot create/allocate depth image!");
         exit(EXIT_FAILURE);
@@ -662,7 +663,7 @@ std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> VulkanConte
     return { presentFramebuffers, depthImageView, depthImage };
 }
 
-AllocatedBuffer& VulkanContext::CreateAllocatedBuffer(const VmaAllocator& allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage) {
+AllocatedBuffer VulkanContext::CreateAllocatedBuffer(const VmaAllocator& allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage) {
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = allocSize;
@@ -671,7 +672,7 @@ AllocatedBuffer& VulkanContext::CreateAllocatedBuffer(const VmaAllocator& alloca
     VmaAllocationCreateInfo vmaallocInfo = {};
     vmaallocInfo.usage = memoryUsage;
 
-    AllocatedBuffer newBuffer;
+    AllocatedBuffer newBuffer = {};
     VkResult result = vmaCreateBuffer(allocator, &bufferInfo, &vmaallocInfo, &newBuffer.buffer, &newBuffer.allocation, nullptr);
     assert(result == VK_SUCCESS);
 
