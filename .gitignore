@@ -365,3 +365,5 @@ FodyWeavers.xsd
 
 # Prevent mesh files with OBJ extensions in assets folder from being ignored
 !Aureolab/assets/models/*.obj
+
+build/

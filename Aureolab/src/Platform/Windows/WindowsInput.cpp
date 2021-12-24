@@ -4,6 +4,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <cassert>
+
 int Al2GlfwMouseButton(MouseButton button) {
 	switch (button) {
 	case MouseButton::Left:
@@ -15,6 +17,9 @@ int Al2GlfwMouseButton(MouseButton button) {
 	case MouseButton::Right:
 		return GLFW_MOUSE_BUTTON_RIGHT;
 		break;
+	default:
+		assert(false); // shouldn't reach here
+		return -1;
 	}
 }
 

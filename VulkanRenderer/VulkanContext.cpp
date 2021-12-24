@@ -557,7 +557,7 @@ VkCommandPool& VulkanContext::CreateGraphicsCommandPool(const VkDevice& device, 
 }
 
 FrameSyncCmd& VulkanContext::CreateFrameSyncCmd(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
-    FrameSyncCmd frame;
+    FrameSyncCmd frame = {};
     frame.commandPool = CreateGraphicsCommandPool(device, graphicsQueueFamilyIndex);
     frame.mainCommandBuffer = CreateCommandBuffer(device, frame.commandPool);
 

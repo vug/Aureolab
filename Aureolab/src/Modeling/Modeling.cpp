@@ -89,7 +89,7 @@ std::vector<BasicVertex> LoadOBJ(const std::string& filepath) { // taken from ht
             index_offset += fv;
 
             // per-face material
-            shapes[s].mesh.material_ids[f];
+            //shapes[s].mesh.material_ids[f];
         }
     }
     return vertices; // apparently this is move semantics, i.e. locally created vector will be moved to the scope of the caller.
@@ -157,7 +157,7 @@ std::vector<BasicVertex> GenerateTorus(float outerRadius, int outerSegments, flo
             glm::vec3 pos = innerCenter + innerPos;
             glm::vec3 norm = glm::normalize(innerPos);
             glm::vec2 uv = { u, v };
-            float checker = (i % 2) ^ (j % 2);
+            float checker = static_cast<float>((i % 2) ^ (j % 2));
             glm::vec4 col = glm::vec4 { 1.0, 1.0, 0.0, 1.0 } * checker + glm::vec4{ 0.0, 1.0, 1.0, 1.0 } * (1.0f - checker);
 
             points.emplace_back(BasicVertex { pos, norm, uv, col });
