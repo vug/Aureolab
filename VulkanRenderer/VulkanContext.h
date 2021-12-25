@@ -14,6 +14,26 @@
 #include <tuple>
 #include <memory>
 
+namespace vr {
+	struct Instance {
+		InstanceBuilder builder = {};
+		VkInstance handle = VK_NULL_HANDLE;
+		operator VkInstance() const;
+	};
+
+	// The idea behind a builder is that it's a class that manages all resources required to create an object
+	// in its local scope. 
+	// VkInstanceCreateInfo::pApplicationInfo is a pointer to VkApplicationInfo
+	// If we have a function that creates and returns a VkInstanceCreateInfo, which uses a VkApplicationInfo created locally
+	// that'll be destroyed at function return.
+	class InstanceBuilder {
+	public:
+		InstanceBuilder();
+		Instance build();
+		VkApplicationInfo appInfo = {};
+	};
+}
+
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
 	std::optional<uint32_t> presentFamily;

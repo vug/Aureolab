@@ -11,6 +11,38 @@
 #include <set>
 #include <string>
 
+namespace vr {
+    Instance::operator VkInstance() const {
+        return handle;
+    }
+
+    InstanceBuilder::InstanceBuilder() {
+        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        appInfo.apiVersion = VK_API_VERSION_1_2;
+        appInfo.pApplicationName = "A Vulkan application";
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.pEngineName = "No Engine";
+        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+    }
+
+    Instance InstanceBuilder::build() {
+        VkInstanceCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        info.pApplicationInfo = &this->appInfo;
+
+        Instance instance = {};
+        instance.builder = *this;
+
+        if (vkCreateInstance(&info, nullptr, &instance.handle) != VK_SUCCESS) {
+            Log::Critical("failed to create Vulkan instance!");
+            exit(EXIT_FAILURE);
+        }
+
+        return instance;
+    }
+}
+
+
 ImmediateCommandSubmitter::ImmediateCommandSubmitter(const VkDevice& device, const VkQueue& graphicsQueue, const uint32_t graphicsQueueFamilyIndex, VulkanDestroyer& destroyer)
     : device(device), queue(graphicsQueue) {
     VkFenceCreateInfo fenceCreateInfo = {};
