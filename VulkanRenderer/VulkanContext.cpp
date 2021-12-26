@@ -12,33 +12,77 @@
 #include <string>
 
 namespace vr {
-    Instance::operator VkInstance() const {
-        return handle;
+    InstanceBuilder::InstanceBuilder(const Params& params)
+        : layers(initLayers(params)),
+        extensions(initExtensions(params)),
+        appInfo({
+            VK_STRUCTURE_TYPE_APPLICATION_INFO,
+            nullptr,
+            "Vulkan Application",
+            1,
+            "Vulkan Engine",
+            1,
+            VK_API_VERSION_1_2,
+        }),
+        info({
+            VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+            nullptr,
+            0,
+            &appInfo,
+            static_cast<uint32_t>(layers.size()),
+            layers.data(),
+            static_cast<uint32_t>(extensions.size()),
+            extensions.data(),
+        }) {}
+
+    InstanceBuilder::operator const VkInstanceCreateInfo* () {
+        return &info;
     }
 
-    InstanceBuilder::InstanceBuilder() {
-        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.apiVersion = VK_API_VERSION_1_2;
-        appInfo.pApplicationName = "A Vulkan application";
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "No Engine";
-        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    }
+    std::vector<const char*> InstanceBuilder::initLayers(const Params& params) {
+        std::vector<const char*> newLayers;
 
-    Instance InstanceBuilder::build() {
-        VkInstanceCreateInfo info = {};
-        info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        info.pApplicationInfo = &this->appInfo;
-
-        Instance instance = {};
-        instance.builder = *this;
-
-        if (vkCreateInstance(&info, nullptr, &instance.handle) != VK_SUCCESS) {
-            Log::Critical("failed to create Vulkan instance!");
-            exit(EXIT_FAILURE);
+        if (params.validation) {
+            const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
+            newLayers.insert(newLayers.end(), validationLayers.begin(), validationLayers.end());
         }
 
-        return instance;
+        for (auto& reqLayer : params.requestedLayers) {
+            if (std::find(newLayers.begin(), newLayers.end(), reqLayer) == newLayers.end())
+                newLayers.push_back(reqLayer); // hopefully copy
+        }
+
+        return newLayers;
+    }
+
+    std::vector<const char*> InstanceBuilder::initExtensions(const Params& params) {
+        std::vector<const char*> newExtensions;
+
+        if (!params.headless) {
+            const std::vector<const char*> surfaceExtensions = { "VK_KHR_surface", "VK_KHR_win32_surface" };
+            newExtensions.insert(newExtensions.end(), surfaceExtensions.begin(), surfaceExtensions.end());
+        }
+
+        for (auto& reqExt : params.requestedExtensions) {
+            if (std::find(newExtensions.begin(), newExtensions.end(), reqExt) == newExtensions.end())
+                newExtensions.push_back(reqExt); // hopefully copy
+        }
+
+        return newExtensions;
+    }
+
+    Instance::Instance(const InstanceBuilder& builder) {
+        Log::Debug("Creating Instance...");
+        VkResult result = vkCreateInstance(&builder.info, nullptr, &handle);
+        if (result != VK_SUCCESS) {
+            Log::Debug("Failed to create Vulkan Instance!");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    Instance::~Instance() {
+        Log::Debug("Destroying Instance...");
+        vkDestroyInstance(handle, nullptr);
     }
 }
 
@@ -96,34 +140,38 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
         Log::Debug("\t{}", windowExtensions[i]);
     }
 
-    std::vector<const char*> vulkanLayers;
-    std::tie(instance, debugMessenger, vulkanLayers) = CreateInstance(windowExtensionCount, windowExtensions, validation);
+    //std::vector<const char*> vulkanLayers;
+    //std::tie(instance, debugMessenger, vulkanLayers) = CreateInstance(windowExtensionCount, windowExtensions, validation);
+    vr::InstanceBuilder instanceBuilder;
+    instance = std::make_unique<vr::Instance>(instanceBuilder);
+    //vr::Instance instance1(instanceBuilder);
+    //instance = instance1.handle;
     shouldDestroyDebugUtils = validation;
-    surface = CreateSurface(win, instance);
-    VkPhysicalDevice physicalDevice;
-    SwapChainSupportDetails swapchainSupportDetails;
-    std::vector<const char*> requiredExtensions;
-    std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(instance, surface);
-    std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, validation, vulkanLayers);
-    std::tie(vmaAllocator, destroyer) = CreateAllocatorAndDestroyer(instance, physicalDevice, device);
-    std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
-    destroyer->Add(swapchainInfo.imageViews);
-    destroyer->Add(swapchain);
+    surface = CreateSurface(win, *instance);
+    //VkPhysicalDevice physicalDevice;
+    //SwapChainSupportDetails swapchainSupportDetails;
+    //std::vector<const char*> requiredExtensions;
+    //std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(instance.handle, surface);
+    //std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, validation, instance.builder.layers);
+    //std::tie(vmaAllocator, destroyer) = CreateAllocatorAndDestroyer(instance, physicalDevice, device);
+    //std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
+    //destroyer->Add(swapchainInfo.imageViews);
+    //destroyer->Add(swapchain);
 }
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
-    vmaDestroyAllocator(vmaAllocator);
-    destroyer->DestroyAll();
-    vkDestroyDevice(device, nullptr);
-    vkDestroySurfaceKHR(instance, surface, nullptr);
-    if (shouldDestroyDebugUtils) {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-        if (func != nullptr) {
-            func(instance, debugMessenger, nullptr);
-        }
-    }
-    vkDestroyInstance(instance, nullptr);
+    //vmaDestroyAllocator(vmaAllocator);
+    //destroyer->DestroyAll();
+    //vkDestroyDevice(device, nullptr);
+    vkDestroySurfaceKHR(*instance, surface, nullptr);
+    //if (shouldDestroyDebugUtils) {
+    //    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    //    if (func != nullptr) {
+    //        func(instance, debugMessenger, nullptr);
+    //    }
+    //}
+    //vkDestroyInstance(instance, nullptr);
 }
 
 std::tuple<VkInstance, VkDebugUtilsMessengerEXT, std::vector<const char*>> VulkanContext::CreateInstance(uint32_t requestedExtensionCount, const char** requestedExtensions, bool enableValidationLayers) {
