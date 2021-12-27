@@ -15,32 +15,6 @@
 #include <tuple>
 #include <memory>
 
-struct QueueFamilyIndices {
-	std::optional<uint32_t> graphicsFamily;
-	std::optional<uint32_t> presentFamily;
-
-	bool isComplete() {
-		return graphicsFamily.has_value() && presentFamily.has_value();
-	}
-};
-
-struct SwapChainSupportDetails {
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
-
-	bool isAdequate() {
-		return !formats.empty() && !presentModes.empty();
-	}
-};
-
-struct SwapchainInfo {
-	VkSurfaceFormatKHR surfaceFormat;
-	VkExtent2D extent;
-	std::vector<VkImageView> imageViews;
-	VkFormat depthFormat;
-};
-
 // Keeps objects together that are required for queueing up draw commands in a synchronized way per frame
 struct FrameSyncCmd {
 	VkSemaphore presentSemaphore, renderSemaphore;
@@ -85,27 +59,25 @@ public:
 	//   Later they might return wrappers with getters. Ex: PDevice->GetQueueIndices(), Device->GetGraphicsQueue() etc
 	
 	// (Used in VulkanContext construction)
-	// Search and pick a suitable GPU with needed properties. Also returns the queue families on that device
-	static std::tuple<VkPhysicalDevice, QueueFamilyIndices, SwapChainSupportDetails, std::vector<const char*>> CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface);
-	static std::tuple<VkDevice, VkQueue, VkQueue> CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers);
+	static std::tuple<VkDevice, VkQueue, VkQueue> CreateLogicalDevice(VkPhysicalDevice& physicalDevice, vr::QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers);
 	static std::tuple<VmaAllocator, std::unique_ptr<VulkanDestroyer>> CreateAllocatorAndDestroyer(const VkInstance& instance, const VkPhysicalDevice& physicalDevice, const VkDevice& device);
-	static std::tuple<VkSwapchainKHR, SwapchainInfo> CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapChainSupportDetails);
+	static std::tuple<VkSwapchainKHR, vr::SwapchainInfo> CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, vr::QueueFamilyIndices& queueIndices, vr::SwapChainSupportDetails& swapChainSupportDetails);
 
 	// Can be used by Example apps
 	static VkCommandPool CreateGraphicsCommandPool(const VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 	static FrameSyncCmd CreateFrameSyncCmd(const VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 	static VkCommandBuffer CreateCommandBuffer(const VkDevice& device, const VkCommandPool& cmdPool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	static VkFramebuffer CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent);
-	static std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const SwapchainInfo&);
+	static std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const vr::SwapchainInfo&);
 	static AllocatedBuffer CreateAllocatedBuffer(const VmaAllocator& allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage); 
 	static VkDescriptorPool CreateDescriptorPool(const VkDevice& device, const std::vector<VkDescriptorPoolSize>& sizes);
 
 	const VkDevice& GetDevice() const { return device; }
 	const VkQueue& GetGraphicsQueue() const { return graphicsQueue; }
 	const VkQueue& GetPresentationQueue() const { return presentQueue; }
-	const QueueFamilyIndices& GetQueueFamilyIndices() const { return queueIndices; }
+	const vr::QueueFamilyIndices& GetQueueFamilyIndices() const { return queueIndices; }
 	const VkSwapchainKHR& GetSwapchain() const { return swapchain; }
-	const SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
+	const vr::SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
 	const VmaAllocator& GetAllocator() const { return vmaAllocator; }
 	VulkanDestroyer& GetDestroyer() const { return *destroyer; }
 
@@ -114,7 +86,7 @@ public:
 	// 2.5) executes it in given RenderPass with that image as attachment in the framebuffer
 	// 3) return the image to the swapchain for presentation
 	// If there is only one FrameSyncCmd it'll be blocked, i.e. acquisition, queue processing and presentation happens sequentially. CPU will wait for GPU to finish before creating commands for the next frame.
-	static void drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<std::shared_ptr<IFrameData>>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&, uint32_t frameNo)> cmdFunc);
+	static void drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<std::shared_ptr<IFrameData>>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const vr::SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&, uint32_t frameNo)> cmdFunc);
 
 	virtual void OnResize(int width, int height) override;
 private:
@@ -127,14 +99,14 @@ private:
 	std::unique_ptr<vr::Instance> instance;
 	std::unique_ptr<vr::DebugMessenger> debugMessenger;
 	std::unique_ptr<vr::Surface> surface;
-	
+	// Queues into which commands will be submitted by client app
+	VkQueue graphicsQueue = VK_NULL_HANDLE;
+	VkQueue presentQueue = VK_NULL_HANDLE;
+	vr::QueueFamilyIndices queueIndices; // determined by PhysicalDevice selection
+
 	//
 	VmaAllocator vmaAllocator; //vma lib allocator
 	std::unique_ptr<VulkanDestroyer> destroyer;
 
-	SwapchainInfo swapchainInfo;
-	// Queues into which commands will be submitted by client app
-	VkQueue graphicsQueue = VK_NULL_HANDLE;
-	VkQueue presentQueue = VK_NULL_HANDLE;
-	QueueFamilyIndices queueIndices;
+	vr::SwapchainInfo swapchainInfo;
 };

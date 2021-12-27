@@ -66,18 +66,20 @@ VulkanContext::VulkanContext(VulkanWindow& win) {
         debugMessenger = std::make_unique<vr::DebugMessenger>(debugMessengerBuilder);
     }
 
+    // TODO: should depend on instance->builder.params.headless
     vr::SurfaceBuilder surfaceBuilder(*instance, win);
     surface = std::make_unique<vr::Surface>(surfaceBuilder);
 
-    VkPhysicalDevice physicalDevice;
-    SwapChainSupportDetails swapchainSupportDetails;
-    std::vector<const char*> requiredExtensions;
-    std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(*instance, *surface);
-    std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, instance->builder.params.validation, instance->builder.layers);
+    vr::PhysicalDeviceBuilder physicalDeviceBuilder(*instance, *surface);
+    vr::PhysicalDevice physicalDevice(physicalDeviceBuilder);
+
+    std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, physicalDevice.builder.indices, physicalDevice.builder.requiredExtensions, instance->builder.params.validation, instance->builder.layers);
     std::tie(vmaAllocator, destroyer) = CreateAllocatorAndDestroyer(*instance, physicalDevice, device);
-    std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, *surface, queueIndices, swapchainSupportDetails);
+    std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, *surface, physicalDevice.builder.indices, physicalDevice.builder.swapchainSupportDetails);
     destroyer->Add(swapchainInfo.imageViews);
     destroyer->Add(swapchain);
+
+    queueIndices = physicalDevice.builder.indices;
 }
 
 VulkanContext::~VulkanContext() {
@@ -87,146 +89,7 @@ VulkanContext::~VulkanContext() {
     vkDestroyDevice(device, nullptr);
 }
 
-std::tuple<VkPhysicalDevice, QueueFamilyIndices, SwapChainSupportDetails, std::vector<const char*>> VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface) {
-    /* Potential Configuration Options:
-    - Queues to request (to get a compute queue)
-    - Device features to query
-    */
-    Log::Debug("Creating Physical Device...");
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    std::vector<VkPhysicalDevice> devices;
-
-    // Available Devices
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-    if (deviceCount == 0) {
-        Log::Critical("Failed to find GPUs with Vulkan support!");
-        exit(EXIT_FAILURE);
-    }
-    devices.resize(deviceCount);
-    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-    Log::Debug("Available devices:");
-    for (const auto& device : devices) {
-        VkPhysicalDeviceProperties properties;
-        vkGetPhysicalDeviceProperties(device, &properties);
-        Log::Debug("\t{}", properties.deviceName);
-    }
-
-    // choose first available and suitable device
-    // (alternatively, we can rate devices by their feature sets and choose best one)
-    Log::Debug("Suitable devices:");
-    QueueFamilyIndices indices;
-
-    SwapChainSupportDetails swapchainSupportDetails;
-
-    std::vector<const char*> requiredExtensions;
-    for (const auto& device : devices) {
-        VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(device, &deviceProperties);
-
-        Log::Debug("\tChecking suitability of {}", deviceProperties.deviceName);
-        // Check required queues, store queue indices if there are any
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-        int ix = 0;
-        for (const auto& queueFamily : queueFamilies) {
-            // VK_QUEUE_TRANSFER_BIT is to copy/transfer buffers from CPU staging to GPU (actually implied by Graphics bit)
-            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                indices.graphicsFamily = ix;
-            }
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, ix, surface, &presentSupport);
-            if (presentSupport) { indices.presentFamily = ix; }
-            if (indices.isComplete()) { break; }
-            ix++;
-        }
-        if (ix == queueFamilies.size()) {
-            Log::Debug("\t\tDoes not have queues graphics and presentation.");
-            continue;
-        }
-        // invariant: indices.isComplete() == true aka indices is a QueueFamilyIndices with required queues
-        Log::Debug("\t\tHas {} queue families. Graphics index: {}, Present/Surface index: {}.",
-            queueFamilyCount, indices.graphicsFamily.value(), indices.presentFamily.value());
-
-        // Check required extensions
-        requiredExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-        uint32_t extensionCount;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-        std::set<std::string> extensionsNotAvailable(requiredExtensions.begin(), requiredExtensions.end());
-        for (const auto& extension : availableExtensions) { extensionsNotAvailable.erase(extension.extensionName); }
-        // not all required extensions are available in this device
-        if (!extensionsNotAvailable.empty()) {
-            std::string s;
-            for (const auto& ext : extensionsNotAvailable) { s += ext + " "; }
-            Log::Debug("\t\tMissing required extensions: {}", s);
-            continue;
-        }
-        else {
-            std::string s;
-            for (const auto& ext : requiredExtensions) { s += std::string(ext) + " "; }
-            Log::Debug("\t\tHas extensions required by swapchain: {}", s);
-        }
-
-        // Check Swapchain support
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swapchainSupportDetails.capabilities);
-        uint32_t formatCount;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-        if (formatCount != 0) {
-            swapchainSupportDetails.formats.resize(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, swapchainSupportDetails.formats.data());
-        }
-        uint32_t presentModeCount;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-        if (presentModeCount != 0) {
-            swapchainSupportDetails.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, swapchainSupportDetails.presentModes.data());
-        }
-        if (!swapchainSupportDetails.isAdequate()) {
-            Log::Debug("\t\tHas no formats or present modes to display images in a swap chain");
-            continue;
-        }
-        else {
-            for (const auto& fmt : swapchainSupportDetails.formats) {
-                Log::Debug("\t\tSupports format: VkFormat[{}], colorspace: VkColorSpaceKHR[{}]", fmt.format, fmt.colorSpace);
-            }
-            for (const auto& mode : swapchainSupportDetails.presentModes) {
-                Log::Debug("\t\tSupports presentation modes: VkPresentModeKHR[{}]", mode);
-            }
-        }
-
-        VkPhysicalDeviceFeatures deviceFeatures;
-        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-        if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-            Log::Debug("\t\tIs not a GPU");
-            continue;
-        }
-
-        if (!deviceFeatures.samplerAnisotropy) {
-            Log::Debug("\t\tDoes not have Anisotrophic sampling feature.");
-            continue;
-        }
-        else {
-            Log::Debug("\t\tSupports Anisotrophic sampling feature.");
-        }
-
-        // all requirements satisfied!
-        physicalDevice = device;
-        Log::Debug("Picked {}", deviceProperties.deviceName);
-        break;
-    }
-    if (physicalDevice == VK_NULL_HANDLE) {
-        Log::Debug("Failed to find a suitable GPU with required queues!");
-        exit(EXIT_FAILURE);
-    }
-    return { physicalDevice, indices, swapchainSupportDetails, requiredExtensions };
-}
-
-std::tuple<VkDevice, VkQueue, VkQueue> VulkanContext::CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers) {
+std::tuple<VkDevice, VkQueue, VkQueue> VulkanContext::CreateLogicalDevice(VkPhysicalDevice& physicalDevice, vr::QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers) {
     Log::Debug("Creating Logical Device...");
     VkDevice device;
     
@@ -288,7 +151,7 @@ std::tuple<VmaAllocator, std::unique_ptr<VulkanDestroyer>> VulkanContext::Create
     return { allocator, std::move(destroyer) };
 }
 
-std::tuple<VkSwapchainKHR, SwapchainInfo> VulkanContext::CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, QueueFamilyIndices& queueIndices, SwapChainSupportDetails& swapchainSupportDetails) {
+std::tuple<VkSwapchainKHR, vr::SwapchainInfo> VulkanContext::CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, vr::QueueFamilyIndices& queueIndices, vr::SwapChainSupportDetails& swapchainSupportDetails) {
     Log::Debug("Creating Swapchain...");
     VkSwapchainKHR swapchain;
 
@@ -414,7 +277,7 @@ std::tuple<VkSwapchainKHR, SwapchainInfo> VulkanContext::CreateSwapChain(VkDevic
     }
 
     //std::vector<std::reference_wrapper<VkImageView>> ret(swapchainImages.begin(), swapchainImages.end());
-    SwapchainInfo swapchainInfo = { surfaceFormat, swapExtent, swapchainImageViews, VK_FORMAT_D32_SFLOAT };
+    vr::SwapchainInfo swapchainInfo = { surfaceFormat, swapExtent, swapchainImageViews, VK_FORMAT_D32_SFLOAT };
     return { swapchain, swapchainInfo };
 }
 
@@ -491,7 +354,7 @@ VkFramebuffer VulkanContext::CreateFramebuffer(const VkDevice& device, const VkR
     return framebuffer;
 }
 
-std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> VulkanContext::CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const SwapchainInfo& swapchainInfo) {
+std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> VulkanContext::CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const vr::SwapchainInfo& swapchainInfo) {
     Log::Debug("Creating Framebuffers for Swapchain...");
     // SwapChain creates images for color attachments automatically. 
     // If we want a depth attachment we need to create it manually.
@@ -578,7 +441,7 @@ void VulkanContext::OnResize(int width, int height) {
     // TODO: resize logic will come here
 }
 
-void VulkanContext::drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<std::shared_ptr<IFrameData>>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&, uint32_t frameNo)> cmdFunc) {
+void VulkanContext::drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<std::shared_ptr<IFrameData>>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const vr::SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&, uint32_t frameNo)> cmdFunc) {
     // Vulkan executes commands asynchroniously/independently. 
     // Need explicit dependency declaration for correct order of execution, i.e. synchronization
     // use fences to sync main app with command queue ops, use semaphors to sync operations within/across command queues
