@@ -60,4 +60,11 @@ namespace vr {
 			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 			void* pUserData);
 	};
+
+	struct DebugMessenger {
+		DebugMessenger(const DebugMessengerBuilder& builder);
+		~DebugMessenger();
+		DebugMessengerBuilder builder;
+		VkDebugUtilsMessengerEXT handle = VK_NULL_HANDLE;
+	};
 }

@@ -123,8 +123,11 @@ private:
 	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 	VkDevice device = VK_NULL_HANDLE;
 	VkSurfaceKHR surface = VK_NULL_HANDLE;
-	VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
+	
+	// order is important!
 	std::unique_ptr<vr::Instance> instance;
+	std::unique_ptr<vr::DebugMessenger> debugMessenger;
+	
 	//
 	VmaAllocator vmaAllocator; //vma lib allocator
 	std::unique_ptr<VulkanDestroyer> destroyer;

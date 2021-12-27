@@ -60,12 +60,12 @@ VulkanContext::VulkanContext(VulkanWindow& win) {
 
     vr::InstanceBuilder instanceBuilder;
     instance = std::make_unique<vr::Instance>(instanceBuilder);
+
     vr::DebugMessengerBuilder debugMessengerBuilder(*instance);
     if (instance->builder.params.validation) {
-        // TODO: call create from DebugMessenger constructor
-        Log::Debug("Creating Debug Messenger...");
-        debugMessengerBuilder.vkCreateDebugUtilsMessengerEXT(*instance, &debugMessengerBuilder.debugCreateInfo, nullptr, &debugMessenger);
+        debugMessenger = std::make_unique<vr::DebugMessenger>(debugMessengerBuilder);
     }
+
     surface = CreateSurface(win, *instance);
     VkPhysicalDevice physicalDevice;
     SwapChainSupportDetails swapchainSupportDetails;
@@ -85,13 +85,6 @@ VulkanContext::~VulkanContext() {
     vkDestroyDevice(device, nullptr);
 
     vkDestroySurfaceKHR(*instance, surface, nullptr);
-    if (instance->builder.params.validation) {
-        // TODO: call destroy from DebugMessenger destructor
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(*instance, "vkDestroyDebugUtilsMessengerEXT");
-        if (func != nullptr) {
-            func(*instance, debugMessenger, nullptr);
-        }
-    }
 }
 
 VkSurfaceKHR VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instance) {

@@ -113,6 +113,8 @@ namespace vr {
         };
     }
 
+    // --------------------------
+
     Instance::Instance(const InstanceBuilder& builder) {
         Log::Debug("Creating Instance...");
         VkResult result = vkCreateInstance(&builder.info, nullptr, &handle);
@@ -127,6 +129,7 @@ namespace vr {
         vkDestroyInstance(handle, nullptr);
     }
 
+    // --------------------------
 
     DebugMessengerBuilder::DebugMessengerBuilder(const Instance& instance)
         : instance(instance),
@@ -199,5 +202,18 @@ namespace vr {
         }
 
         return VK_FALSE;
+    }
+
+    // --------------------------
+
+    DebugMessenger::DebugMessenger(const DebugMessengerBuilder& builder) 
+        : builder(builder) {
+        Log::Debug("Creating Debug Messenger...");
+        builder.vkCreateDebugUtilsMessengerEXT(builder.instance, &builder.debugCreateInfo, nullptr, &handle);
+    }
+
+    DebugMessenger::~DebugMessenger() {
+        Log::Debug("Destroying Debug Messenger...");
+        builder.vkDestroyDebugUtilsMessengerEXT(builder.instance, handle, nullptr);
     }
 }
