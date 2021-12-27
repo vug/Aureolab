@@ -27,11 +27,14 @@ namespace vr {
 	private:
 		std::vector<const char*> initLayers(const Params& params);
 		std::vector<const char*> initExtensions(const Params& params);
+		VkApplicationInfo initAppInfo(const Params& params);
+		VkInstanceCreateInfo initInfo(const Params& params);
 
 	public:
 		std::vector<const char*> layers;
 		std::vector<const char*> extensions;
 		VkApplicationInfo appInfo = {};
+		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
 		VkInstanceCreateInfo info = {};
 	};
 
