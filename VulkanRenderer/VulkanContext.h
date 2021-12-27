@@ -124,7 +124,6 @@ private:
 	VkDevice device = VK_NULL_HANDLE;
 	VkSurfaceKHR surface = VK_NULL_HANDLE;
 	VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
-	//VkInstance instance = VK_NULL_HANDLE;
 	std::unique_ptr<vr::Instance> instance;
 	//
 	VmaAllocator vmaAllocator; //vma lib allocator
@@ -135,9 +134,4 @@ private:
 	VkQueue graphicsQueue = VK_NULL_HANDLE;
 	VkQueue presentQueue = VK_NULL_HANDLE;
 	QueueFamilyIndices queueIndices;
-
-	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-		VkDebugUtilsMessageTypeFlagsEXT messageType,
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		void* pUserData);
 };

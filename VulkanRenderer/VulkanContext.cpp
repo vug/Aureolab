@@ -53,29 +53,18 @@ VulkanContext::VulkanContext(VulkanWindow& win) {
     - Device features such as samplerAnisotropy
     - Number of images in SwapChain
     */
-    Log::Debug("Constructing Vulkan Renderer...");
+    Log::Debug("Constructing Vulkan Context...");
 
     // Window binding. Will make the window to call OnResize when Window's framebuffer resized.
     win.SetUserPointer(this);
-    uint32_t windowExtensionCount = win.GetVulkanExtensionCount();
-    const char** windowExtensions = win.GetVulkanExtensions();
-    Log::Debug("Extensions required by the windowing system: {}", windowExtensionCount);
-    for (uint32_t i = 0; i < windowExtensionCount; i++) {
-        Log::Debug("\t{}", windowExtensions[i]);
-    }
 
     vr::InstanceBuilder instanceBuilder;
     instance = std::make_unique<vr::Instance>(instanceBuilder);
+    vr::DebugMessengerBuilder debugMessengerBuilder(*instance);
     if (instance->builder.params.validation) {
+        // TODO: call create from DebugMessenger constructor
         Log::Debug("Creating Debug Messenger...");
-        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
-        debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-        debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(*instance, "vkCreateDebugUtilsMessengerEXT");
-        if (func != nullptr) {
-            func(*instance, &debugCreateInfo, nullptr, &debugMessenger);
-        }
+        debugMessengerBuilder.vkCreateDebugUtilsMessengerEXT(*instance, &debugMessengerBuilder.debugCreateInfo, nullptr, &debugMessenger);
     }
     surface = CreateSurface(win, *instance);
     VkPhysicalDevice physicalDevice;
@@ -97,6 +86,7 @@ VulkanContext::~VulkanContext() {
 
     vkDestroySurfaceKHR(*instance, surface, nullptr);
     if (instance->builder.params.validation) {
+        // TODO: call destroy from DebugMessenger destructor
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(*instance, "vkDestroyDebugUtilsMessengerEXT");
         if (func != nullptr) {
             func(*instance, debugMessenger, nullptr);
@@ -683,42 +673,4 @@ void VulkanContext::drawFrame(const VkDevice& device, const VkSwapchainKHR& swap
     assert(vkQueuePresentKHR(graphicsQueue, &presentInfo) == VK_SUCCESS);
 
     frameNo++;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::DebugCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData) {
-
-    std::string msgType;
-    switch (messageType) {
-    case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
-        msgType = "General";
-        break;
-    case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
-        msgType = "Validation";
-        break;
-    case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
-        msgType = "Performance";
-        break;
-    }
-
-    switch (messageSeverity) {
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-        Log::Trace("[ValidationLayer, {}] {}", msgType, pCallbackData->pMessage);
-        break;
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-        Log::Info("[ValidationLayer, {}] {}", msgType, pCallbackData->pMessage);
-        break;
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-        Log::Warning("[ValidationLayer, {}] {}", msgType, pCallbackData->pMessage);
-        break;
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-        Log::Error("[ValidationLayer, {}] {}", msgType, pCallbackData->pMessage);
-        __debugbreak();
-        break;
-    }
-
-    return VK_FALSE;
 }

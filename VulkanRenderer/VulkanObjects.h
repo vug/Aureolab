@@ -18,12 +18,6 @@ namespace vr {
 		InstanceBuilder(const Params& params = Params());
 		operator const VkInstanceCreateInfo* ();
 
-		void foo() {
-			VkDebugUtilsMessageSeverityFlagsEXT severity =
-				VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
-				| VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		}
-
 	private:
 		std::vector<const char*> initLayers(const Params& params);
 		std::vector<const char*> initExtensions(const Params& params);
@@ -48,5 +42,22 @@ namespace vr {
 		operator VkInstance () const { return handle; }
 		operator VkInstance* () { return &handle; }
 		operator VkInstance& () { return handle; }
+	};
+
+	class DebugMessengerBuilder {
+	public:
+		DebugMessengerBuilder(const Instance& instance);
+
+		const Instance& instance;
+		PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
+		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
+		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
+	private:
+		PFN_vkCreateDebugUtilsMessengerEXT initCreateFunc();
+		PFN_vkDestroyDebugUtilsMessengerEXT initDestroyFunc();
+		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+			VkDebugUtilsMessageTypeFlagsEXT messageType,
+			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+			void* pUserData);
 	};
 }
