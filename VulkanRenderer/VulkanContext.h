@@ -59,7 +59,6 @@ public:
 	//   Later they might return wrappers with getters. Ex: PDevice->GetQueueIndices(), Device->GetGraphicsQueue() etc
 	
 	// (Used in VulkanContext construction)
-	static std::tuple<VkDevice, VkQueue, VkQueue> CreateLogicalDevice(VkPhysicalDevice& physicalDevice, vr::QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers);
 	static std::tuple<VmaAllocator, std::unique_ptr<VulkanDestroyer>> CreateAllocatorAndDestroyer(const VkInstance& instance, const VkPhysicalDevice& physicalDevice, const VkDevice& device);
 	static std::tuple<VkSwapchainKHR, vr::SwapchainInfo> CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, vr::QueueFamilyIndices& queueIndices, vr::SwapChainSupportDetails& swapChainSupportDetails);
 
@@ -72,10 +71,10 @@ public:
 	static AllocatedBuffer CreateAllocatedBuffer(const VmaAllocator& allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage); 
 	static VkDescriptorPool CreateDescriptorPool(const VkDevice& device, const std::vector<VkDescriptorPoolSize>& sizes);
 
-	const VkDevice& GetDevice() const { return device; }
-	const VkQueue& GetGraphicsQueue() const { return graphicsQueue; }
-	const VkQueue& GetPresentationQueue() const { return presentQueue; }
-	const vr::QueueFamilyIndices& GetQueueFamilyIndices() const { return queueIndices; }
+	const VkDevice& GetDevice() const { return device->handle; }
+	const VkQueue& GetGraphicsQueue() const { return device->graphicsQueue; }
+	const VkQueue& GetPresentationQueue() const { return device->presentQueue; }
+	const vr::QueueFamilyIndices& GetQueueFamilyIndices() const { return device->builder.physicalDevice.builder.indices; }
 	const VkSwapchainKHR& GetSwapchain() const { return swapchain; }
 	const vr::SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
 	const VmaAllocator& GetAllocator() const { return vmaAllocator; }
@@ -89,21 +88,19 @@ public:
 	static void drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<std::shared_ptr<IFrameData>>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const vr::SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&, uint32_t frameNo)> cmdFunc);
 
 	virtual void OnResize(int width, int height) override;
-private:
-	// Vulkan Objects that needs to be destroyed with VulkanContext
-	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-	VkDevice device = VK_NULL_HANDLE;
-	
+
 	// Order of members is important, which is the order in which Vulkan Objects are generated. 
 	// When VulkanContext is destructed, their destructors will be called in reverse order.
 	std::unique_ptr<vr::Instance> instance;
 	std::unique_ptr<vr::DebugMessenger> debugMessenger;
 	std::unique_ptr<vr::Surface> surface;
-	// Queues into which commands will be submitted by client app
-	VkQueue graphicsQueue = VK_NULL_HANDLE;
-	VkQueue presentQueue = VK_NULL_HANDLE;
-	vr::QueueFamilyIndices queueIndices; // determined by PhysicalDevice selection
+	std::unique_ptr<vr::PhysicalDevice> physicalDevice;
+	std::unique_ptr<vr::Device> device;
 
+private:
+	// Vulkan Objects that needs to be destroyed with VulkanContext
+	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+	
 	//
 	VmaAllocator vmaAllocator; //vma lib allocator
 	std::unique_ptr<VulkanDestroyer> destroyer;

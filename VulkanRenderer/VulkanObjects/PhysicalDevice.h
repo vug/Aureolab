@@ -19,14 +19,14 @@ namespace vr {
 		std::optional<uint32_t> computeFamily;
 		std::optional<uint32_t> presentFamily;
 
-		VkQueueFlagBits requestedQueues;
+		VkQueueFlagBits requestedQueues = {};
 
 		bool isComplete();
 		void logIndices();
 	};
 
 	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities;
+		VkSurfaceCapabilitiesKHR capabilities = {};
 		std::vector<VkSurfaceFormatKHR> formats;
 		std::vector<VkPresentModeKHR> presentModes;
 
@@ -36,10 +36,10 @@ namespace vr {
 	};
 
 	struct SwapchainInfo {
-		VkSurfaceFormatKHR surfaceFormat;
-		VkExtent2D extent;
+		VkSurfaceFormatKHR surfaceFormat = {};
+		VkExtent2D extent = {};
 		std::vector<VkImageView> imageViews;
-		VkFormat depthFormat;
+		VkFormat depthFormat = {};
 	};
 
 	// Search and pick a suitable GPU with needed properties. Also returns the queue families on that device
@@ -51,10 +51,12 @@ namespace vr {
 		const Instance& instance;
 		const Surface& surface;
 
-		QueueFamilyIndices indices;
+		QueueFamilyIndices indices = {};
 		std::vector<const char*> requiredExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 		SwapChainSupportDetails swapchainSupportDetails = {};
 		std::vector<VkPhysicalDevice> physicalDevices;
+		std::vector<VkPhysicalDeviceProperties> physicalDeviceProperties;
+		std::vector<VkPhysicalDeviceFeatures> physicalDeviceFeatures;
 
 		static bool defaultDevFeaturesFunc(VkPhysicalDeviceFeatures devFeats) {
 			return devFeats.samplerAnisotropy;

@@ -67,7 +67,7 @@ VkDescriptorSet RenderView::AllocateAndUpdateDescriptorSet(const VkDevice& devic
 
 // VulkanRenderer
 
-VulkanRenderer::VulkanRenderer(VulkanContext& context) :
+VulkanRenderer::VulkanRenderer(const VulkanContext& context) :
     vc(context),
     imCmdSubmitter(vc.GetDevice(), vc.GetGraphicsQueue(), vc.GetQueueFamilyIndices().graphicsFamily.value(), vc.GetDestroyer()) {}
 

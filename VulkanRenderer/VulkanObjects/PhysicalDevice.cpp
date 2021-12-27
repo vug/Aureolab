@@ -72,8 +72,8 @@ namespace vr {
         for (const auto& device : devices) {
             VkPhysicalDeviceProperties deviceProperties;
             vkGetPhysicalDeviceProperties(device, &deviceProperties);
-
             Log::Debug("\tChecking suitability of {}", deviceProperties.deviceName);
+
             // Check required queues, store queue indices if there are any
             uint32_t queueFamilyCount = 0;
             vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -152,7 +152,7 @@ namespace vr {
                 }
             }
 
-            VkPhysicalDeviceFeatures deviceFeatures;
+            VkPhysicalDeviceFeatures deviceFeatures = {};
             vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
             if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                 Log::Debug("\t\tIs not a GPU");
@@ -167,10 +167,10 @@ namespace vr {
                 Log::Debug("\t\tDevice has all requested features.");
             }
 
-            // all requirements satisfied!
             physicalDevices.push_back(device);
-            Log::Debug("Picked {}", deviceProperties.deviceName);
-            break;
+            physicalDeviceProperties.push_back(deviceProperties);
+            physicalDeviceFeatures.push_back(deviceFeatures);
+            Log::Debug("\t'{}' satisfies all requirements", deviceProperties.deviceName);
         }
         if (physicalDevices.empty()) {
             Log::Debug("Failed to find a suitable GPU with required queues!");
@@ -182,7 +182,8 @@ namespace vr {
 
 	PhysicalDevice::PhysicalDevice(const PhysicalDeviceBuilder& builder)
 		: builder(builder) {
-        Log::Debug("Selecting the first suitable PhysicalDevice...");
-        handle = builder.physicalDevices[0];
+        const size_t ix = 0;
+        Log::Debug("Selecting the first suitable PhysicalDevice '{}'", builder.physicalDeviceProperties[ix].deviceName);
+        handle = builder.physicalDevices[ix];
 	}
 }

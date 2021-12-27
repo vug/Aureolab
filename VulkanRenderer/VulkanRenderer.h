@@ -48,7 +48,7 @@ private:
 
 class VulkanRenderer {
 public:
-	VulkanRenderer(VulkanContext& context);
+	VulkanRenderer(const VulkanContext& context);
 	~VulkanRenderer();
 
 	VkRenderPass CreateRenderPass();
@@ -79,7 +79,7 @@ public:
 
 private:
 	// declaring as reference prevents it from being destroyed with Renderer
-	VulkanContext& vc;
+	const VulkanContext& vc;
 
 	ImmediateCommandSubmitter imCmdSubmitter;
 

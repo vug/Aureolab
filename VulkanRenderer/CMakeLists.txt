@@ -8,6 +8,7 @@ add_executable(VulkanRenderer
  "VulkanObjects/DebugMessenger.h" "VulkanObjects/DebugMessenger.cpp" 
  "VulkanObjects/Surface.h" "VulkanObjects/Surface.cpp"
  "VulkanObjects/PhysicalDevice.h" "VulkanObjects/PhysicalDevice.cpp"
+ "VulkanObjects/Device.h" "VulkanObjects/Device.cpp"
  "VulkanContext.h" "VulkanContext.cpp" 
  "VulkanDestroyer.h" 
  "Mesh.h" "Mesh.cpp"
