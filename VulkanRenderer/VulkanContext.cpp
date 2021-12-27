@@ -66,14 +66,16 @@ VulkanContext::VulkanContext(VulkanWindow& win) {
         debugMessenger = std::make_unique<vr::DebugMessenger>(debugMessengerBuilder);
     }
 
-    surface = CreateSurface(win, *instance);
+    vr::SurfaceBuilder surfaceBuilder(*instance, win);
+    surface = std::make_unique<vr::Surface>(surfaceBuilder);
+
     VkPhysicalDevice physicalDevice;
     SwapChainSupportDetails swapchainSupportDetails;
     std::vector<const char*> requiredExtensions;
-    std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(*instance, surface);
+    std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(*instance, *surface);
     std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, instance->builder.params.validation, instance->builder.layers);
     std::tie(vmaAllocator, destroyer) = CreateAllocatorAndDestroyer(*instance, physicalDevice, device);
-    std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
+    std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, *surface, queueIndices, swapchainSupportDetails);
     destroyer->Add(swapchainInfo.imageViews);
     destroyer->Add(swapchain);
 }
@@ -83,18 +85,6 @@ VulkanContext::~VulkanContext() {
     vmaDestroyAllocator(vmaAllocator);
     destroyer->DestroyAll();
     vkDestroyDevice(device, nullptr);
-
-    vkDestroySurfaceKHR(*instance, surface, nullptr);
-}
-
-VkSurfaceKHR VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instance) {
-    Log::Debug("Creating Surface...");
-    VkSurfaceKHR surface;
-    if (win.CreateSurface(instance, &surface) != VK_SUCCESS) {
-        Log::Critical("Failed to create Window Surface!");
-        exit(EXIT_FAILURE);
-    }
-    return surface;
 }
 
 std::tuple<VkPhysicalDevice, QueueFamilyIndices, SwapChainSupportDetails, std::vector<const char*>> VulkanContext::CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface) {

@@ -19,7 +19,7 @@ public:
 
 	void SetUserPointer(void* ptr);
 
-	VkResult CreateSurface(VkInstance instance, VkSurfaceKHR* surface);
+	VkResult CreateSurface(VkInstance instance, VkSurfaceKHR* surface) const;
 private:
 	GLFWwindow* window;
 	uint32_t glfwVulkanExtensionCount;

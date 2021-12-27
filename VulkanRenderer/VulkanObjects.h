@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VulkanWindow.h"
+
 #include <vulkan/vulkan.h>
 
 #include <vector>
@@ -66,5 +68,24 @@ namespace vr {
 		~DebugMessenger();
 		DebugMessengerBuilder builder;
 		VkDebugUtilsMessengerEXT handle = VK_NULL_HANDLE;
+	};
+
+	class SurfaceBuilder {
+	public:
+		SurfaceBuilder(const Instance& instance, const VulkanWindow& win);
+
+		const Instance& instance;
+		const VulkanWindow& win;
+	};
+
+	struct Surface {
+		Surface(const SurfaceBuilder& builder);
+		~Surface();
+		SurfaceBuilder builder;
+		VkSurfaceKHR handle = VK_NULL_HANDLE;
+
+		operator VkSurfaceKHR () const { return handle; }
+		operator VkSurfaceKHR* () { return &handle; }
+		operator VkSurfaceKHR& () { return handle; }
 	};
 }

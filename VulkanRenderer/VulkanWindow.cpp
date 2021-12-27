@@ -62,6 +62,6 @@ void VulkanWindow::SetUserPointer(void* ptr) {
     glfwSetWindowUserPointer(window, ptr);
 }
 
-VkResult VulkanWindow::CreateSurface(VkInstance instance, VkSurfaceKHR* surface) {
+VkResult VulkanWindow::CreateSurface(VkInstance instance, VkSurfaceKHR* surface) const {
     return glfwCreateWindowSurface(instance, window, nullptr, surface);
 }

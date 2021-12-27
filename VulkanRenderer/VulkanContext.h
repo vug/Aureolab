@@ -85,7 +85,6 @@ public:
 	//   Later they might return wrappers with getters. Ex: PDevice->GetQueueIndices(), Device->GetGraphicsQueue() etc
 	
 	// (Used in VulkanContext construction)
-	static VkSurfaceKHR CreateSurface(VulkanWindow& win, VkInstance& instance);
 	// Search and pick a suitable GPU with needed properties. Also returns the queue families on that device
 	static std::tuple<VkPhysicalDevice, QueueFamilyIndices, SwapChainSupportDetails, std::vector<const char*>> CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface);
 	static std::tuple<VkDevice, VkQueue, VkQueue> CreateLogicalDevice(VkPhysicalDevice& physicalDevice, QueueFamilyIndices& queueIndices, std::vector<const char*>& requiredExtensions, bool enableValidationLayers, std::vector<const char*>& vulkanLayers);
@@ -122,11 +121,12 @@ private:
 	// Vulkan Objects that needs to be destroyed with VulkanContext
 	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 	VkDevice device = VK_NULL_HANDLE;
-	VkSurfaceKHR surface = VK_NULL_HANDLE;
 	
-	// order is important!
+	// Order of members is important, which is the order in which Vulkan Objects are generated. 
+	// When VulkanContext is destructed, their destructors will be called in reverse order.
 	std::unique_ptr<vr::Instance> instance;
 	std::unique_ptr<vr::DebugMessenger> debugMessenger;
+	std::unique_ptr<vr::Surface> surface;
 	
 	//
 	VmaAllocator vmaAllocator; //vma lib allocator
