@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanWindow.h"
+#include "VulkanObjects.h"
 #include "VulkanDestroyer.h"
 #include "Types.h"
 
@@ -13,43 +14,6 @@
 #include <vector>
 #include <tuple>
 #include <memory>
-
-namespace vr {
-	class InstanceBuilder {
-	public:
-		// Defaults for a windowed Windows app with validation layers
-		struct Params {
-			bool headless = false;
-			bool validation = true;
-			std::vector<const char*> requestedLayers = {};
-			std::vector<const char*> requestedExtensions = {};
-		};
-
-		InstanceBuilder(const Params& params = Params());
-		operator const VkInstanceCreateInfo* ();
-
-	private:
-		std::vector<const char*> initLayers(const Params& params);
-		std::vector<const char*> initExtensions(const Params& params);
-
-	public:
-		std::vector<const char*> layers;
-		std::vector<const char*> extensions;
-		VkApplicationInfo appInfo = {};
-		VkInstanceCreateInfo info = {};
-	};
-
-	struct Instance {
-		Instance(const InstanceBuilder& builder);
-		~Instance();
-		InstanceBuilder builder = {};
-		VkInstance handle = VK_NULL_HANDLE;
-
-		operator VkInstance () const { return handle; }
-		operator VkInstance* () { return &handle; }
-		operator VkInstance& () { return handle; }
-	};
-}
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
