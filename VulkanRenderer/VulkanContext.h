@@ -75,7 +75,7 @@ private:
 
 class VulkanContext : public IResizable {
 public:
-	VulkanContext(VulkanWindow& win, bool validation = true);
+	VulkanContext(VulkanWindow& win);
 	~VulkanContext();
 
 	// These functions return individual Vulkan objects for the initialization part that'll be the same for all Vulkan Apps
@@ -85,7 +85,6 @@ public:
 	//   Later they might return wrappers with getters. Ex: PDevice->GetQueueIndices(), Device->GetGraphicsQueue() etc
 	
 	// (Used in VulkanContext construction)
-	static std::tuple<VkInstance, VkDebugUtilsMessengerEXT, std::vector<const char*>> CreateInstance(uint32_t requestedExtensionCount, const char** requestedExtensions, bool enableValidationLayers);
 	static VkSurfaceKHR CreateSurface(VulkanWindow& win, VkInstance& instance);
 	// Search and pick a suitable GPU with needed properties. Also returns the queue families on that device
 	static std::tuple<VkPhysicalDevice, QueueFamilyIndices, SwapChainSupportDetails, std::vector<const char*>> CreatePhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface);
@@ -127,7 +126,6 @@ private:
 	VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 	//VkInstance instance = VK_NULL_HANDLE;
 	std::unique_ptr<vr::Instance> instance;
-	bool shouldDestroyDebugUtils = false;
 	//
 	VmaAllocator vmaAllocator; //vma lib allocator
 	std::unique_ptr<VulkanDestroyer> destroyer;

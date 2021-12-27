@@ -48,7 +48,7 @@ void ImmediateCommandSubmitter::Submit(std::function<void(VkCommandBuffer cmd)>&
     vkResetCommandPool(device, cmdPool, 0);
 }
 
-VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
+VulkanContext::VulkanContext(VulkanWindow& win) {
     /* Potential configuration options:
     - Device features such as samplerAnisotropy
     - Number of images in SwapChain
@@ -64,141 +64,44 @@ VulkanContext::VulkanContext(VulkanWindow& win, bool validation) {
         Log::Debug("\t{}", windowExtensions[i]);
     }
 
-    //std::vector<const char*> vulkanLayers;
-    //std::tie(instance, debugMessenger, vulkanLayers) = CreateInstance(windowExtensionCount, windowExtensions, validation);
     vr::InstanceBuilder instanceBuilder;
     instance = std::make_unique<vr::Instance>(instanceBuilder);
-    //vr::Instance instance1(instanceBuilder);
-    //instance = instance1.handle;
-    shouldDestroyDebugUtils = validation;
+    if (instance->builder.params.validation) {
+        Log::Debug("Creating Debug Messenger...");
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
+        debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+        debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(*instance, "vkCreateDebugUtilsMessengerEXT");
+        if (func != nullptr) {
+            func(*instance, &debugCreateInfo, nullptr, &debugMessenger);
+        }
+    }
     surface = CreateSurface(win, *instance);
-    //VkPhysicalDevice physicalDevice;
-    //SwapChainSupportDetails swapchainSupportDetails;
-    //std::vector<const char*> requiredExtensions;
-    //std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(instance.handle, surface);
-    //std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, validation, instance.builder.layers);
-    //std::tie(vmaAllocator, destroyer) = CreateAllocatorAndDestroyer(instance, physicalDevice, device);
-    //std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
-    //destroyer->Add(swapchainInfo.imageViews);
-    //destroyer->Add(swapchain);
+    VkPhysicalDevice physicalDevice;
+    SwapChainSupportDetails swapchainSupportDetails;
+    std::vector<const char*> requiredExtensions;
+    std::tie(physicalDevice, queueIndices, swapchainSupportDetails, requiredExtensions) = CreatePhysicalDevice(*instance, surface);
+    std::tie(device, graphicsQueue, presentQueue) = CreateLogicalDevice(physicalDevice, queueIndices, requiredExtensions, instance->builder.params.validation, instance->builder.layers);
+    std::tie(vmaAllocator, destroyer) = CreateAllocatorAndDestroyer(*instance, physicalDevice, device);
+    std::tie(swapchain, swapchainInfo) = CreateSwapChain(device, surface, queueIndices, swapchainSupportDetails);
+    destroyer->Add(swapchainInfo.imageViews);
+    destroyer->Add(swapchain);
 }
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
-    //vmaDestroyAllocator(vmaAllocator);
-    //destroyer->DestroyAll();
-    //vkDestroyDevice(device, nullptr);
+    vmaDestroyAllocator(vmaAllocator);
+    destroyer->DestroyAll();
+    vkDestroyDevice(device, nullptr);
+
     vkDestroySurfaceKHR(*instance, surface, nullptr);
-    //if (shouldDestroyDebugUtils) {
-    //    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    //    if (func != nullptr) {
-    //        func(instance, debugMessenger, nullptr);
-    //    }
-    //}
-    //vkDestroyInstance(instance, nullptr);
-}
-
-std::tuple<VkInstance, VkDebugUtilsMessengerEXT, std::vector<const char*>> VulkanContext::CreateInstance(uint32_t requestedExtensionCount, const char** requestedExtensions, bool enableValidationLayers) {
-    /* Potential Configuration Options:
-    - Whole VkApplicationInfo (API version, App Name/Version etc)
-    - Debug
-      - Callback Function
-      - Severity Flags
-      - User Data Pointer
-    - Validation: Enable/Disable Features and Checks
-    - Headless context
-    */
-    Log::Debug("Creating Vulkan Instance...");
-    VkInstance instance;
-
-    VkDebugUtilsMessageSeverityFlagsEXT severity =
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
-        | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-
-    std::vector<const char*> layers;
-    // Check requested layers
-    if (enableValidationLayers) {
-        layers.push_back("VK_LAYER_KHRONOS_validation");
-    }
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-    for (const char* layerName : layers) {
-        bool layerFound = false;
-        for (const auto& layerProperties : availableLayers) {
-            if (strcmp(layerName, layerProperties.layerName) == 0) {
-                layerFound = true;
-                break;
-            }
-        }
-        if (!layerFound) {
-            Log::Critical("Requested Vulkan layer {} not supported or found!", layerName);
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    VkApplicationInfo appInfo{};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.apiVersion = VK_API_VERSION_1_2;
-    // rest is not important
-    appInfo.pApplicationName = "A Vulkan application";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-
-    // initialization of a vector from an array: v(a, a + len)
-    std::vector<const char*> extensions(requestedExtensions, requestedExtensions + requestedExtensionCount);
-    if (enableValidationLayers) {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
-
-    // Debug setup for instance creation/destruction
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
-    // put logic into a function. Needed twice. -> or don't :-)
-    debugCreateInfo = {};
-    debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    // If kept at warning throws harmless warnings such as "loaderAddLayerProperties: C:\VulkanSDK\1.2.189.2\Bin\VkLayer_device_simulation.json 
-    // invalid layer manifest file version 1.2.0.  May cause errors."
-    debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    debugCreateInfo.messageType =
-        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
-        | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
-        | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    debugCreateInfo.pfnUserCallback = DebugCallback;
-
-    VkInstanceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
-    if (enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
-        createInfo.ppEnabledLayerNames = layers.data();
-        // For debug messages related to instance creation
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-    }
-    else {
-        createInfo.enabledLayerCount = 0;
-        createInfo.pNext = nullptr;
-    }
-
-    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-        Log::Critical("failed to create Vulkan instance!");
-        exit(EXIT_FAILURE);
-    }
-
-    VkDebugUtilsMessengerEXT debugMessenger;
-    if (enableValidationLayers) {
-        Log::Debug("Creating Debug Messenger...");
-        // For debug messages not related to instance creation. (reusing previous VkDebugUtilsMessengerCreateInfoEXT)
-        debugCreateInfo.messageSeverity = severity;
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (instance->builder.params.validation) {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(*instance, "vkDestroyDebugUtilsMessengerEXT");
         if (func != nullptr) {
-            func(instance, &debugCreateInfo, nullptr, &debugMessenger);
+            func(*instance, debugMessenger, nullptr);
         }
     }
-    return { instance, debugMessenger, layers };
 }
 
 VkSurfaceKHR VulkanContext::CreateSurface(VulkanWindow& win, VkInstance& instance) {
