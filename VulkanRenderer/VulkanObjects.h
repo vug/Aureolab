@@ -31,6 +31,7 @@ namespace vr {
 		VkInstanceCreateInfo initInfo(const Params& params);
 
 	public:
+		Params params = {};
 		std::vector<const char*> layers;
 		std::vector<const char*> extensions;
 		VkApplicationInfo appInfo = {};

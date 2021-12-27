@@ -4,7 +4,8 @@
 
 namespace vr {
     InstanceBuilder::InstanceBuilder(const Params& params)
-        : layers(initLayers(params)),
+        : params(params),
+        layers(initLayers(params)),
         extensions(initExtensions(params)),
         appInfo(initAppInfo(params)),
         info(initInfo(params)) {}
