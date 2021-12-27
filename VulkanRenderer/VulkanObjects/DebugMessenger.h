@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "VulkanInstance.h"
+#include "Instance.h"
 
 namespace vr {
 	class DebugMessengerBuilder {

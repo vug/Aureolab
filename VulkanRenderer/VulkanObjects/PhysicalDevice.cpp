@@ -33,10 +33,10 @@ namespace vr {
             Log::Debug("\t\tGraphics index: {}", graphicsFamily.value());
 
         if (requestedQueues & VK_QUEUE_TRANSFER_BIT)
-            Log::Debug("\t\Transfer index: {}", transferFamily.value());
+            Log::Debug("\t\tTransfer index: {}", transferFamily.value());
 
         if (requestedQueues & VK_QUEUE_COMPUTE_BIT)
-            Log::Debug("\t\Compute index: {}", computeFamily.value());
+            Log::Debug("\t\tCompute index: {}", computeFamily.value());
 
         Log::Debug("\t\tPresent / Surface index : {}.", presentFamily.value());
     }

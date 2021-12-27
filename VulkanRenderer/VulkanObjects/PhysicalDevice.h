@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VulkanInstance.h"
-#include "VulkanSurface.h"
+#include "Instance.h"
+#include "Surface.h"
 
 #include <vulkan/vulkan.h>
 
