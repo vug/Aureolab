@@ -45,7 +45,7 @@ VulkanWindow::~VulkanWindow() {
     glfwTerminate();
 }
 
-void VulkanWindow::GetFramebufferSize(int* width, int* height) {
+void VulkanWindow::GetFramebufferSize(int* width, int* height) const {
     glfwGetFramebufferSize(window, width, height);
 }
 

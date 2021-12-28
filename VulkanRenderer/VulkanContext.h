@@ -57,15 +57,12 @@ public:
 	// Some returns a tuple of various types, first being the Vulkan Object mentioned in function name the rest are side objects that comes with it.
 	//   Later they might return wrappers with getters. Ex: PDevice->GetQueueIndices(), Device->GetGraphicsQueue() etc
 	
-	// (Used in VulkanContext construction)
-	static std::tuple<VmaAllocator, std::unique_ptr<VulkanDestroyer>> CreateAllocatorAndDestroyer(const VkInstance& instance, const VkPhysicalDevice& physicalDevice, const VkDevice& device);
-	static std::tuple<VkSwapchainKHR, vr::SwapchainInfo> CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, vr::QueueFamilyIndices& queueIndices, vr::SwapChainSupportDetails& swapChainSupportDetails);
-
 	// Can be used by Example apps
 	static VkCommandPool CreateGraphicsCommandPool(const VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 	static FrameSyncCmd CreateFrameSyncCmd(const VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 	static VkCommandBuffer CreateCommandBuffer(const VkDevice& device, const VkCommandPool& cmdPool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	static VkFramebuffer CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent);
+	// TODO: only take RenderPass as input
 	static std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const vr::SwapchainInfo&);
 	static AllocatedBuffer CreateAllocatedBuffer(const VmaAllocator& allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage); 
 	static VkDescriptorPool CreateDescriptorPool(const VkDevice& device, const std::vector<VkDescriptorPoolSize>& sizes);
@@ -74,8 +71,8 @@ public:
 	const VkQueue& GetGraphicsQueue() const { return device->graphicsQueue; }
 	const VkQueue& GetPresentationQueue() const { return device->presentQueue; }
 	const vr::QueueFamilyIndices& GetQueueFamilyIndices() const { return physicalDevice->builder.indices; }
-	const VkSwapchainKHR& GetSwapchain() const { return swapchain; }
-	const vr::SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
+	const VkSwapchainKHR& GetSwapchain() const { return *swapchain; }
+	const vr::SwapchainInfo& GetSwapchainInfo() const { return swapchain->swapchainInfo; }
 	const VmaAllocator& GetAllocator() const { return *allocator; }
 	VulkanDestroyer& GetDestroyer() const { return *destroyer; }
 
@@ -97,9 +94,5 @@ public:
 	std::unique_ptr<vr::Device> device;
 	std::unique_ptr<vr::Allocator> allocator;
 	std::unique_ptr<VulkanDestroyer> destroyer;
-
-private:
-	// Vulkan Objects that needs to be destroyed with VulkanContext
-	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-	vr::SwapchainInfo swapchainInfo;
+	std::unique_ptr<vr::Swapchain> swapchain;
 };

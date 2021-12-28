@@ -6,3 +6,4 @@
 #include "VulkanObjects/PhysicalDevice.h"
 #include "VulkanObjects/Device.h"
 #include "VulkanObjects/Allocator.h"
+#include "VulkanObjects/Swapchain.h"
