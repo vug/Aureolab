@@ -90,15 +90,6 @@ public:
             destroyer.Add(blockySampler);
         }
 
-        renderPass = vr.CreateRenderPass();
-        destroyer.Add(renderPass);
-        AllocatedImage depthImage;
-        VkImageView depthImageView;
-        std::tie(presentFramebuffers, depthImageView, depthImage) = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), vc.GetAllocator(), renderPass, vc.GetSwapchainInfo());
-        destroyer.Add(presentFramebuffers);
-        destroyer.Add(depthImageView);
-        destroyer.Add(depthImage);
-
         // Descriptors
         VkDescriptorPool descriptorPool = vc.CreateDescriptorPool(
             vc.GetDevice(), { 
@@ -113,12 +104,12 @@ public:
         int framesInFlight = 2;
         for (int i = 0; i < framesInFlight; i++) {
             FrameSyncCmd syncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
-            FrameData04 frame{ syncCmd };
+            FrameData05 frame{ syncCmd };
 
             frame.renderView.Init(vc.GetDevice(), vc.GetAllocator(), descriptorPool, vc.GetDestroyer());
             frame.renderView.GetDescriptorSetLayouts();
 
-            frameDatas.push_back(std::make_shared<FrameData04>(frame));
+            frameDatas.push_back(std::make_shared<FrameData05>(frame));
 
             destroyer.Add(syncCmd.commandPool);
             destroyer.Add(syncCmd.renderFence);
@@ -127,7 +118,7 @@ public:
         }
 
         std::vector<VkDescriptorSetLayout> texturedMaterialSetLayouts = {};
-        auto& renderViewSetLayouts = std::static_pointer_cast<FrameData04>(frameDatas[0])->renderView.GetDescriptorSetLayouts();
+        auto& renderViewSetLayouts = std::static_pointer_cast<FrameData05>(frameDatas[0])->renderView.GetDescriptorSetLayouts();
         texturedMaterialSetLayouts.insert(texturedMaterialSetLayouts.end(), renderViewSetLayouts.begin(), renderViewSetLayouts.end());
         texturedMaterialSetLayouts.push_back(singleTextureSetLayout);
         // Material Assets (aka pipelines and pipeline layouts)
@@ -138,7 +129,7 @@ public:
 
             vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-04-desc-set-vert.spv"));
             fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-normal-frag.spv"));
-            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderViewSetLayouts, renderPass);
+            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderViewSetLayouts, vc.swapchainRenderPass);
             vr.materials["vizNormal"] = Material{ pipeline, pipelineLayout };
             destroyer.Add(std::vector{ vertShader, fragShader });
             destroyer.Add(pipelineLayout);
@@ -146,7 +137,7 @@ public:
 
             vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-04-desc-set-vert.spv"));
             fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-uv-frag.spv"));
-            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderViewSetLayouts, renderPass);
+            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), renderViewSetLayouts, vc.swapchainRenderPass);
             vr.materials["vizUV"] = Material{ pipeline, pipelineLayout };
             destroyer.Add(std::vector{ vertShader, fragShader });
             destroyer.Add(pipelineLayout);
@@ -156,7 +147,7 @@ public:
             {
                 vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-vert.spv"));
                 fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-frag.spv"));
-                std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), texturedMaterialSetLayouts, renderPass);
+                std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), texturedMaterialSetLayouts, vc.swapchainRenderPass);
                 vr.materials["textured"] = Material{ pipeline, pipelineLayout };
                 destroyer.Add(std::vector{ vertShader, fragShader });
                 destroyer.Add(pipelineLayout);
@@ -191,7 +182,7 @@ public:
             {
                 vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-vert.spv"));
                 fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-frag.spv"));
-                std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), texturedMaterialSetLayouts, renderPass);
+                std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), texturedMaterialSetLayouts, vc.swapchainRenderPass);
                 vr.materials["textured-lost_empire"] = Material{ pipeline, pipelineLayout };
                 destroyer.Add(std::vector{ vertShader, fragShader });
                 destroyer.Add(pipelineLayout);
@@ -248,8 +239,8 @@ public:
             obj.transform = glm::rotate(obj.transform, delta.count() * w, { 0, 1, 0 });
         }
 
-        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameDatas, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd, uint32_t frameNo) {
-            auto frameData = std::static_pointer_cast<FrameData04>(frameDatas[frameNo]);
+        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), vc.swapchainRenderPass, frameDatas, vc.swapchainFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd, uint32_t frameNo) {
+            auto frameData = std::static_pointer_cast<FrameData05>(frameDatas[frameNo]);
 
             RenderView& renderView = frameData->renderView;
             renderView.camera = {
@@ -279,9 +270,7 @@ public:
         }
     }
 private:
-    VkRenderPass renderPass;
     std::vector<std::shared_ptr<IFrameData>> frameDatas;
-    std::vector<VkFramebuffer> presentFramebuffers;
 
     std::vector<RenderObject> objects;
 };

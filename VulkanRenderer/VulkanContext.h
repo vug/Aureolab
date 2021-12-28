@@ -73,8 +73,6 @@ public:
 	static VkCommandPool CreateGraphicsCommandPool(const VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 	static FrameSyncCmd CreateFrameSyncCmd(const VkDevice& device, uint32_t graphicsQueueFamilyIndex);
 	static VkCommandBuffer CreateCommandBuffer(const VkDevice& device, const VkCommandPool& cmdPool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-	static VkFramebuffer CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent);
-	static std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const vr::SwapchainInfo&);
 	static AllocatedBuffer CreateAllocatedBuffer(const VmaAllocator& allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage); 
 	static VkDescriptorPool CreateDescriptorPool(const VkDevice& device, const std::vector<VkDescriptorPoolSize>& sizes);
 

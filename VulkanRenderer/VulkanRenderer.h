@@ -51,7 +51,6 @@ public:
 	VulkanRenderer(const VulkanContext& context);
 	~VulkanRenderer();
 
-	VkRenderPass CreateRenderPass();
 	std::tuple<VkPipeline, VkPipelineLayout> CreateSinglePassGraphicsPipeline(
 		VkShaderModule& vertShaderModule, VkShaderModule& fragShaderModule,
 		const VertexInputDescription& vertDesc,

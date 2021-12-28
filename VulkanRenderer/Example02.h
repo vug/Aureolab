@@ -21,15 +21,6 @@ public:
         vr.UploadMeshCpuToGpu(monkeyMesh);
         destroyer.Add(monkeyMesh.vertexBuffer);
 
-        renderPass = vr.CreateRenderPass();
-        destroyer.Add(renderPass);
-        AllocatedImage depthImage;
-        VkImageView depthImageView;
-        std::tie(presentFramebuffers, depthImageView, depthImage) = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), vc.GetAllocator(), renderPass, vc.GetSwapchainInfo());
-        destroyer.Add(presentFramebuffers);
-        destroyer.Add(depthImageView);
-        destroyer.Add(depthImage);
-
         for (int i = 0; i < 1; i++) {
             FrameSyncCmd syncCmd = vc.CreateFrameSyncCmd(vc.GetDevice(), vc.GetQueueFamilyIndices().graphicsFamily.value());
             frameSyncCmds.push_back(std::make_shared<IFrameData>(syncCmd));
@@ -42,7 +33,7 @@ public:
         VkShaderModule fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-frag.spv"));
         destroyer.Add(vertShader);
         destroyer.Add(fragShader);
-        std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), {}, renderPass);
+        std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), {}, vc.swapchainRenderPass);
         destroyer.Add(pipelineLayout);
         destroyer.Add(pipeline);
     }
@@ -54,7 +45,7 @@ public:
         std::vector<VkClearValue> clearValues(2);
         clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
         clearValues[1].depthStencil.depth = 1.0f;
-        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameSyncCmds, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd, uint32_t frameNo) {
+        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), vc.swapchainRenderPass, frameSyncCmds, vc.swapchainFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd, uint32_t frameNo) {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
             Mesh mesh = int(time.count() / 2.0f) % 2 == 0 ? monkeyMesh : quadMesh;
@@ -82,11 +73,9 @@ public:
         }
     }
 private:
-    VkRenderPass renderPass;
     std::vector<std::shared_ptr<IFrameData>> frameSyncCmds;
     VkPipeline pipeline;
     VkPipelineLayout pipelineLayout;
-    std::vector<VkFramebuffer> presentFramebuffers;
 
     Mesh triangleMesh, quadMesh, monkeyMesh;
 };

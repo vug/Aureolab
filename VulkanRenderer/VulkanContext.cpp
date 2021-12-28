@@ -237,10 +237,6 @@ std::vector<VkFramebuffer> VulkanContext::initSwapchainFramebuffers() {
 
 
 
-
-
-
-
 VkCommandPool VulkanContext::CreateGraphicsCommandPool(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
     Log::Debug("Creating Command Pool...");
     VkCommandPool commandPool;
@@ -294,76 +290,6 @@ VkCommandBuffer VulkanContext::CreateCommandBuffer(const VkDevice& device, const
     cmdAllocInfo.level = level;
     assert(vkAllocateCommandBuffers(device, &cmdAllocInfo, &cmdBuf) == VK_SUCCESS);
     return cmdBuf;
-}
-
-VkFramebuffer VulkanContext::CreateFramebuffer(const VkDevice& device, const VkRenderPass& renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent) {
-    Log::Debug("Creating Framebuffer...");
-
-    VkFramebufferCreateInfo framebufferInfo{};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    // can only be used with compatible (same number and type of attachments) render passes
-    framebufferInfo.renderPass = renderPass;
-    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    framebufferInfo.pAttachments = attachments.data();
-    framebufferInfo.width = extent.width;
-    framebufferInfo.height = extent.height;
-    framebufferInfo.layers = 1;
-
-    VkFramebuffer framebuffer;
-    assert(vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffer) == VK_SUCCESS);
-    return framebuffer;
-}
-
-std::tuple<std::vector<VkFramebuffer>, VkImageView, AllocatedImage&> VulkanContext::CreateSwapChainFrameBuffers(const VkDevice& device, const VmaAllocator& allocator, const VkRenderPass& renderPass, const vr::SwapchainInfo& swapchainInfo) {
-    Log::Debug("Creating Framebuffers for Swapchain...");
-    // SwapChain creates images for color attachments automatically. 
-    // If we want a depth attachment we need to create it manually.
-    VkImageCreateInfo depthImageInfo = {};
-    depthImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    depthImageInfo.pNext = nullptr;
-    depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
-    depthImageInfo.format = swapchainInfo.depthFormat;
-    depthImageInfo.extent = { swapchainInfo.extent.width, swapchainInfo.extent.height, 1u }; // Depth extent is 3D
-    depthImageInfo.mipLevels = 1;
-    depthImageInfo.arrayLayers = 1;
-    depthImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    depthImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    depthImageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-
-    VmaAllocationCreateInfo depthImageAllocationInfo = {};
-    depthImageAllocationInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-    depthImageAllocationInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    AllocatedImage depthImage = {};
-    if (vmaCreateImage(allocator, &depthImageInfo, &depthImageAllocationInfo, &depthImage.image, &depthImage.allocation, nullptr) != VK_SUCCESS) {
-        Log::Error("Cannot create/allocate depth image!");
-        exit(EXIT_FAILURE);
-    }
-
-    VkImageView depthImageView;
-    VkImageViewCreateInfo depthImageViewInfo = {};
-    depthImageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    depthImageViewInfo.pNext = nullptr;
-    depthImageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    depthImageViewInfo.image = depthImage.image;
-    depthImageViewInfo.format = swapchainInfo.depthFormat;
-    depthImageViewInfo.subresourceRange.baseMipLevel = 0;
-    depthImageViewInfo.subresourceRange.levelCount = 1;
-    depthImageViewInfo.subresourceRange.baseArrayLayer = 0;
-    depthImageViewInfo.subresourceRange.layerCount = 1;
-    depthImageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    if (vkCreateImageView(device, &depthImageViewInfo, nullptr, &depthImageView) != VK_SUCCESS) {
-        Log::Error("Cannot create depth image view!");
-        exit(EXIT_FAILURE);
-    }
-
-    const auto& presentImageViews = swapchainInfo.imageViews;
-    std::vector<VkFramebuffer> presentFramebuffers(presentImageViews.size());
-    for (size_t i = 0; i < presentImageViews.size(); i++) {
-        // The swapchain framebuffers will share the same depth image
-        std::vector<VkImageView> attachments = { presentImageViews[i], depthImageView };
-        presentFramebuffers[i] = CreateFramebuffer(device, renderPass, attachments, swapchainInfo.extent);
-    }
-    return { presentFramebuffers, depthImageView, depthImage };
 }
 
 AllocatedBuffer VulkanContext::CreateAllocatedBuffer(const VmaAllocator& allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage) {
