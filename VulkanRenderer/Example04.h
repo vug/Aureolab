@@ -34,15 +34,6 @@ public:
             destroyer.Add(std::vector{ vr.meshes["triangle"].vertexBuffer, vr.meshes["quad"].vertexBuffer, vr.meshes["monkey_flat"].vertexBuffer });
         }
 
-        renderPass = vr.CreateRenderPass();
-        destroyer.Add(renderPass);
-        AllocatedImage depthImage;
-        VkImageView depthImageView;
-        std::tie(presentFramebuffers, depthImageView, depthImage) = vc.CreateSwapChainFrameBuffers(vc.GetDevice(), vc.GetAllocator(), renderPass, vc.GetSwapchainInfo());
-        destroyer.Add(presentFramebuffers);
-        destroyer.Add(depthImageView);
-        destroyer.Add(depthImage);
-
         // Descriptors
         VkDescriptorPool descriptorPool = vc.CreateDescriptorPool(
             vc.GetDevice(), { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 } }
@@ -74,7 +65,7 @@ public:
 
             vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-04-desc-set-vert.spv"));
             fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-normal-frag.spv"));
-            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), descriptorSetLayouts, renderPass);
+            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), descriptorSetLayouts, vc.swapchainRenderPass);
             vr.materials["vizNormal"] = Material{ pipeline, pipelineLayout };
             destroyer.Add(std::vector{ vertShader, fragShader });
             destroyer.Add(pipelineLayout);
@@ -82,7 +73,7 @@ public:
 
             vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-04-desc-set-vert.spv"));
             fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-uv-frag.spv"));
-            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), descriptorSetLayouts, renderPass);
+            std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), descriptorSetLayouts, vc.swapchainRenderPass);
             vr.materials["vizUV"] = Material{ pipeline, pipelineLayout };
             destroyer.Add(std::vector{ vertShader, fragShader });
             destroyer.Add(pipelineLayout);
@@ -112,7 +103,7 @@ public:
             obj.transform = glm::rotate(obj.transform, delta.count(), { 0, 1, 0 });
         }
 
-        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), renderPass, frameDatas, presentFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd, uint32_t frameNo) {
+        vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), vc.swapchainRenderPass, frameDatas, vc.swapchainFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd, uint32_t frameNo) {
             auto frameData = std::static_pointer_cast<FrameData04>(frameDatas[frameNo]);
 
             RenderView& renderView = frameData->renderView;
@@ -143,9 +134,7 @@ public:
         }
     }
 private:
-    VkRenderPass renderPass;
     std::vector<std::shared_ptr<IFrameData>> frameDatas;
-    std::vector<VkFramebuffer> presentFramebuffers;
 
     std::vector<RenderObject> objects;
 };

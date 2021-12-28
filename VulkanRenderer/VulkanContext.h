@@ -60,6 +60,8 @@ public:
 	vr::Allocator allocator;
 	std::unique_ptr<VulkanDestroyer> destroyer;
 	vr::Swapchain swapchain;
+	VkRenderPass swapchainRenderPass;
+	std::vector<VkFramebuffer> swapchainFramebuffers;
 
 	// These functions return individual Vulkan objects for the initialization part that'll be the same for all Vulkan Apps
 	// They are all static to make the creation dependencies explicit, i.e. cannot access internal state hence inputs and outputs have to be declarated
@@ -93,4 +95,9 @@ public:
 	static void drawFrame(const VkDevice& device, const VkSwapchainKHR& swapchain, const VkQueue& graphicsQueue, const VkRenderPass& renderPass, const std::vector<std::shared_ptr<IFrameData>>& frames, const std::vector<VkFramebuffer>& swapchainFramebuffers, const vr::SwapchainInfo& swapchainInfo, const std::vector<VkClearValue>& clearValues, std::function<void(const VkCommandBuffer&, uint32_t frameNo)> cmdFunc);
 
 	virtual void OnResize(int width, int height) override;
+
+private:
+	// TODO: Implement and use RenderPassBuilder and FramebufferBuilder abstractions
+	VkRenderPass initSwapchainRenderPass();
+	std::vector<VkFramebuffer> initSwapchainFramebuffers();
 };

@@ -52,7 +52,9 @@ VulkanContext::VulkanContext(VulkanWindow& win)
     device(vr::DeviceBuilder(physicalDevice)),
     allocator(vr::AllocatorBuilder(device)),
     destroyer(std::make_unique<VulkanDestroyer>(device, allocator)),
-    swapchain(vr::SwapchainBuilder(device)) {
+    swapchain(vr::SwapchainBuilder(device)),
+    swapchainRenderPass(initSwapchainRenderPass()),
+    swapchainFramebuffers(initSwapchainFramebuffers()) {
     /* Potential configuration options:
     - Device features such as samplerAnisotropy
     - Number of images in SwapChain
@@ -70,7 +72,173 @@ VulkanContext::VulkanContext(VulkanWindow& win)
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
     destroyer->DestroyAll();
+    vkDestroyRenderPass(device, swapchainRenderPass, nullptr);
 }
+
+VkRenderPass VulkanContext::initSwapchainRenderPass() {
+    /*
+     A Renderpass is a collection of N attachments, M subpassesand their L dependencies.
+     Describes how attachments are used over the course of subpasses.
+     Each subpass can use N_m <= N subset of attachments as their input, color, depth, resolve etc. attachment
+     Dependencies are memory-deps between src and dst subpasses. Self-dependencies are possible.
+
+     Later, Graphics Pipelines and Framebuffers will be created with this Render pass, which ensures compatibility.
+    */
+    Log::Debug("Creating Render Pass for Swapchain...");
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = swapchain.swapchainInfo.surfaceFormat.format;
+    // should this be the same as pipeline rasterizationSamples?
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    // at the beginning of subpass clear when loaded: _LOAD would preserved what was previously there. Other: _DONT_CARE
+    // for depth/stencil attachment only apply to depth
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    // store it at the end of subpass: or _DONT_CARE
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    // ignored when dealing with a color attachment, used by depth/stencil attachments
+    // currently, not using stencil buffer
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    // Layout at the beginning of render pass. Don't care about the layout before rendering. Will overwrite anyway.
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    // Layout to automatically transition to after render pass finishes
+    // Since this is a single render-pass sub-pass example, this attachment will be displayed after drawn
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // Only one sub-pass at the moment
+    VkAttachmentReference colorAttachmentRef{};
+    // index in parent Renderpass' VkAttachmentDescription* pAttachments
+    colorAttachmentRef.attachment = 0;
+    // Vulkan will transition the attachment into this layout when subpass will start
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentDescription depthAttachment = {};
+    depthAttachment.flags = 0;
+    depthAttachment.format = swapchain.swapchainInfo.depthFormat;
+    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference depthAttachmentRef = {};
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    // Need at least one sub-pass
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; // not _COMPUTE
+    subpass.colorAttachmentCount = 1;
+    // index in this "array" is directly referenced in fragment shader, say `layout(location = 0) out vec4 outColor`
+    subpass.pColorAttachments = &colorAttachmentRef;
+    // Life of an image: UNDEFINED -> RenderPass Begins -> Subpass 0 begins (Transition to Attachment Optimal) -> Subpass 0 renders -> Subpass 0 ends -> Renderpass Ends (Transitions to Present Source)
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+    // specify memory and execution dependencies between subpasses
+    // We want our only single subpass to happen after swap chain image is acquired
+    // Option 1: set waitStages for the imageAvailableSemaphore to VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT <- render pass does not start until image is available
+    // Option 2: (this one) make the render pass wait for the VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT stage
+    //VkSubpassDependency dependency{};
+    //dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // special value reference: "subpass before renderpass"
+    //dependency.dstSubpass = 0; // first and only subpass
+    //dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //dependency.srcAccessMask = 0;
+    //dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    // Renderpass is created by providing attachments, subpasses that use them, and the dependency relationship between subpasses
+    std::vector<VkAttachmentDescription> attachments = { colorAttachment, depthAttachment };
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    renderPassInfo.pAttachments = attachments.data();
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    //renderPassInfo.dependencyCount = 1;
+    //renderPassInfo.pDependencies = &dependency;
+
+    VkRenderPass renderPass;
+    VkResult result = vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass);
+    if (result != VK_SUCCESS) {
+        Log::Debug("Failed to create RenderPass for Swapchain!");
+        exit(EXIT_FAILURE);
+    }
+    return renderPass;
+}
+
+std::vector<VkFramebuffer> VulkanContext::initSwapchainFramebuffers() {
+    Log::Debug("Creating Framebuffers for Swapchain...");
+    // SwapChain creates images for color attachments automatically. 
+    // If we want a depth attachment we need to create it manually.
+    auto& swapchainInfo = swapchain.swapchainInfo;
+    VkImageCreateInfo depthImageInfo = {};
+    depthImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    depthImageInfo.pNext = nullptr;
+    depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
+    depthImageInfo.format = swapchainInfo.depthFormat;
+    depthImageInfo.extent = { swapchainInfo.extent.width, swapchainInfo.extent.height, 1u }; // Depth extent is 3D
+    depthImageInfo.mipLevels = 1;
+    depthImageInfo.arrayLayers = 1;
+    depthImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    depthImageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    VmaAllocationCreateInfo depthImageAllocationInfo = {};
+    depthImageAllocationInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    depthImageAllocationInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    AllocatedImage depthImage = {};
+    if (vmaCreateImage(allocator, &depthImageInfo, &depthImageAllocationInfo, &depthImage.image, &depthImage.allocation, nullptr) != VK_SUCCESS) {
+        Log::Error("Cannot create/allocate depth image!");
+        exit(EXIT_FAILURE);
+    }
+
+    VkImageView depthImageView;
+    VkImageViewCreateInfo depthImageViewInfo = {};
+    depthImageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    depthImageViewInfo.pNext = nullptr;
+    depthImageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    depthImageViewInfo.image = depthImage.image;
+    depthImageViewInfo.format = swapchainInfo.depthFormat;
+    depthImageViewInfo.subresourceRange.baseMipLevel = 0;
+    depthImageViewInfo.subresourceRange.levelCount = 1;
+    depthImageViewInfo.subresourceRange.baseArrayLayer = 0;
+    depthImageViewInfo.subresourceRange.layerCount = 1;
+    depthImageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    if (vkCreateImageView(device, &depthImageViewInfo, nullptr, &depthImageView) != VK_SUCCESS) {
+        Log::Error("Cannot create depth image view!");
+        exit(EXIT_FAILURE);
+    }
+
+    const auto& presentImageViews = swapchainInfo.imageViews;
+    std::vector<VkFramebuffer> presentFramebuffers(presentImageViews.size());
+    for (size_t i = 0; i < presentImageViews.size(); i++) {
+        // The swapchain framebuffers will share the same depth image
+        std::vector<VkImageView> attachments = { presentImageViews[i], depthImageView };
+        Log::Debug("Creating Swapchain Framebuffer [{}]...", i);
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        // can only be used with compatible (same number and type of attachments) render passes
+        framebufferInfo.renderPass = swapchainRenderPass;
+        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        framebufferInfo.pAttachments = attachments.data();
+        framebufferInfo.width = swapchainInfo.extent.width;
+        framebufferInfo.height = swapchainInfo.extent.height;
+        framebufferInfo.layers = 1;
+
+        assert(vkCreateFramebuffer(device, &framebufferInfo, nullptr, &presentFramebuffers[i]) == VK_SUCCESS);
+    }
+    // TODO: Destroy these in Framebuffer abstraction destructor
+    destroyer->Add(presentFramebuffers);
+    destroyer->Add(depthImageView);
+    destroyer->Add(depthImage);
+    return presentFramebuffers;
+}
+
+
+
+
+
 
 
 VkCommandPool VulkanContext::CreateGraphicsCommandPool(const VkDevice& device, uint32_t graphicsQueueFamilyIndex) {
