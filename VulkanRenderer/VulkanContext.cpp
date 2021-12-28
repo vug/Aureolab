@@ -54,31 +54,23 @@ VulkanContext::VulkanContext(VulkanWindow& win) {
     // Window binding. Will make the window to call OnResize when Window's framebuffer resized.
     win.SetUserPointer(this);
 
-    vr::InstanceBuilder instanceBuilder;
-    instance = std::make_unique<vr::Instance>(instanceBuilder);
+    instance = std::make_unique<vr::Instance>(vr::InstanceBuilder());
 
-    vr::DebugMessengerBuilder debugMessengerBuilder(*instance);
-    if (instance->builder.params.validation) {
-        debugMessenger = std::make_unique<vr::DebugMessenger>(debugMessengerBuilder);
-    }
+    if (instance->builder.params.validation)
+        debugMessenger = std::make_unique<vr::DebugMessenger>(vr::DebugMessengerBuilder(*instance));
 
     // TODO: should depend on instance->builder.params.headless
-    vr::SurfaceBuilder surfaceBuilder(*instance, win);
-    surface = std::make_unique<vr::Surface>(surfaceBuilder);
+    surface = std::make_unique<vr::Surface>(vr::SurfaceBuilder(*instance, win));
 
-    vr::PhysicalDeviceBuilder physicalDeviceBuilder(*instance, *surface);
-    physicalDevice = std::make_unique<vr::PhysicalDevice>(physicalDeviceBuilder);
+    physicalDevice = std::make_unique<vr::PhysicalDevice>(vr::PhysicalDeviceBuilder(*instance, *surface));
 
-    vr::DeviceBuilder deviceBuilder(*physicalDevice);
-    device = std::make_unique<vr::Device>(deviceBuilder);
+    device = std::make_unique<vr::Device>(vr::DeviceBuilder(*physicalDevice));
 
-    vr::AllocatorBuilder allocatorBuilder(*device);
-    allocator = std::make_unique<vr::Allocator>(allocatorBuilder);
+    allocator = std::make_unique<vr::Allocator>(vr::AllocatorBuilder(*device));
 
     destroyer = std::make_unique<VulkanDestroyer>(*device, *allocator);
 
-    vr::SwapchainBuilder swapchainBuilder(*device);
-    swapchain = std::make_unique<vr::Swapchain>(swapchainBuilder);
+    swapchain = std::make_unique<vr::Swapchain>(vr::SwapchainBuilder(*device));
 }
 
 VulkanContext::~VulkanContext() {

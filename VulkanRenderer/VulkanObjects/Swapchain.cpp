@@ -133,14 +133,14 @@ namespace vr {
         Log::Debug("Acquiring Swapchain Images...");
         uint32_t imCnt;
         vkGetSwapchainImagesKHR(device, handle, &imCnt, nullptr);
-        swapchainImages.resize(imCnt);
-        vkGetSwapchainImagesKHR(device, handle, &imCnt, swapchainImages.data());
+        imageHandles.resize(imCnt);
+        vkGetSwapchainImagesKHR(device, handle, &imCnt, imageHandles.data());
 
         Log::Debug("Creating Swapchain ImageViews...");
-        swapchainInfo.imageViews.resize(swapchainImages.size());
-        for (uint32_t i = 0; i < swapchainImages.size(); i++) {
+        swapchainInfo.imageViews.resize(imageHandles.size());
+        for (uint32_t i = 0; i < imageHandles.size(); i++) {
             VkImageViewCreateInfo viewInfo = builder.imageViewInfo;
-            viewInfo.image = swapchainImages[i];
+            viewInfo.image = imageHandles[i];
 
             VkResult result = vkCreateImageView(device, &viewInfo, nullptr, &swapchainInfo.imageViews[i]);
             if (result != VK_SUCCESS) {

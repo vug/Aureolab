@@ -26,9 +26,7 @@ namespace vr {
 		SwapchainBuilder builder;
 
 		SwapchainInfo swapchainInfo = {};
-		VkPresentModeKHR presentMode;
-
-		std::vector<VkImage> swapchainImages;
+		std::vector<VkImage> imageHandles;
 
 		VkSwapchainKHR handle = VK_NULL_HANDLE;
 		operator VkSwapchainKHR () const { return handle; }
