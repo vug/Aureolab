@@ -11,7 +11,7 @@
 
 class FrameData05 : public IFrameData {
 public:
-    //FrameData04(const FrameSyncCmd& syncCmd1) : IFrameData(syncCmd1) {} // implied default constructor
+    //FrameData05(const FrameSyncCmd& syncCmd1) : IFrameData(syncCmd1) {} // implied default constructor
     RenderView renderView;
 };
 
@@ -36,10 +36,10 @@ public:
             vr.meshes["monkey_flat"] = mesh;
             destroyer.Add(vr.meshes["monkey_flat"].vertexBuffer);
 
-            mesh.LoadFromOBJ("assets/models/lost_empire.obj");
-            vr.UploadMesh(mesh);
-            vr.meshes["lost_empire"] = mesh;
-            destroyer.Add(vr.meshes["lost_empire"].vertexBuffer);
+            //mesh.LoadFromOBJ("assets/models/lost_empire.obj");
+            //vr.UploadMesh(mesh);
+            //vr.meshes["lost_empire"] = mesh;
+            //destroyer.Add(vr.meshes["lost_empire"].vertexBuffer);
         }
 
         VkDescriptorSetLayout singleTextureSetLayout;
@@ -69,11 +69,11 @@ public:
             // TODO figure out how to add image to deletion queue from UploadTexture. Observe how texture's and newImage's addresses change etc.
             destroyer.Add(vr.textures["sculpture"].newImage);
 
-            texture.LoadImageFromFile("assets/textures/lost_empire-RGBA.png");
-            vr.UploadTexture(texture);
-            vr.textures["lost_empire"] = texture;
-            destroyer.Add(vr.textures["lost_empire"].imageView);
-            destroyer.Add(vr.textures["lost_empire"].newImage);
+            //texture.LoadImageFromFile("assets/textures/lost_empire-RGBA.png");
+            //vr.UploadTexture(texture);
+            //vr.textures["lost_empire"] = texture;
+            //destroyer.Add(vr.textures["lost_empire"].imageView);
+            //destroyer.Add(vr.textures["lost_empire"].newImage);
         }
 
         // Samplers
@@ -179,43 +179,43 @@ public:
             }
 
             // Textured Material 2
-            {
-                vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-vert.spv"));
-                fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-frag.spv"));
-                std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), texturedMaterialSetLayouts, vc.swapchainRenderPass);
-                vr.materials["textured-lost_empire"] = Material{ pipeline, pipelineLayout };
-                destroyer.Add(std::vector{ vertShader, fragShader });
-                destroyer.Add(pipelineLayout);
-                destroyer.Add(pipeline);
+            //{
+            //    vertShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-vert.spv"));
+            //    fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-frag.spv"));
+            //    std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), texturedMaterialSetLayouts, vc.swapchainRenderPass);
+            //    vr.materials["textured-lost_empire"] = Material{ pipeline, pipelineLayout };
+            //    destroyer.Add(std::vector{ vertShader, fragShader });
+            //    destroyer.Add(pipelineLayout);
+            //    destroyer.Add(pipeline);
 
-                VkDescriptorSetAllocateInfo allocInfo = {};
-                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = descriptorPool;
-                allocInfo.descriptorSetCount = 1;
-                allocInfo.pSetLayouts = &singleTextureSetLayout;
-                vkAllocateDescriptorSets(vc.GetDevice(), &allocInfo, &vr.materials["textured-lost_empire"].textureSet);
+            //    VkDescriptorSetAllocateInfo allocInfo = {};
+            //    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            //    allocInfo.descriptorPool = descriptorPool;
+            //    allocInfo.descriptorSetCount = 1;
+            //    allocInfo.pSetLayouts = &singleTextureSetLayout;
+            //    vkAllocateDescriptorSets(vc.GetDevice(), &allocInfo, &vr.materials["textured-lost_empire"].textureSet);
 
-                // Write to the descriptor set so that it points to given texture
-                VkDescriptorImageInfo imageBufferInfo;
-                imageBufferInfo.sampler = blockySampler;
-                imageBufferInfo.imageView = vr.textures["lost_empire"].imageView;
-                imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            //    // Write to the descriptor set so that it points to given texture
+            //    VkDescriptorImageInfo imageBufferInfo;
+            //    imageBufferInfo.sampler = blockySampler;
+            //    imageBufferInfo.imageView = vr.textures["lost_empire"].imageView;
+            //    imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-                VkWriteDescriptorSet writeSetTexture = {};
-                writeSetTexture.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                writeSetTexture.dstBinding = 0;
-                writeSetTexture.dstSet = vr.materials["textured-lost_empire"].textureSet;
-                writeSetTexture.descriptorCount = 1;
-                writeSetTexture.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                writeSetTexture.pImageInfo = &imageBufferInfo;
-                vkUpdateDescriptorSets(vc.GetDevice(), 1, &writeSetTexture, 0, nullptr);
-            }
+            //    VkWriteDescriptorSet writeSetTexture = {};
+            //    writeSetTexture.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            //    writeSetTexture.dstBinding = 0;
+            //    writeSetTexture.dstSet = vr.materials["textured-lost_empire"].textureSet;
+            //    writeSetTexture.descriptorCount = 1;
+            //    writeSetTexture.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            //    writeSetTexture.pImageInfo = &imageBufferInfo;
+            //    vkUpdateDescriptorSets(vc.GetDevice(), 1, &writeSetTexture, 0, nullptr);
+            //}
         }
 
         objects = {
             { &vr.meshes["monkey_flat"], &vr.materials["vizNormal"], glm::translate(glm::scale(glm::mat4(1.0f), {0.5, 0.5, 0.5}), { -1.0f, 0.0, 0.0 }) },
             { &vr.meshes["quad"], &vr.materials["textured"], glm::translate(glm::mat4(1.0f), { 1.0f, 0.0, 0.0 }) },
-            { &vr.meshes["lost_empire"], &vr.materials["textured-lost_empire"], glm::translate(glm::mat4(1.0f), { 0.0f, -20.0, 0.0 }) },
+            //{ &vr.meshes["lost_empire"], &vr.materials["textured-lost_empire"], glm::translate(glm::mat4(1.0f), { 0.0f, -20.0, 0.0 }) },
         };
     }
 

@@ -10,13 +10,14 @@ add_executable(VulkanRenderer
  "VulkanObjects/PhysicalDevice.h" "VulkanObjects/PhysicalDevice.cpp"
  "VulkanObjects/Device.h" "VulkanObjects/Device.cpp"
  "VulkanObjects/Allocator.h" "VulkanObjects/Allocator.cpp"
+ "VulkanObjects/Swapchain.h" "VulkanObjects/Swapchain.cpp"
  "VulkanContext.h" "VulkanContext.cpp" 
  "VulkanDestroyer.h" 
  "Mesh.h" "Mesh.cpp"
+ "Texture.h" "Texture.cpp"
  "Types.h" 
- "Example.h" 
- "Example01.h" "Example02.h" "Example03.h" "Example04.h" "Example05.h"
- "Texture.h" "Texture.cpp" "VulkanObjects/Swapchain.h" "VulkanObjects/Swapchain.cpp")
+ "Examples/Example.h" 
+ "Examples/Example01.h" "Examples/Example02.h" "Examples/Example03.h" "Examples/Example04.h" "Examples/Example05.h")
 
 target_link_libraries(
 	VulkanRenderer PRIVATE 

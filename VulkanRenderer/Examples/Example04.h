@@ -46,7 +46,6 @@ public:
             FrameData04 frame{ syncCmd };
 
             frame.renderView.Init(vc.GetDevice(), vc.GetAllocator(), descriptorPool, vc.GetDestroyer());
-            frame.renderView.GetDescriptorSetLayouts();
 
             frameDatas.push_back(std::make_shared<FrameData04>(frame));
 
