@@ -23,5 +23,6 @@ namespace vr {
 		operator VmaAllocator () const { return handle; }
 		operator VmaAllocator* () { return &handle; }
 		operator VmaAllocator& () { return handle; }
+		operator const VmaAllocator& () const { return handle; }
 	};
 }

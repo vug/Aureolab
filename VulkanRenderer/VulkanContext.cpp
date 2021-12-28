@@ -44,7 +44,15 @@ void ImmediateCommandSubmitter::Submit(std::function<void(VkCommandBuffer cmd)>&
     vkResetCommandPool(device, cmdPool, 0);
 }
 
-VulkanContext::VulkanContext(VulkanWindow& win) {
+VulkanContext::VulkanContext(VulkanWindow& win)
+    : instance(vr::InstanceBuilder()),
+    // TODO: should depend on instance->builder.params.headless
+    surface(vr::SurfaceBuilder(instance, win)),
+    physicalDevice(vr::PhysicalDeviceBuilder(instance, surface)),
+    device(vr::DeviceBuilder(physicalDevice)),
+    allocator(vr::AllocatorBuilder(device)),
+    destroyer(std::make_unique<VulkanDestroyer>(device, allocator)),
+    swapchain(vr::SwapchainBuilder(device)) {
     /* Potential configuration options:
     - Device features such as samplerAnisotropy
     - Number of images in SwapChain
@@ -54,23 +62,9 @@ VulkanContext::VulkanContext(VulkanWindow& win) {
     // Window binding. Will make the window to call OnResize when Window's framebuffer resized.
     win.SetUserPointer(this);
 
-    instance = std::make_unique<vr::Instance>(vr::InstanceBuilder());
-
-    if (instance->builder.params.validation)
-        debugMessenger = std::make_unique<vr::DebugMessenger>(vr::DebugMessengerBuilder(*instance));
-
-    // TODO: should depend on instance->builder.params.headless
-    surface = std::make_unique<vr::Surface>(vr::SurfaceBuilder(*instance, win));
-
-    physicalDevice = std::make_unique<vr::PhysicalDevice>(vr::PhysicalDeviceBuilder(*instance, *surface));
-
-    device = std::make_unique<vr::Device>(vr::DeviceBuilder(*physicalDevice));
-
-    allocator = std::make_unique<vr::Allocator>(vr::AllocatorBuilder(*device));
-
-    destroyer = std::make_unique<VulkanDestroyer>(*device, *allocator);
-
-    swapchain = std::make_unique<vr::Swapchain>(vr::SwapchainBuilder(*device));
+    // TODO: better to use std::optional and an initDebugMessenger private method for initialization
+    if (instance.builder.params.validation)
+        debugMessenger = std::make_unique<vr::DebugMessenger>(vr::DebugMessengerBuilder(instance));
 }
 
 VulkanContext::~VulkanContext() {

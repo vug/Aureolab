@@ -24,8 +24,7 @@ namespace vr {
 		VkQueue graphicsQueue = VK_NULL_HANDLE;
 		VkQueue presentQueue = VK_NULL_HANDLE;
 
-		operator VkDevice () const { return handle; }
-		operator VkDevice* () { return &handle; }
 		operator VkDevice& () { return handle; }
+		operator const VkDevice& () const { return handle; }
 	};
 }

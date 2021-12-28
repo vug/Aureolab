@@ -29,8 +29,7 @@ namespace vr {
 		std::vector<VkImage> imageHandles;
 
 		VkSwapchainKHR handle = VK_NULL_HANDLE;
-		operator VkSwapchainKHR () const { return handle; }
-		operator VkSwapchainKHR* () { return &handle; }
 		operator VkSwapchainKHR& () { return handle; }
+		operator const VkSwapchainKHR& () const { return handle; }
 	};
 }
