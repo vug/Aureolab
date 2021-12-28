@@ -69,6 +69,9 @@ namespace vr {
 		PhysicalDeviceBuilder builder;
 		VkPhysicalDevice handle = VK_NULL_HANDLE;
 
+		const Instance& instance;
+		const Surface& surface;
+
 		operator VkPhysicalDevice () const { return handle; }
 		operator VkPhysicalDevice* () { return &handle; }
 		operator VkPhysicalDevice& () { return handle; }

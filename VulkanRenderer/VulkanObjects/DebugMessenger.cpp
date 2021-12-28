@@ -79,13 +79,13 @@ namespace vr {
     // --------------------------
 
     DebugMessenger::DebugMessenger(const DebugMessengerBuilder& builder)
-        : builder(builder) {
+        : builder(builder), instance(builder.instance) {
         Log::Debug("Creating Debug Messenger...");
-        builder.vkCreateDebugUtilsMessengerEXT(builder.instance, &builder.debugCreateInfo, nullptr, &handle);
+        builder.vkCreateDebugUtilsMessengerEXT(instance, &builder.debugCreateInfo, nullptr, &handle);
     }
 
     DebugMessenger::~DebugMessenger() {
         Log::Debug("Destroying Debug Messenger...");
-        builder.vkDestroyDebugUtilsMessengerEXT(builder.instance, handle, nullptr);
+        builder.vkDestroyDebugUtilsMessengerEXT(instance, handle, nullptr);
     }
 }

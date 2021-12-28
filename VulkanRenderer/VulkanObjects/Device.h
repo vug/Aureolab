@@ -19,6 +19,8 @@ namespace vr {
 		DeviceBuilder builder;
 		VkDevice handle = VK_NULL_HANDLE;
 
+		const PhysicalDevice& physicalDevice;
+
 		VkQueue graphicsQueue = VK_NULL_HANDLE;
 		VkQueue presentQueue = VK_NULL_HANDLE;
 

@@ -6,7 +6,6 @@
 #include "Types.h"
 
 #include <vulkan/vulkan.h>
-#include <vk_mem_alloc.h>
 
 #include <functional> // reference_wrapper
 #include <optional>
@@ -74,10 +73,10 @@ public:
 	const VkDevice& GetDevice() const { return device->handle; }
 	const VkQueue& GetGraphicsQueue() const { return device->graphicsQueue; }
 	const VkQueue& GetPresentationQueue() const { return device->presentQueue; }
-	const vr::QueueFamilyIndices& GetQueueFamilyIndices() const { return device->builder.physicalDevice.builder.indices; }
+	const vr::QueueFamilyIndices& GetQueueFamilyIndices() const { return physicalDevice->builder.indices; }
 	const VkSwapchainKHR& GetSwapchain() const { return swapchain; }
 	const vr::SwapchainInfo& GetSwapchainInfo() const { return swapchainInfo; }
-	const VmaAllocator& GetAllocator() const { return vmaAllocator; }
+	const VmaAllocator& GetAllocator() const { return *allocator; }
 	VulkanDestroyer& GetDestroyer() const { return *destroyer; }
 
 	// 1) acquire (next available) image from swap chain
@@ -96,14 +95,11 @@ public:
 	std::unique_ptr<vr::Surface> surface;
 	std::unique_ptr<vr::PhysicalDevice> physicalDevice;
 	std::unique_ptr<vr::Device> device;
+	std::unique_ptr<vr::Allocator> allocator;
+	std::unique_ptr<VulkanDestroyer> destroyer;
 
 private:
 	// Vulkan Objects that needs to be destroyed with VulkanContext
 	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-	
-	//
-	VmaAllocator vmaAllocator; //vma lib allocator
-	std::unique_ptr<VulkanDestroyer> destroyer;
-
 	vr::SwapchainInfo swapchainInfo;
 };

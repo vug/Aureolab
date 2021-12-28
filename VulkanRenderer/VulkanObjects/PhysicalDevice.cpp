@@ -181,7 +181,7 @@ namespace vr {
 	// ---------------------
 
 	PhysicalDevice::PhysicalDevice(const PhysicalDeviceBuilder& builder)
-		: builder(builder) {
+		: builder(builder), instance(builder.instance), surface(builder.surface) {
         const size_t ix = 0;
         Log::Debug("Selecting the first suitable PhysicalDevice '{}'", builder.physicalDeviceProperties[ix].deviceName);
         handle = builder.physicalDevices[ix];

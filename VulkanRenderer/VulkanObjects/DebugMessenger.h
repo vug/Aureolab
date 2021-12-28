@@ -27,5 +27,7 @@ namespace vr {
 		~DebugMessenger();
 		DebugMessengerBuilder builder;
 		VkDebugUtilsMessengerEXT handle = VK_NULL_HANDLE;
+
+		const Instance& instance;
 	};
 }

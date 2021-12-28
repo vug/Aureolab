@@ -21,6 +21,9 @@ namespace vr {
 		SurfaceBuilder builder;
 		VkSurfaceKHR handle = VK_NULL_HANDLE;
 
+		const Instance& instance;
+		const VulkanWindow& win;
+
 		operator VkSurfaceKHR () const { return handle; }
 		operator VkSurfaceKHR* () { return &handle; }
 		operator VkSurfaceKHR& () { return handle; }

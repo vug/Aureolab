@@ -2,9 +2,6 @@
 
 #include "Core/Log.h"
 
-#define VMA_IMPLEMENTATION
-#include "vk_mem_alloc.h"
-
 #include <array>
 #include <cassert>
 #include <functional>
@@ -76,7 +73,11 @@ VulkanContext::VulkanContext(VulkanWindow& win) {
     vr::DeviceBuilder deviceBuilder(*physicalDevice);
     device = std::make_unique<vr::Device>(deviceBuilder);
 
-    std::tie(vmaAllocator, destroyer) = CreateAllocatorAndDestroyer(*instance, *physicalDevice, *device);
+    vr::AllocatorBuilder allocatorBuilder(*device);
+    allocator = std::make_unique<vr::Allocator>(allocatorBuilder);
+
+    destroyer = std::make_unique<VulkanDestroyer>(*device, *allocator);
+
     std::tie(swapchain, swapchainInfo) = CreateSwapChain(*device, *surface, physicalDevice->builder.indices, physicalDevice->builder.swapchainSupportDetails);
     destroyer->Add(swapchainInfo.imageViews);
     destroyer->Add(swapchain);
@@ -84,21 +85,7 @@ VulkanContext::VulkanContext(VulkanWindow& win) {
 
 VulkanContext::~VulkanContext() {
     Log::Debug("Destructing Vulkan Context...");
-    vmaDestroyAllocator(vmaAllocator);
     destroyer->DestroyAll();
-}
-
-std::tuple<VmaAllocator, std::unique_ptr<VulkanDestroyer>> VulkanContext::CreateAllocatorAndDestroyer(const VkInstance& instance, const VkPhysicalDevice& physicalDevice, const VkDevice& device) {
-    VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.physicalDevice = physicalDevice;
-    allocatorInfo.device = device;
-    allocatorInfo.instance = instance;
-
-    VmaAllocator allocator;
-    vmaCreateAllocator(&allocatorInfo, &allocator);
-
-    std::unique_ptr<VulkanDestroyer> destroyer = std::make_unique<VulkanDestroyer>(device, allocator);
-    return { allocator, std::move(destroyer) };
 }
 
 std::tuple<VkSwapchainKHR, vr::SwapchainInfo> VulkanContext::CreateSwapChain(VkDevice& device, VkSurfaceKHR& surface, vr::QueueFamilyIndices& queueIndices, vr::SwapChainSupportDetails& swapchainSupportDetails) {

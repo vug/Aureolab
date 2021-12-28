@@ -9,15 +9,15 @@ namespace vr {
     // --------------------------
 
     Surface::Surface(const SurfaceBuilder& builder)
-        : builder(builder) {
+        : builder(builder), instance(builder.instance), win(builder.win) {
         Log::Debug("Creating Surface...");
-        if (builder.win.CreateSurface(builder.instance, &handle) != VK_SUCCESS) {
+        if (win.CreateSurface(instance, &handle) != VK_SUCCESS) {
             Log::Critical("Failed to create Window Surface!");
             exit(EXIT_FAILURE);
         }
     }
     Surface::~Surface() {
         Log::Debug("Destroying Surface...");
-        vkDestroySurfaceKHR(builder.instance, handle, nullptr);
+        vkDestroySurfaceKHR(instance, handle, nullptr);
     }
 }

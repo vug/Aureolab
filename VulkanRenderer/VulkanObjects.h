@@ -5,3 +5,4 @@
 #include "VulkanObjects/Surface.h"
 #include "VulkanObjects/PhysicalDevice.h"
 #include "VulkanObjects/Device.h"
+#include "VulkanObjects/Allocator.h"

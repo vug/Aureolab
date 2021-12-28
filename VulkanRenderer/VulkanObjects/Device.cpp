@@ -48,7 +48,7 @@ namespace vr {
     // ---------------------
 
 	Device::Device(const DeviceBuilder& builder) 
-		: builder(builder) {
+		: builder(builder), physicalDevice(builder.physicalDevice) {
         Log::Debug("Creating Logical Device...");
 
         VkResult result = vkCreateDevice(builder.physicalDevice, &builder.info, nullptr, &handle);
