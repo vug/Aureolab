@@ -27,7 +27,7 @@ public:
             destroyer.Add(std::vector{ vr.meshes["triangle"].vertexBuffer, vr.meshes["quad"].vertexBuffer, vr.meshes["monkey_flat"].vertexBuffer });
         }
 
-        // Descriptors
+        // Descriptors (added retrespectively. not used in the example)
         VkDescriptorPool descriptorPool = vc.CreateDescriptorPool(
             vc.GetDevice(), { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 } }
         );
