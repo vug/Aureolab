@@ -7,7 +7,8 @@
 //#include "Examples/Example02.h"
 //#include "Examples/Example03.h"
 //#include "Examples/Example04.h"
-#include "Examples/Example05.h"
+//#include "Examples/Example05.h"
+#include "Examples/Example06.h"
 
 int main() {
     VulkanWindow win;
@@ -20,8 +21,9 @@ int main() {
     //auto ex02 = Ex02VertexBufferInput(vc, vr);
     //auto ex03 = Ex03SceneManagement(vc, vr);
     //auto ex04 = Ex04DescriptorSets(vc, vr);
-    auto ex05 = Ex05Textures(vc, vr);
-    Example& example = ex05;
+    //auto ex05 = Ex05Textures(vc, vr);
+    auto ex06 = Ex06Plain(vc, vr);
+    Example& example = ex06;
 
     while (!win.ShouldClose()) {
         win.PollEvents();
