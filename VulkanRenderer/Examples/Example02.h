@@ -33,7 +33,7 @@ public:
         VkShaderModule fragShader = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-frag.spv"));
         destroyer.Add(vertShader);
         destroyer.Add(fragShader);
-        std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), {}, vc.swapchainRenderPass);
+        std::tie(pipeline, pipelineLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader, fragShader, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant1>() }, {}, vc.swapchainRenderPass);
         destroyer.Add(pipelineLayout);
         destroyer.Add(pipeline);
     }

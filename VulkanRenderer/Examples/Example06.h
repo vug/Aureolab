@@ -91,7 +91,7 @@ public:
             destroyer.Add(vertShader3);
             destroyer.Add(fragShader3);
             // VkShaderModule, VkShaderModule, VertexInputDescription, std::vector<VkPushConstantRange>, std::vector<VkDescriptorSetLayout>, VkRenderPass
-            std::tie(pipeline3, pipelineLayout3) = vr.CreateSinglePassGraphicsPipeline(vertShader3, fragShader3, Vertex::GetVertexDescription(), MeshPushConstants::GetPushConstantRanges(), {}, vc.swapchainRenderPass);
+            std::tie(pipeline3, pipelineLayout3) = vr.CreateSinglePassGraphicsPipeline(vertShader3, fragShader3, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, {}, vc.swapchainRenderPass);
             destroyer.Add(pipelineLayout3);
             destroyer.Add(pipeline3);
         }
@@ -120,8 +120,9 @@ public:
 
         // Example: Update Clear Color
         float val = cos(time) * 0.5f + 0.5f;
+        val *= 0.05f;
         std::vector<VkClearValue> clearValues(2);
-        clearValues[0].color = { val, 1.0f - val, 0.0f, 1.0f };
+        clearValues[0].color = { val, 0.05f - val, 0.0f, 1.0f };
         clearValues[1].depthStencil.depth = 1.0f;
 
         VkRenderPassBeginInfo rpInfo = {};
@@ -136,20 +137,23 @@ public:
 
         // Commands for presentation pass
         // Example simple mesh drawing
+        // ViewProjection
+        glm::vec3 camPos = { 0.f, 0.f, -2.f };
+        glm::mat4 viewFromWorld = glm::translate(glm::mat4(1.f), camPos);
+        glm::mat4 projectionFromView = glm::perspective(glm::radians(70.f), 800.f / 600.f, 0.1f, 200.0f);
+        projectionFromView[1][1] *= -1;
+
         VkDeviceSize offset = 0;
         vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &mesh.vertexBuffer.buffer, &offset);
-        glm::vec3 camPos = { 0.f, 0.f, -2.f };
-        glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
-        glm::mat4 projection = glm::perspective(glm::radians(70.f), 800.f / 600.f, 0.1f, 200.0f);
-        projection[1][1] *= -1;
-        glm::mat4 model = glm::mat4{ 1.0f };
-        model = glm::translate(model, { 0, 0, 0.5 });
-        model = glm::rotate(model, time, glm::vec3(0, 1, 0));
-        glm::mat4 mvp = projection * view * model;
-        MeshPushConstants::PushConstant1 constants;
+        glm::mat4 worldFromObject = glm::mat4{ 1.0f };
+        worldFromObject = glm::translate(worldFromObject, { 0, 0, 0.5 });
+        worldFromObject = glm::rotate(worldFromObject, time, glm::vec3(1, 0, 0));
+        
         // constants.data empty
-        constants.modelViewProjection = mvp;
-        vkCmdPushConstants(mainCommandBuffer, pipelineLayout3, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant1), &constants);
+        glm::mat4 mvp = projectionFromView * viewFromWorld * worldFromObject;
+        MeshPushConstants::PushConstant2 constants;
+        constants.transform = mvp;
+        vkCmdPushConstants(mainCommandBuffer, pipelineLayout3, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
         vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline3);
         vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
 

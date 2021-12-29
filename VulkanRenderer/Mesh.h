@@ -38,5 +38,14 @@ struct MeshPushConstants {
 		glm::mat4 modelViewProjection;
 	};
 
-	static std::vector<VkPushConstantRange> GetPushConstantRanges();
+	struct PushConstant2 {
+		glm::vec4 data; // unspecified vec4 for arbitrary data
+		glm::mat4 transform;
+	};
+
+	template <typename TStruct>
+	static VkPushConstantRange GetPushConstantRange();
 };
+// Need one of these per PushConstant struct
+template VkPushConstantRange MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant1>();
+template VkPushConstantRange MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>();

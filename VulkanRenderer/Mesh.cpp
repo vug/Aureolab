@@ -47,14 +47,14 @@ VertexInputDescription Vertex::GetVertexDescription() {
 	return description;
 }
 
-std::vector<VkPushConstantRange> MeshPushConstants::GetPushConstantRanges() {
+template <typename TStruct>
+VkPushConstantRange MeshPushConstants::GetPushConstantRange() {
 	std::vector<VkPushConstantRange> pushConstantRanges;
-	VkPushConstantRange pushConstant;
-	pushConstant.offset = 0;
-	pushConstant.size = sizeof(MeshPushConstants::PushConstant1);
-	pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	pushConstantRanges.push_back(pushConstant);
-	return pushConstantRanges;
+	VkPushConstantRange range;
+	range.offset = 0;
+	range.size = sizeof(TStruct);
+	range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	return range;
 }
 
 bool Mesh::LoadFromOBJ(const char* filename) {

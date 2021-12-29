@@ -466,8 +466,9 @@ void VulkanRenderer::DrawObjects(VkCommandBuffer cmd, RenderView& renderView, st
             lastMaterial = obj.material;
         }
 
-        MeshPushConstants::PushConstant1 constants;
-        constants.modelViewProjection = obj.transform;
+        // TODO: Either figure out how to provice different versions of push constants to DrawObjects or choose one version for good
+        MeshPushConstants::PushConstant2 constants;
+        constants.transform = obj.transform;
         vkCmdPushConstants(cmd, obj.material->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant1), &constants);
 
         // Similarly, don't bind vertex buffer if we are repeating meshes
