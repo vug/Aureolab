@@ -72,7 +72,7 @@ public:
         }
     }
 
-    void OnRender() {
+    void OnRender(float time, float delta) {
         // --- BEGIN FRAME
         assert(vkWaitForFences(vc.device, 1, &renderFence, true, 1000000000) == VK_SUCCESS); // 1sec = 1000000000
         assert(vkResetFences(vc.device, 1, &renderFence) == VK_SUCCESS);
@@ -93,8 +93,9 @@ public:
 
         // Commands for early passes
 
+        float val = cos(time) * 0.5f + 0.5f;
         std::vector<VkClearValue> clearValues(2);
-        clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+        clearValues[0].color = { val, 1.0f - val, 0.0f, 1.0f };
         clearValues[1].depthStencil.depth = 1.0f;
 
         VkRenderPassBeginInfo rpInfo = {};

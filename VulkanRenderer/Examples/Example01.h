@@ -33,7 +33,7 @@ public:
         destroyer.Add(pipeline2);
     }
 
-    void OnRender() {
+    void OnRender(float time, float delta) {
         std::vector<VkClearValue> clearValues(2);
         static int frameNumber = 0;
         float flash = abs(sin(frameNumber / 2400.f));

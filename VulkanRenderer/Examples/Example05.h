@@ -219,13 +219,7 @@ public:
         };
     }
 
-    void OnRender() {
-        static auto t0 = std::chrono::system_clock::now();
-        static auto prevTime = std::chrono::duration<float>(0.0f);
-        std::chrono::duration<float> time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - t0);
-        std::chrono::duration<float> delta = time - prevTime;
-        prevTime = time;
-
+    void OnRender(float time, float delta) {
         std::vector<VkClearValue> clearValues(2);
         clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
         clearValues[1].depthStencil.depth = 1.0f;
@@ -236,7 +230,7 @@ public:
         for (int i = 0; i < objects.size(); i++) {
             auto& obj = objects[i];
             float w = angularVelocities[i];
-            obj.transform = glm::rotate(obj.transform, delta.count() * w, { 0, 1, 0 });
+            obj.transform = glm::rotate(obj.transform, delta * w, { 0, 1, 0 });
         }
 
         vc.drawFrame(vc.GetDevice(), vc.GetSwapchain(), vc.GetGraphicsQueue(), vc.swapchainRenderPass, frameDatas, vc.swapchainFramebuffers, vc.GetSwapchainInfo(), clearValues, [&](const VkCommandBuffer& cmd, uint32_t frameNo) {
