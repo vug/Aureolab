@@ -16,11 +16,13 @@ public:
     VkCommandBuffer mainCommandBuffer;
     
     // Pipelines
-    VkPipeline pipeline2, pipeline3;
-    VkPipelineLayout pipelineLayout3;
+    VkPipeline pipeline2, pipeline3, pipeline4;
+    VkPipelineLayout pipelineLayout3, pipelineLayout4;
 
+    // Descriptors
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+    VkDescriptorSet descriptorSetTexture;
 
     // RenderView
     RenderView renderView;
@@ -77,18 +79,86 @@ public:
         }
 
         // Descriptors
+        VkDescriptorSetLayout singleTextureSetLayout;
         {
             descriptorPool = vc.CreateDescriptorPool(
-                vc.GetDevice(), { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 } }
+                vc.GetDevice(), { 
+                    // Weirdly, works fine when commented out
+                    { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 },
+                    { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 },
+                }
             );
             destroyer.Add(descriptorPool);
+
+            VkDescriptorSetLayoutBinding texSetBind = {};
+            texSetBind.binding = 0;
+            texSetBind.descriptorCount = 1;
+            texSetBind.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            texSetBind.pImmutableSamplers = nullptr;
+            texSetBind.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+            VkDescriptorSetLayoutCreateInfo set3info = {};
+            set3info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            set3info.bindingCount = 1;
+            set3info.flags = 0;
+            set3info.pBindings = &texSetBind;
+            vkCreateDescriptorSetLayout(vc.GetDevice(), &set3info, nullptr, &singleTextureSetLayout);
+            destroyer.Add(singleTextureSetLayout);
         }
 
         // RenderView
         {
             renderView.Init(vc.GetDevice(), vc.GetAllocator(), descriptorPool, vc.GetDestroyer());
             destroyer.Add(renderView.GetCameraBuffer());
-            descriptorSetLayouts.insert(descriptorSetLayouts.begin(), renderView.GetDescriptorSetLayouts().begin(), renderView.GetDescriptorSetLayouts().end());
+        }
+
+        descriptorSetLayouts.insert(descriptorSetLayouts.begin(), renderView.GetDescriptorSetLayouts().begin(), renderView.GetDescriptorSetLayouts().end());
+        descriptorSetLayouts.push_back(singleTextureSetLayout);
+
+        // Samplers
+        VkSampler blockySampler;
+        {
+            VkSamplerCreateInfo samplerInfo = {};
+            samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+            samplerInfo.magFilter = VK_FILTER_NEAREST;
+            samplerInfo.minFilter = VK_FILTER_NEAREST;
+            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            vkCreateSampler(vc.GetDevice(), &samplerInfo, nullptr, &blockySampler);
+            destroyer.Add(blockySampler);
+        }
+
+        // Texture Assets
+        {
+            Texture texture;
+            texture.LoadImageFromFile("assets/textures/texture.jpg");
+            vr.UploadTexture(texture);
+            vr.textures["sculpture"] = texture;
+            destroyer.Add(vr.textures["sculpture"].imageView);
+            destroyer.Add(vr.textures["sculpture"].newImage);
+
+            VkDescriptorSetAllocateInfo allocInfo = {};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = descriptorPool;
+            allocInfo.descriptorSetCount = 1;
+            allocInfo.pSetLayouts = &singleTextureSetLayout;
+            vkAllocateDescriptorSets(vc.GetDevice(), &allocInfo, &descriptorSetTexture);
+
+            // Write to the descriptor set so that it points to given texture
+            VkDescriptorImageInfo imageBufferInfo;
+            imageBufferInfo.sampler = blockySampler;
+            imageBufferInfo.imageView = vr.textures["sculpture"].imageView;
+            imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            VkWriteDescriptorSet writeSetTexture = {};
+            writeSetTexture.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writeSetTexture.dstBinding = 0;
+            writeSetTexture.dstSet = descriptorSetTexture;
+            writeSetTexture.descriptorCount = 1;
+            writeSetTexture.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            writeSetTexture.pImageInfo = &imageBufferInfo;
+            vkUpdateDescriptorSets(vc.GetDevice(), 1, &writeSetTexture, 0, nullptr);
         }
 
         // Pipeline
@@ -106,10 +176,16 @@ public:
             VkShaderModule fragShader3 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-normal-frag.spv"));
             destroyer.Add(vertShader3);
             destroyer.Add(fragShader3);
-            // VkShaderModule, VkShaderModule, VertexInputDescription, std::vector<VkPushConstantRange>, std::vector<VkDescriptorSetLayout>, VkRenderPass
             std::tie(pipeline3, pipelineLayout3) = vr.CreateSinglePassGraphicsPipeline(vertShader3, fragShader3, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts, vc.swapchainRenderPass);
             destroyer.Add(pipelineLayout3);
             destroyer.Add(pipeline3);
+
+            VkShaderModule vertShader4 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-vert.spv"));
+            VkShaderModule fragShader4 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-frag.spv"));
+            std::tie(pipeline4, pipelineLayout4) = vr.CreateSinglePassGraphicsPipeline(vertShader4, fragShader4, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts, vc.swapchainRenderPass);
+            destroyer.Add(std::vector{ vertShader4, fragShader4 });
+            destroyer.Add(pipelineLayout4);
+            destroyer.Add(pipeline4);
         }
     }
 
@@ -157,11 +233,6 @@ public:
         vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline2);
         vkCmdDraw(mainCommandBuffer, 6, 1, 0, 0);
 
-        // Example simple mesh drawing
-        // Bind Mesh
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &mesh.vertexBuffer.buffer, &offset);
-
         // Bind RenderView (Camera) UBO for ViewProjection
         glm::vec3 camPos = { 0.f, 0.f, -2.f };
         glm::mat4 viewFromWorld = glm::translate(glm::mat4(1.f), camPos);
@@ -176,19 +247,38 @@ public:
         memcpy(data, &renderView.camera, sizeof(RenderView::Camera));
         vmaUnmapMemory(vc.GetAllocator(), camBuf.allocation);
 
+        // Example simple mesh drawing
+        // Bind Mesh
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &mesh.vertexBuffer.buffer, &offset);
+
         // Bind PushConstant for Model
         glm::mat4 worldFromObject = glm::mat4{ 1.0f };
-        worldFromObject = glm::translate(worldFromObject, { 0, 0, 0.5 });
+        worldFromObject = glm::translate(worldFromObject, { 0, 0, 0.9 });
+        worldFromObject = glm::scale(worldFromObject, { 0.5, 0.5, 0.5 });
         worldFromObject = glm::rotate(worldFromObject, time, glm::vec3(1, 0, 0));
-
         MeshPushConstants::PushConstant2 constants;
         // constants.data unused so far
         constants.transform = worldFromObject;
         vkCmdPushConstants(mainCommandBuffer, pipelineLayout3, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
 
-        //
         vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline3);
         vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
+
+        // Example textured mesh drawing
+        vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &mesh.vertexBuffer.buffer, &offset);
+        worldFromObject = glm::mat4{ 1.0f };
+        worldFromObject = glm::translate(worldFromObject, { 1.5, 0, 0.0 });
+        worldFromObject = glm::scale(worldFromObject, { 0.3, 0.3, 0.3 });
+        worldFromObject = glm::rotate(worldFromObject, time, glm::vec3(0, 0, 1));
+        constants.transform = worldFromObject;
+        vkCmdPushConstants(mainCommandBuffer, pipelineLayout4, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
+
+        vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout4, 1, 1, &descriptorSetTexture, 0, nullptr);
+
+        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline4);
+        vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
+
 
         vkCmdEndRenderPass(mainCommandBuffer);
         assert(vkEndCommandBuffer(mainCommandBuffer) == VK_SUCCESS);
