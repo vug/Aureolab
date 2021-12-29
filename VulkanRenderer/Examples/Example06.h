@@ -230,15 +230,20 @@ public:
         // Commands for presentation pass
 
         // Example: drawing w/o mesh
-        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline2);
-        vkCmdDraw(mainCommandBuffer, 6, 1, 0, 0);
+        if (false) {
+            vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline2);
+            vkCmdDraw(mainCommandBuffer, 6, 1, 0, 0);
+        }
 
         // Bind RenderView (Camera) UBO for ViewProjection
-        glm::vec3 camPos = { 0.f, 0.f, -2.f };
-        glm::mat4 viewFromWorld = glm::translate(glm::mat4(1.f), camPos);
-        glm::mat4 projectionFromView = glm::perspective(glm::radians(70.f), 800.f / 600.f, 0.1f, 200.0f);
-        renderView.camera = { viewFromWorld, projectionFromView };
-        renderView.camera.projection[1][1] *= -1;
+        {
+            float r = 2.0f;
+            glm::vec3 camPos = { r * sin(time), 0.f, r * cos(time) };
+            glm::mat4 viewFromWorld = glm::lookAt(camPos, { 0,0,0 }, { 0,1,0 });
+            glm::mat4 projectionFromView = glm::perspective(glm::radians(70.f), 800.f / 600.f, 0.1f, 200.0f);
+            renderView.camera = { viewFromWorld, projectionFromView };
+            renderView.camera.projection[1][1] *= -1;
+        }
         vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout3, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
 
         const AllocatedBuffer& camBuf = renderView.GetCameraBuffer();
@@ -256,7 +261,7 @@ public:
         glm::mat4 worldFromObject = glm::mat4{ 1.0f };
         worldFromObject = glm::translate(worldFromObject, { 0, 0, 0.9 });
         worldFromObject = glm::scale(worldFromObject, { 0.5, 0.5, 0.5 });
-        worldFromObject = glm::rotate(worldFromObject, time, glm::vec3(1, 0, 0));
+        worldFromObject = glm::rotate(worldFromObject, time * 0.1f, glm::vec3(1, 0, 0));
         MeshPushConstants::PushConstant2 constants;
         // constants.data unused so far
         constants.transform = worldFromObject;
@@ -270,7 +275,7 @@ public:
         worldFromObject = glm::mat4{ 1.0f };
         worldFromObject = glm::translate(worldFromObject, { 1.5, 0, 0.0 });
         worldFromObject = glm::scale(worldFromObject, { 0.3, 0.3, 0.3 });
-        worldFromObject = glm::rotate(worldFromObject, time, glm::vec3(0, 0, 1));
+        worldFromObject = glm::rotate(worldFromObject, time * 2.0f, glm::vec3(0, 0, 1));
         constants.transform = worldFromObject;
         vkCmdPushConstants(mainCommandBuffer, pipelineLayout4, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
 
