@@ -59,7 +59,7 @@ namespace vr {
 		std::vector<VkPhysicalDeviceFeatures> physicalDeviceFeatures;
 
 		static bool defaultDevFeaturesFunc(VkPhysicalDeviceFeatures devFeats) {
-			return devFeats.samplerAnisotropy;
+			return devFeats.samplerAnisotropy && devFeats.fillModeNonSolid;
 		};
 	};
 

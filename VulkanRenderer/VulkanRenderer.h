@@ -56,7 +56,9 @@ public:
 		const VertexInputDescription& vertDesc,
 		const std::vector<VkPushConstantRange>& pushConstantRanges,
 		const std::vector<VkDescriptorSetLayout>& descSetLayouts,
-		VkRenderPass& renderPass
+		VkRenderPass& renderPass,
+		// Params
+		VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL
 	);
 
 	static std::vector<char> ReadFile(const std::string& filename);

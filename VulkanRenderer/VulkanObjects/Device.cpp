@@ -26,6 +26,7 @@ namespace vr {
 
         // TODO: Make "device features to be used / enabled" parameters
         deviceFeatures.samplerAnisotropy = VK_TRUE; // use anisotropy filters for textures
+        deviceFeatures.fillModeNonSolid = VK_TRUE; // for wireframe mode
 
         const std::vector<const char*>& requiredExtensions = physicalDevice.builder.requiredExtensions;
         const std::vector<const char*>& layers = physicalDevice.builder.instance.builder.layers;

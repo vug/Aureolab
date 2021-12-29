@@ -78,7 +78,8 @@ std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphic
     const VertexInputDescription& vertDesc, 
     const std::vector<VkPushConstantRange>& pushConstantRanges,
     const std::vector<VkDescriptorSetLayout>& descSetLayouts,
-    VkRenderPass& renderPass
+    VkRenderPass& renderPass,
+    VkPolygonMode polygonMode // default VK_POLYGON_MODE_FILL
 ) {
     Log::Debug("Creating Graphics Pipeline...");
     // optional parameters: shaders, Vertex class with binding and attribute descriptions,
@@ -148,7 +149,7 @@ std::tuple<VkPipeline, VkPipelineLayout> VulkanRenderer::CreateSinglePassGraphic
     // when tru geometry never passes rasterizer stage. => disables framebuffer.
     rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
     // Triangle rendering mode. {FILL, LINE, POINT}. Other modes require a GPU feature.
-    rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizerInfo.polygonMode = polygonMode;
     // NONE, FRONT, BACK, or FRONT_AND_BACK
     rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
     //rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
