@@ -3,11 +3,6 @@
 
 #include <glm/gtx/transform.hpp>
 
-class FrameData06 : public IFrameData {
-public:
-    RenderView renderView;
-};
-
 // Empty but running example with no abstractions for command generation, frames-in-flight handling, pipeline creation etc.
 class Ex06Plain : public Example {
 public:
@@ -23,6 +18,12 @@ public:
     // Pipelines
     VkPipeline pipeline2, pipeline3;
     VkPipelineLayout pipelineLayout3;
+
+    VkDescriptorPool descriptorPool;
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+
+    // RenderView
+    RenderView renderView;
 
     Ex06Plain(VulkanContext& vc, VulkanRenderer& vr) : Example(vc, vr) {
         // Mesh Assets
@@ -75,6 +76,21 @@ public:
             destroyer.Add(commandPool);
         }
 
+        // Descriptors
+        {
+            descriptorPool = vc.CreateDescriptorPool(
+                vc.GetDevice(), { { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 } }
+            );
+            destroyer.Add(descriptorPool);
+        }
+
+        // RenderView
+        {
+            renderView.Init(vc.GetDevice(), vc.GetAllocator(), descriptorPool, vc.GetDestroyer());
+            destroyer.Add(renderView.GetCameraBuffer());
+            descriptorSetLayouts.insert(descriptorSetLayouts.begin(), renderView.GetDescriptorSetLayouts().begin(), renderView.GetDescriptorSetLayouts().end());
+        }
+
         // Pipeline
         {
             VkShaderModule vertShader2 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-square-vert.spv"));
@@ -86,12 +102,12 @@ public:
             destroyer.Add(pipelineLayout2);
             destroyer.Add(pipeline2);
 
-            VkShaderModule vertShader3 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-vert.spv"));
-            VkShaderModule fragShader3 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-push-const-frag.spv"));
+            VkShaderModule vertShader3 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-04-desc-set-vert.spv"));
+            VkShaderModule fragShader3 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-normal-frag.spv"));
             destroyer.Add(vertShader3);
             destroyer.Add(fragShader3);
             // VkShaderModule, VkShaderModule, VertexInputDescription, std::vector<VkPushConstantRange>, std::vector<VkDescriptorSetLayout>, VkRenderPass
-            std::tie(pipeline3, pipelineLayout3) = vr.CreateSinglePassGraphicsPipeline(vertShader3, fragShader3, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, {}, vc.swapchainRenderPass);
+            std::tie(pipeline3, pipelineLayout3) = vr.CreateSinglePassGraphicsPipeline(vertShader3, fragShader3, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts, vc.swapchainRenderPass);
             destroyer.Add(pipelineLayout3);
             destroyer.Add(pipeline3);
         }
@@ -136,30 +152,43 @@ public:
         vkCmdBeginRenderPass(mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         // Commands for presentation pass
+
+        // Example: drawing w/o mesh
+        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline2);
+        vkCmdDraw(mainCommandBuffer, 6, 1, 0, 0);
+
         // Example simple mesh drawing
-        // ViewProjection
+        // Bind Mesh
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &mesh.vertexBuffer.buffer, &offset);
+
+        // Bind RenderView (Camera) UBO for ViewProjection
         glm::vec3 camPos = { 0.f, 0.f, -2.f };
         glm::mat4 viewFromWorld = glm::translate(glm::mat4(1.f), camPos);
         glm::mat4 projectionFromView = glm::perspective(glm::radians(70.f), 800.f / 600.f, 0.1f, 200.0f);
-        projectionFromView[1][1] *= -1;
+        renderView.camera = { viewFromWorld, projectionFromView };
+        renderView.camera.projection[1][1] *= -1;
+        vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout3, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
 
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &mesh.vertexBuffer.buffer, &offset);
+        const AllocatedBuffer& camBuf = renderView.GetCameraBuffer();
+        void* data;
+        vmaMapMemory(vc.GetAllocator(), camBuf.allocation, &data);
+        memcpy(data, &renderView.camera, sizeof(RenderView::Camera));
+        vmaUnmapMemory(vc.GetAllocator(), camBuf.allocation);
+
+        // Bind PushConstant for Model
         glm::mat4 worldFromObject = glm::mat4{ 1.0f };
         worldFromObject = glm::translate(worldFromObject, { 0, 0, 0.5 });
         worldFromObject = glm::rotate(worldFromObject, time, glm::vec3(1, 0, 0));
-        
-        // constants.data empty
-        glm::mat4 mvp = projectionFromView * viewFromWorld * worldFromObject;
+
         MeshPushConstants::PushConstant2 constants;
-        constants.transform = mvp;
+        // constants.data unused so far
+        constants.transform = worldFromObject;
         vkCmdPushConstants(mainCommandBuffer, pipelineLayout3, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
+
+        //
         vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline3);
         vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
-
-        // Example: no mesh drawing
-        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline2);
-        vkCmdDraw(mainCommandBuffer, 6, 1, 0, 0);
 
         vkCmdEndRenderPass(mainCommandBuffer);
         assert(vkEndCommandBuffer(mainCommandBuffer) == VK_SUCCESS);
