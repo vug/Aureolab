@@ -221,8 +221,8 @@ public:
     
     // Pipelines
     struct Pipelines {
-        VkPipeline screenSquare, normal, textured;
-        VkPipelineLayout normalLayout, texturedLayout;
+        VkPipeline screenSquare, normal, textured, wireframe;
+        VkPipelineLayout normalLayout, texturedLayout, wireframeLayout;
     }; 
     Pipelines pipelines;
 
@@ -381,18 +381,24 @@ public:
 
             VkShaderModule vertShader3 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-04-desc-set-vert.spv"));
             VkShaderModule fragShader3 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-normal-frag.spv"));
-            destroyer.Add(vertShader3);
-            destroyer.Add(fragShader3);
-            std::tie(pipelines.normal, pipelines.normalLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader3, fragShader3, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts, vc.swapchainRenderPass);
-            destroyer.Add(pipelines.normalLayout);
-            destroyer.Add(pipelines.normal);
+            pipelines.normalLayout = CreatePipelineLayout(vc, { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts);
+            pipelines.normal = CreatePipeline(vc, vertShader3, fragShader3, Vertex::GetVertexDescription(), pipelines.normalLayout, vc.swapchainRenderPass,
+                VK_POLYGON_MODE_FILL, { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
+            destroyer.Add(std::vector{ vertShader3, fragShader3 });
 
             VkShaderModule vertShader4 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-vert.spv"));
             VkShaderModule fragShader4 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-frag.spv"));
-            std::tie(pipelines.textured, pipelines.texturedLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader4, fragShader4, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts, vc.swapchainRenderPass);
+            pipelines.texturedLayout = CreatePipelineLayout(vc, { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts);
+            pipelines.textured = CreatePipeline(vc, vertShader4, fragShader4, Vertex::GetVertexDescription(), pipelines.texturedLayout, vc.swapchainRenderPass,
+                VK_POLYGON_MODE_FILL, { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR });
             destroyer.Add(std::vector{ vertShader4, fragShader4 });
-            destroyer.Add(pipelines.texturedLayout);
-            destroyer.Add(pipelines.textured);
+
+            VkShaderModule vertShader5 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/default-vert.spv"));
+            VkShaderModule fragShader5 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-solid-color-frag.spv"));
+            pipelines.wireframeLayout = CreatePipelineLayout(vc, { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts);
+            pipelines.wireframe = CreatePipeline(vc, vertShader5, fragShader5, Vertex::GetVertexDescription(), pipelines.wireframeLayout, vc.swapchainRenderPass,
+                VK_POLYGON_MODE_LINE, { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR }); // VK_DYNAMIC_STATE_LINE_WIDTH,
+            destroyer.Add(std::vector{ vertShader5, fragShader5 });
         }
     }
 
@@ -435,7 +441,6 @@ public:
         vkCmdBeginRenderPass(mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         // Commands for presentation pass
-
         // Example: drawing w/o mesh
         if (false) {
             vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.screenSquare);
@@ -447,7 +452,7 @@ public:
             float r = 2.0f;
             glm::vec3 camPos = { r * sin(time), 0.f, r * cos(time) };
             glm::mat4 viewFromWorld = glm::lookAt(camPos, { 0,0,0 }, { 0,1,0 });
-            glm::mat4 projectionFromView = glm::perspective(glm::radians(70.f), 800.f / 600.f, 0.1f, 200.0f);
+            glm::mat4 projectionFromView = glm::perspective(glm::radians(70.f), (float)vc.GetSwapchainInfo().extent.width / vc.GetSwapchainInfo().extent.height, 0.1f, 200.0f);
             renderView.camera = { viewFromWorld, projectionFromView };
             renderView.camera.projection[1][1] *= -1;
         }
@@ -458,6 +463,13 @@ public:
         vmaMapMemory(vc.GetAllocator(), camBuf.allocation, &data);
         memcpy(data, &renderView.camera, sizeof(RenderView::Camera));
         vmaUnmapMemory(vc.GetAllocator(), camBuf.allocation);
+
+
+        const auto& [width, height] = vc.GetSwapchainInfo().extent;
+        VkViewport viewport = { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
+        vkCmdSetViewport(mainCommandBuffer, 0, 1, &viewport);
+        VkRect2D scissor = { {0, 0}, {width, height} };
+        vkCmdSetScissor(mainCommandBuffer, 0, 1, &scissor);
 
         // Example simple mesh drawing
         // Bind Mesh
@@ -474,8 +486,20 @@ public:
         constants.transform = worldFromObject;
         vkCmdPushConstants(mainCommandBuffer, pipelines.normalLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
 
-        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normal);
-        vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
+        auto drawHalfWithWireframe = [&](VkPipeline pipeline, float ratio = 0.75) {
+            int offsetX = int(width * ratio);
+            scissor = { {0, 0}, {(uint32_t)offsetX, height} };
+            vkCmdSetScissor(mainCommandBuffer, 0, 1, &scissor);
+            vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+            vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
+
+            scissor = { {offsetX, 0}, {width - offsetX, height} };
+            vkCmdSetScissor(mainCommandBuffer, 0, 1, &scissor);
+            vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.wireframe);
+            vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
+        };
+
+        drawHalfWithWireframe(pipelines.normal);
 
         // Example textured mesh drawing
         vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &mesh.vertexBuffer.buffer, &offset);
@@ -486,8 +510,8 @@ public:
         constants.transform = worldFromObject;
         vkCmdPushConstants(mainCommandBuffer, pipelines.texturedLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
         vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.texturedLayout, 1, 1, &descriptorSetTexture, 0, nullptr);
-        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.textured);
-        vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
+
+        drawHalfWithWireframe(pipelines.textured);
 
 
         vkCmdEndRenderPass(mainCommandBuffer);
