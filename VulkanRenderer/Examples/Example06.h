@@ -19,6 +19,9 @@ public:
     // CmdBufs
     VkCommandPool commandPool;
     VkCommandBuffer mainCommandBuffer;
+    
+    // Pipeline
+    VkPipeline pipeline1, pipeline2;
 
     Ex06Plain(VulkanContext& vc, VulkanRenderer& vr) : Example(vc, vr) {
         // Mesh Assets
@@ -70,6 +73,27 @@ public:
 
             destroyer.Add(commandPool);
         }
+
+        // Pipeline
+        {
+            VkShaderModule vertShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-vert.spv"));
+            VkShaderModule fragShader1 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-triangle-frag.spv"));
+            destroyer.Add(vertShader1); destroyer.Add(fragShader1);
+            VkPipelineLayout pipelineLayout1;
+            // VkShaderModule, VkShaderModule, VertexInputDescription, std::vector<VkPushConstantRange>, std::vector<VkDescriptorSetLayout>, VkRenderPass
+            std::tie(pipeline1, pipelineLayout1) = vr.CreateSinglePassGraphicsPipeline(vertShader1, fragShader1, {}, {}, {}, vc.swapchainRenderPass);
+            destroyer.Add(pipelineLayout1);
+            destroyer.Add(pipeline1);
+
+            VkShaderModule vertShader2 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-square-vert.spv"));
+            VkShaderModule fragShader2 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-square-frag.spv"));
+            destroyer.Add(vertShader2);
+            destroyer.Add(fragShader2);
+            VkPipelineLayout pipelineLayout2;
+            std::tie(pipeline2, pipelineLayout2) = vr.CreateSinglePassGraphicsPipeline(vertShader2, fragShader2, {}, {}, {}, vc.swapchainRenderPass);
+            destroyer.Add(pipelineLayout2);
+            destroyer.Add(pipeline2);
+        }
     }
 
     void OnRender(float time, float delta) {
@@ -109,6 +133,12 @@ public:
         vkCmdBeginRenderPass(mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         // Commands for presentation pass
+        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline2);
+        vkCmdDraw(mainCommandBuffer, 6, 1, 0, 0);
+
+        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline1);
+        vkCmdDraw(mainCommandBuffer, 3, 1, 0, 0);
+
 
         vkCmdEndRenderPass(mainCommandBuffer);
         assert(vkEndCommandBuffer(mainCommandBuffer) == VK_SUCCESS);
