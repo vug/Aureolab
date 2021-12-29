@@ -16,8 +16,11 @@ public:
     VkCommandBuffer mainCommandBuffer;
     
     // Pipelines
-    VkPipeline pipeline2, pipeline3, pipeline4;
-    VkPipelineLayout pipelineLayout3, pipelineLayout4;
+    struct Pipelines {
+        VkPipeline screenSquare, normal, textured;
+        VkPipelineLayout normalLayout, texturedLayout;
+    }; 
+    Pipelines pipelines;
 
     // Descriptors
     VkDescriptorPool descriptorPool;
@@ -168,24 +171,24 @@ public:
             destroyer.Add(vertShader2);
             destroyer.Add(fragShader2);
             VkPipelineLayout pipelineLayout2;
-            std::tie(pipeline2, pipelineLayout2) = vr.CreateSinglePassGraphicsPipeline(vertShader2, fragShader2, {}, {}, {}, vc.swapchainRenderPass);
+            std::tie(pipelines.screenSquare, pipelineLayout2) = vr.CreateSinglePassGraphicsPipeline(vertShader2, fragShader2, {}, {}, {}, vc.swapchainRenderPass);
             destroyer.Add(pipelineLayout2);
-            destroyer.Add(pipeline2);
+            destroyer.Add(pipelines.screenSquare);
 
             VkShaderModule vertShader3 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-04-desc-set-vert.spv"));
             VkShaderModule fragShader3 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/visualize-normal-frag.spv"));
             destroyer.Add(vertShader3);
             destroyer.Add(fragShader3);
-            std::tie(pipeline3, pipelineLayout3) = vr.CreateSinglePassGraphicsPipeline(vertShader3, fragShader3, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts, vc.swapchainRenderPass);
-            destroyer.Add(pipelineLayout3);
-            destroyer.Add(pipeline3);
+            std::tie(pipelines.normal, pipelines.normalLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader3, fragShader3, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts, vc.swapchainRenderPass);
+            destroyer.Add(pipelines.normalLayout);
+            destroyer.Add(pipelines.normal);
 
             VkShaderModule vertShader4 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-vert.spv"));
             VkShaderModule fragShader4 = vr.CreateShaderModule(vr.ReadFile("assets/shaders/example-05-textured-frag.spv"));
-            std::tie(pipeline4, pipelineLayout4) = vr.CreateSinglePassGraphicsPipeline(vertShader4, fragShader4, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts, vc.swapchainRenderPass);
+            std::tie(pipelines.textured, pipelines.texturedLayout) = vr.CreateSinglePassGraphicsPipeline(vertShader4, fragShader4, Vertex::GetVertexDescription(), { MeshPushConstants::GetPushConstantRange<MeshPushConstants::PushConstant2>() }, descriptorSetLayouts, vc.swapchainRenderPass);
             destroyer.Add(std::vector{ vertShader4, fragShader4 });
-            destroyer.Add(pipelineLayout4);
-            destroyer.Add(pipeline4);
+            destroyer.Add(pipelines.texturedLayout);
+            destroyer.Add(pipelines.textured);
         }
     }
 
@@ -231,7 +234,7 @@ public:
 
         // Example: drawing w/o mesh
         if (false) {
-            vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline2);
+            vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.screenSquare);
             vkCmdDraw(mainCommandBuffer, 6, 1, 0, 0);
         }
 
@@ -244,7 +247,7 @@ public:
             renderView.camera = { viewFromWorld, projectionFromView };
             renderView.camera.projection[1][1] *= -1;
         }
-        vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout3, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
+        vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normalLayout, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
 
         const AllocatedBuffer& camBuf = renderView.GetCameraBuffer();
         void* data;
@@ -265,9 +268,9 @@ public:
         MeshPushConstants::PushConstant2 constants;
         // constants.data unused so far
         constants.transform = worldFromObject;
-        vkCmdPushConstants(mainCommandBuffer, pipelineLayout3, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
+        vkCmdPushConstants(mainCommandBuffer, pipelines.normalLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
 
-        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline3);
+        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normal);
         vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
 
         // Example textured mesh drawing
@@ -277,11 +280,9 @@ public:
         worldFromObject = glm::scale(worldFromObject, { 0.3, 0.3, 0.3 });
         worldFromObject = glm::rotate(worldFromObject, time * 2.0f, glm::vec3(0, 0, 1));
         constants.transform = worldFromObject;
-        vkCmdPushConstants(mainCommandBuffer, pipelineLayout4, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
-
-        vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout4, 1, 1, &descriptorSetTexture, 0, nullptr);
-
-        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline4);
+        vkCmdPushConstants(mainCommandBuffer, pipelines.texturedLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
+        vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.texturedLayout, 1, 1, &descriptorSetTexture, 0, nullptr);
+        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.textured);
         vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
 
 
