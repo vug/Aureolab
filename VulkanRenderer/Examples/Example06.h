@@ -499,7 +499,9 @@ public:
             vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
         };
 
-        drawHalfWithWireframe(pipelines.normal);
+        const auto& [mx, my] = vc.win.GetMouseCursorPosition();
+        float ratio = glm::clamp(mx / width, 0.0f, 1.0f);
+        drawHalfWithWireframe(pipelines.normal, ratio);
 
         // Example textured mesh drawing
         vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &mesh.vertexBuffer.buffer, &offset);
@@ -511,7 +513,7 @@ public:
         vkCmdPushConstants(mainCommandBuffer, pipelines.texturedLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
         vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.texturedLayout, 1, 1, &descriptorSetTexture, 0, nullptr);
 
-        drawHalfWithWireframe(pipelines.textured);
+        drawHalfWithWireframe(pipelines.textured, ratio);
 
 
         vkCmdEndRenderPass(mainCommandBuffer);

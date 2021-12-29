@@ -49,6 +49,7 @@ public:
 	VulkanContext(VulkanWindow& win);
 	~VulkanContext();
 
+	VulkanWindow& win;
 	// Order of members is important, which is the order in which Vulkan Objects are generated. 
 	// When VulkanContext is destructed, their destructors will be called in reverse order.
 	// Objects whose classes don't have default constructors will be initialized in the initialization list.

@@ -45,7 +45,8 @@ void ImmediateCommandSubmitter::Submit(std::function<void(VkCommandBuffer cmd)>&
 }
 
 VulkanContext::VulkanContext(VulkanWindow& win)
-    : instance(vr::InstanceBuilder()),
+    : win(win),
+    instance(vr::InstanceBuilder()),
     // TODO: should depend on instance->builder.params.headless
     surface(vr::SurfaceBuilder(instance, win)),
     physicalDevice(vr::PhysicalDeviceBuilder(instance, surface)),

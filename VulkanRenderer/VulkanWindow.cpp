@@ -49,6 +49,12 @@ void VulkanWindow::GetFramebufferSize(int* width, int* height) const {
     glfwGetFramebufferSize(window, width, height);
 }
 
+VulkanWindow::Vec2D VulkanWindow::GetMouseCursorPosition() {
+    double x, y;
+    glfwGetCursorPos(window, &x, &y);
+    return { float(x), float(y) };
+}
+
 bool VulkanWindow::ShouldClose() {
     return glfwWindowShouldClose(window);
 }
