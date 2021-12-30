@@ -3,7 +3,101 @@
 
 #include <glm/gtx/transform.hpp>
 
-VkPipelineLayout CreatePipelineLayout(
+static uint32_t GetMemoryType(VkPhysicalDeviceMemoryProperties memoryProperties, uint32_t typeBits, VkMemoryPropertyFlags properties, VkBool32* memTypeFound = nullptr)
+{
+    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+    {
+        if ((typeBits & 1) == 1)
+        {
+            if ((memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            {
+                if (memTypeFound)
+                {
+                    *memTypeFound = true;
+                }
+                return i;
+            }
+        }
+        typeBits >>= 1;
+    }
+
+    if (memTypeFound)
+    {
+        *memTypeFound = false;
+        return 0;
+    }
+    else
+    {
+        throw std::runtime_error("Could not find a matching memory type");
+    }
+}
+
+struct FrameBufferAttachment {
+    VkImage image;
+    VkDeviceMemory mem;
+    VkImageView view;
+};
+struct OffscreenPass {
+    int32_t width, height;
+    VkFramebuffer frameBuffer;
+    FrameBufferAttachment color, depth;
+    VkRenderPass renderPass;
+    VkSampler sampler;
+    VkDescriptorImageInfo descriptor;
+} offscreenPass;
+
+static void prepareOffscreen(const VulkanContext& vc) {
+    auto& device = vc.GetDevice();
+
+    offscreenPass.width = 512;
+    offscreenPass.height = 512;
+    const VkFormat fbColorFormat = VK_FORMAT_R8G8B8A8_UNORM;
+    {
+        // Color attachment
+        VkImageCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        info.imageType = VK_IMAGE_TYPE_2D;
+        info.format = fbColorFormat;
+        info.extent.width = offscreenPass.width;
+        info.extent.height = offscreenPass.height;
+        info.extent.depth = 1;
+        info.mipLevels = 1;
+        info.arrayLayers = 1;
+        info.samples = VK_SAMPLE_COUNT_1_BIT;
+        info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        // We will sample directly from the color attachment
+        info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+        // manual allocation without vmaCreateImage
+        VkMemoryAllocateInfo memAlloc = {};
+        memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        assert(vkCreateImage(device, &info, nullptr, &offscreenPass.color.image) == VK_SUCCESS);
+        VkMemoryRequirements memReqs;
+        vkGetImageMemoryRequirements(device, offscreenPass.color.image, &memReqs);
+        memAlloc.allocationSize = memReqs.size;
+        memAlloc.memoryTypeIndex = GetMemoryType(vc.physicalDevice.memoryProperties, memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        assert(vkAllocateMemory(device, &memAlloc, nullptr, &offscreenPass.color.mem) == VK_SUCCESS);
+        assert(vkBindImageMemory(device, offscreenPass.color.image, offscreenPass.color.mem, 0) == VK_SUCCESS);
+        vc.destroyer->Add(offscreenPass.color.image);
+        vc.destroyer->Add(offscreenPass.color.mem);
+
+        VkImageViewCreateInfo colorImageView = {};
+        colorImageView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        colorImageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        colorImageView.format = fbColorFormat;
+        colorImageView.subresourceRange = {};
+        colorImageView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        colorImageView.subresourceRange.baseMipLevel = 0;
+        colorImageView.subresourceRange.levelCount = 1;
+        colorImageView.subresourceRange.baseArrayLayer = 0;
+        colorImageView.subresourceRange.layerCount = 1;
+        colorImageView.image = offscreenPass.color.image;
+        assert(vkCreateImageView(device, &colorImageView, nullptr, &offscreenPass.color.view) == VK_SUCCESS);
+        vc.destroyer->Add(offscreenPass.color.view);
+    }
+}
+
+static VkPipelineLayout CreatePipelineLayout(
     const VulkanContext& vc,
     const std::vector<VkPushConstantRange>& pushConstantRanges,
     const std::vector<VkDescriptorSetLayout>& descSetLayouts) {
@@ -25,7 +119,7 @@ VkPipelineLayout CreatePipelineLayout(
     return pipelineLayout;
 }
 
-VkPipeline CreatePipeline(
+static VkPipeline CreatePipeline(
     const VulkanContext& vc,
     VkShaderModule vertShaderModule, VkShaderModule fragShaderModule,
     const VertexInputDescription& vertDesc,
@@ -210,6 +304,8 @@ VkPipeline CreatePipeline(
 // Basic functional scene example with no abstractions for command generation, frames-in-flight handling, or pipeline creation etc.
 class Ex08Offscreen : public Example {
 public:
+    VkPhysicalDeviceMemoryProperties memoryProperties;
+
     // Frame sync
     VkSemaphore presentSemaphore, renderSemaphore;
     VkFence renderFence;
@@ -234,6 +330,9 @@ public:
     RenderView renderView;
 
     Ex08Offscreen(VulkanContext& vc, VulkanRenderer& vr) : Example(vc, vr) {
+        vkGetPhysicalDeviceMemoryProperties(vc.physicalDevice, &memoryProperties);
+        prepareOffscreen(vc);
+
         // Mesh Assets
         {
             Mesh mesh;
