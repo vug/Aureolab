@@ -185,5 +185,7 @@ namespace vr {
         const size_t ix = 0;
         Log::Debug("Selecting the first suitable PhysicalDevice '{}'", builder.physicalDeviceProperties[ix].deviceName);
         handle = builder.physicalDevices[ix];
+
+        vkGetPhysicalDeviceMemoryProperties(handle, &memoryProperties);
 	}
 }

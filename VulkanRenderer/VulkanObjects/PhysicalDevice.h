@@ -69,6 +69,8 @@ namespace vr {
 		PhysicalDeviceBuilder builder;
 		VkPhysicalDevice handle = VK_NULL_HANDLE;
 
+		VkPhysicalDeviceMemoryProperties memoryProperties;
+
 		const Instance& instance;
 		const Surface& surface;
 
