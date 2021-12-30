@@ -51,10 +51,14 @@ struct OffscreenPass {
 static void prepareOffscreen(const VulkanContext& vc) {
     auto& device = vc.GetDevice();
 
-    offscreenPass.width = 512;
-    offscreenPass.height = 512;
-    const VkFormat fbColorFormat = VK_FORMAT_R8G8B8A8_UNORM;
-    const VkFormat fbDepthFormat = VK_FORMAT_D24_UNORM_S8_UINT; // VK_FORMAT_D32_SFLOAT won't work because we have stencil info too
+    offscreenPass.width = 128;
+    offscreenPass.height = 128;
+    // TODO: At the moment using the same pipelines.normal that renders to the screen, which has surface's renderpass
+    // Try having a new pipeline that'll render via offscreen pass and see how/whether image format translations happen
+    //VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_SRGB, VK_FORMAT_B8G8R8A8_SRGB
+    const VkFormat fbColorFormat = vc.GetSwapchainInfo().surfaceFormat.format; // which is VK_FORMAT_B8G8R8A8_SRGB
+    //VK_FORMAT_D24_UNORM_S8_UINT
+    const VkFormat fbDepthFormat = vc.GetSwapchainInfo().depthFormat; // which is VK_FORMAT_D32_SFLOAT
     // 1) PREPARE OFFSCREEN FRAMEBUFFER COLOR AND DEPTH ATTACHMENTS
     {
         // Color attachment
@@ -102,8 +106,8 @@ static void prepareOffscreen(const VulkanContext& vc) {
         // Create sampler to sample from the attachment in the fragment shader
         VkSamplerCreateInfo samplerInfo = {};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.magFilter = VK_FILTER_LINEAR;
-        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.magFilter = VK_FILTER_NEAREST; // VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_NEAREST;
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
         samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         samplerInfo.addressModeV = samplerInfo.addressModeU;
@@ -135,7 +139,9 @@ static void prepareOffscreen(const VulkanContext& vc) {
         depthStencilView.format = fbDepthFormat;
         depthStencilView.flags = 0;
         depthStencilView.subresourceRange = {};
-        depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        // TODO: bring stencil back (not for a specific purpose). See above TODO.
+        //depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         depthStencilView.subresourceRange.baseMipLevel = 0;
         depthStencilView.subresourceRange.levelCount = 1;
         depthStencilView.subresourceRange.baseArrayLayer = 0;
@@ -596,9 +602,14 @@ public:
 
             // Write to the descriptor set so that it points to given texture
             VkDescriptorImageInfo imageBufferInfo;
-            imageBufferInfo.sampler = blockySampler;
-            imageBufferInfo.imageView = vr.textures["sculpture"].imageView;
-            imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            // For rendering texture from file
+            //imageBufferInfo.sampler = blockySampler;
+            //imageBufferInfo.imageView = vr.textures["sculpture"].imageView;
+            //imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            // For rendering texture from offscreen "render target"
+            imageBufferInfo.sampler = offscreenPass.descriptor.sampler;
+            imageBufferInfo.imageView = offscreenPass.descriptor.imageView;
+            imageBufferInfo.imageLayout = offscreenPass.descriptor.imageLayout;
 
             VkWriteDescriptorSet writeSetTexture = {};
             writeSetTexture.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -663,12 +674,54 @@ public:
         cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         assert(vkBeginCommandBuffer(mainCommandBuffer, &cmdBeginInfo) == VK_SUCCESS);
 
-        // Commands for early passes
 
         // Example: Update Clear Color
+        // OFFSCREEN PASS!
+        {
+            std::vector<VkClearValue> clearValues(2);
+            clearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+            clearValues[1].depthStencil = { 1.0f, 0 };
+
+            VkRenderPassBeginInfo renderPassBeginInfo = {};
+            renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            renderPassBeginInfo.renderPass = offscreenPass.renderPass;
+            renderPassBeginInfo.framebuffer = offscreenPass.frameBuffer;
+            renderPassBeginInfo.renderArea.extent.width = offscreenPass.width;
+            renderPassBeginInfo.renderArea.extent.height = offscreenPass.height;
+            renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+            renderPassBeginInfo.pClearValues = clearValues.data();
+
+            VkViewport viewport = { 0.0f, 0.0f, (float)offscreenPass.width, (float)offscreenPass.height, 0.0f, 1.0f };
+            vkCmdSetViewport(mainCommandBuffer, 0, 1, &viewport);
+            VkRect2D scissor = { {0, 0}, {offscreenPass.width, offscreenPass.height} };
+            vkCmdSetScissor(mainCommandBuffer, 0, 1, &scissor);
+            
+            vkCmdBeginRenderPass(mainCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+            {
+                vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normalLayout, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
+
+                // Example simple mesh drawing
+                VkDeviceSize offset = 0;
+                vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &vr.meshes["monkey_flat"].vertexBuffer.buffer, &offset);
+                glm::mat4 worldFromObject = glm::mat4{ 1.0f };
+                worldFromObject = glm::scale(worldFromObject, { 0.5, 0.5, 0.5 });
+                worldFromObject = glm::rotate(worldFromObject, time * 0.1f, glm::vec3(1, 0, 0));
+                MeshPushConstants::PushConstant2 constants;
+                // constants.data unused so far
+                constants.transform = worldFromObject;
+                vkCmdPushConstants(mainCommandBuffer, pipelines.normalLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
+                vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normal);
+                vkCmdDraw(mainCommandBuffer, (uint32_t)vr.meshes["monkey_flat"].vertices.size(), 1, 0, 0);
+            }
+
+            vkCmdEndRenderPass(mainCommandBuffer);
+        }
+
+        // ONSCREEN PASS
         std::vector<VkClearValue> clearValues(2);
-        clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-        clearValues[1].depthStencil.depth = 1.0f;
+        clearValues[0].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+        clearValues[1].depthStencil = { 1.0f, 0 };
 
         VkRenderPassBeginInfo rpInfo = {};
         rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -693,8 +746,6 @@ public:
             renderView.camera = { viewFromWorld, projectionFromView };
             renderView.camera.projection[1][1] *= -1;
         }
-        vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normalLayout, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
-
         const AllocatedBuffer& camBuf = renderView.GetCameraBuffer();
         void* data;
         vmaMapMemory(vc.GetAllocator(), camBuf.allocation, &data);
@@ -708,29 +759,17 @@ public:
         VkRect2D scissor = { {0, 0}, {width, height} };
         vkCmdSetScissor(mainCommandBuffer, 0, 1, &scissor);
 
-        // Example simple mesh drawing
-        // Bind Mesh
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &vr.meshes["monkey_flat"].vertexBuffer.buffer, &offset);
-
-        // Bind PushConstant for Model
-        glm::mat4 worldFromObject = glm::mat4{ 1.0f };
-        worldFromObject = glm::translate(worldFromObject, { 0, 0, 0.9 });
-        worldFromObject = glm::scale(worldFromObject, { 0.5, 0.5, 0.5 });
-        worldFromObject = glm::rotate(worldFromObject, time * 0.1f, glm::vec3(1, 0, 0));
-        MeshPushConstants::PushConstant2 constants;
-        // constants.data unused so far
-        constants.transform = worldFromObject;
-        vkCmdPushConstants(mainCommandBuffer, pipelines.normalLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
-        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normal);
-        vkCmdDraw(mainCommandBuffer, (uint32_t)vr.meshes["monkey_flat"].vertices.size(), 1, 0, 0);
+        vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normalLayout, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
 
         // Example textured mesh drawing
+        VkDeviceSize offset = 0;
         vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &vr.meshes["cube"].vertexBuffer.buffer, &offset);
+        glm::mat4 worldFromObject = glm::mat4{ 1.0f };
         worldFromObject = glm::mat4{ 1.0f };
-        worldFromObject = glm::translate(worldFromObject, { 1.5, 0, 0.0 });
+        worldFromObject = glm::translate(worldFromObject, { 0.0, 0, 0.0 });
         worldFromObject = glm::scale(worldFromObject, { 0.3, 0.3, 0.3 });
-        worldFromObject = glm::rotate(worldFromObject, time * 2.0f, glm::vec3(0, 0, 1));
+        worldFromObject = glm::rotate(worldFromObject, time, glm::vec3(0, 0, 1));
+        MeshPushConstants::PushConstant2 constants;
         constants.transform = worldFromObject;
         vkCmdPushConstants(mainCommandBuffer, pipelines.texturedLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
         vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.texturedLayout, 1, 1, &descriptorSetTexture, 0, nullptr);
