@@ -228,6 +228,11 @@ static void prepareOffscreen(const VulkanContext& vc) {
         assert(vkCreateFramebuffer(device, &fbufCreateInfo, nullptr, &offscreenPass.frameBuffer) == VK_SUCCESS);
         vc.destroyer->Add(offscreenPass.frameBuffer);
     }
+
+    // Fill a descriptor for later use in a descriptor set
+    offscreenPass.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    offscreenPass.descriptor.imageView = offscreenPass.color.view;
+    offscreenPass.descriptor.sampler = offscreenPass.sampler;
 }
 
 static VkPipelineLayout CreatePipelineLayout(
