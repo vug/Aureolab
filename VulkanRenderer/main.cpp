@@ -9,7 +9,8 @@
 //#include "Examples/Example04.h"
 //#include "Examples/Example05.h"
 //#include "Examples/Example06.h"
-#include "Examples/Example07.h"
+//#include "Examples/Example07.h"
+#include "Examples/Example08.h"
 
 class Timer {
 public:
@@ -46,8 +47,9 @@ int main() {
     //auto ex04 = Ex04DescriptorSets(vc, vr);
     //auto ex05 = Ex05Textures(vc, vr);
     //auto ex06 = Ex06SplitScreen(vc, vr);
-    auto ex07 = Ex07Plain(vc, vr);
-    Example& example = ex07;
+    //auto ex07 = Ex07Plain(vc, vr);
+    auto ex08 = Ex08Offscreen(vc, vr);
+    Example& example = ex08;
 
     Timer timer;
 

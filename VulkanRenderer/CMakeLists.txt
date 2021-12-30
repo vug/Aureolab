@@ -17,7 +17,7 @@ add_executable(VulkanRenderer
  "Texture.h" "Texture.cpp"
  "Types.h" 
  "Examples/Example.h" 
- "Examples/Example01.h" "Examples/Example02.h" "Examples/Example03.h" "Examples/Example04.h" "Examples/Example05.h" "Examples/Example06.h" "Examples/Example07.h")
+ "Examples/Example01.h" "Examples/Example02.h" "Examples/Example03.h" "Examples/Example04.h" "Examples/Example05.h" "Examples/Example06.h" "Examples/Example07.h" "Examples/Example08.h")
 
 target_link_libraries(
 	VulkanRenderer PRIVATE 
