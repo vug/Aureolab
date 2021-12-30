@@ -165,7 +165,7 @@ VkPipeline CreatePipeline(
     //colorBlendingInfo.logicOp = VK_LOGIC_OP_COPY; // Optional
     colorBlendingInfo.attachmentCount = 1;
     colorBlendingInfo.pAttachments = &colorBlendAttachment;
-   
+
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
@@ -207,8 +207,8 @@ VkPipeline CreatePipeline(
     return graphicsPipeline;
 }
 
-// Render right-half via wireframe shader and left half with original shaders.
-class Ex06SplitScreen : public Example {
+// Basic functional scene example with no abstractions for command generation, frames-in-flight handling, or pipeline creation etc.
+class Ex07Plain : public Example {
 public:
     Mesh mesh;
     // Frame sync
@@ -218,12 +218,12 @@ public:
     // CmdBufs
     VkCommandPool commandPool;
     VkCommandBuffer mainCommandBuffer;
-    
+
     // Pipelines
     struct Pipelines {
         VkPipeline screenSquare, normal, textured, wireframe;
         VkPipelineLayout normalLayout, texturedLayout, wireframeLayout;
-    }; 
+    };
     Pipelines pipelines;
 
     // Descriptors
@@ -234,7 +234,7 @@ public:
     // RenderView
     RenderView renderView;
 
-    Ex06SplitScreen(VulkanContext& vc, VulkanRenderer& vr) : Example(vc, vr) {
+    Ex07Plain(VulkanContext& vc, VulkanRenderer& vr) : Example(vc, vr) {
         // Mesh Assets
         {
             mesh.LoadFromOBJ("assets/models/suzanne.obj");
@@ -289,7 +289,7 @@ public:
         VkDescriptorSetLayout singleTextureSetLayout;
         {
             descriptorPool = vc.CreateDescriptorPool(
-                vc.GetDevice(), { 
+                vc.GetDevice(), {
                     // Weirdly, works fine when commented out
                     { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10 },
                     { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 },
@@ -441,8 +441,11 @@ public:
         vkCmdBeginRenderPass(mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         // Commands for presentation pass
+        // Cursor coordinates if needed
+        const auto& [mx, my] = vc.win.GetMouseCursorPosition();
+
         // Example: drawing w/o mesh
-        if (false) {
+        if (true) {
             vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.screenSquare);
             vkCmdDraw(mainCommandBuffer, 6, 1, 0, 0);
         }
@@ -464,7 +467,7 @@ public:
         memcpy(data, &renderView.camera, sizeof(RenderView::Camera));
         vmaUnmapMemory(vc.GetAllocator(), camBuf.allocation);
 
-
+        // Needed only when pipeline has dynamic states for viewport and scissors
         const auto& [width, height] = vc.GetSwapchainInfo().extent;
         VkViewport viewport = { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
         vkCmdSetViewport(mainCommandBuffer, 0, 1, &viewport);
@@ -485,23 +488,8 @@ public:
         // constants.data unused so far
         constants.transform = worldFromObject;
         vkCmdPushConstants(mainCommandBuffer, pipelines.normalLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
-
-        auto drawHalfWithWireframe = [&](VkPipeline pipeline, float ratio = 0.75) {
-            int offsetX = int(width * ratio);
-            scissor = { {0, 0}, {(uint32_t)offsetX, height} };
-            vkCmdSetScissor(mainCommandBuffer, 0, 1, &scissor);
-            vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-            vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
-
-            scissor = { {offsetX, 0}, {width - offsetX, height} };
-            vkCmdSetScissor(mainCommandBuffer, 0, 1, &scissor);
-            vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.wireframe);
-            vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
-        };
-
-        const auto& [mx, my] = vc.win.GetMouseCursorPosition();
-        float ratio = glm::clamp(mx / width, 0.0f, 1.0f);
-        drawHalfWithWireframe(pipelines.normal, ratio);
+        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normal);
+        vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
 
         // Example textured mesh drawing
         vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &mesh.vertexBuffer.buffer, &offset);
@@ -512,9 +500,8 @@ public:
         constants.transform = worldFromObject;
         vkCmdPushConstants(mainCommandBuffer, pipelines.texturedLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
         vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.texturedLayout, 1, 1, &descriptorSetTexture, 0, nullptr);
-
-        drawHalfWithWireframe(pipelines.textured, ratio);
-
+        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.textured);
+        vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
 
         vkCmdEndRenderPass(mainCommandBuffer);
         assert(vkEndCommandBuffer(mainCommandBuffer) == VK_SUCCESS);
