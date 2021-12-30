@@ -471,6 +471,7 @@ public:
     VkDescriptorSet descriptorSetTexture;
 
     // RenderView
+    RenderView renderViewOff;
     RenderView renderView;
 
     Ex08Offscreen(VulkanContext& vc, VulkanRenderer& vr) : Example(vc, vr) {
@@ -485,10 +486,10 @@ public:
             vr.meshes["monkey_flat"] = mesh;
             destroyer.Add(vr.meshes["monkey_flat"].vertexBuffer);
 
-            mesh.LoadFromOBJ("assets/models/cube.obj");
+            mesh.LoadFromOBJ("assets/models/plane.obj");
             vr.UploadMesh(mesh);
-            vr.meshes["cube"] = mesh;
-            destroyer.Add(vr.meshes["cube"].vertexBuffer);
+            vr.meshes["plane"] = mesh;
+            destroyer.Add(vr.meshes["plane"].vertexBuffer);
         }
 
         // Frame Synchronization
@@ -564,7 +565,9 @@ public:
         // RenderView
         {
             renderView.Init(vc.GetDevice(), vc.GetAllocator(), descriptorPool, vc.GetDestroyer());
+            renderViewOff.Init(vc.GetDevice(), vc.GetAllocator(), descriptorPool, vc.GetDestroyer());
             destroyer.Add(renderView.GetCameraBuffer());
+            destroyer.Add(renderViewOff.GetCameraBuffer());
         }
 
         descriptorSetLayouts.insert(descriptorSetLayouts.begin(), renderView.GetDescriptorSetLayouts().begin(), renderView.GetDescriptorSetLayouts().end());
@@ -675,8 +678,24 @@ public:
         assert(vkBeginCommandBuffer(mainCommandBuffer, &cmdBeginInfo) == VK_SUCCESS);
 
 
-        // Example: Update Clear Color
         // OFFSCREEN PASS!
+        // Bind RenderView (Camera) UBO for ViewProjection
+        {
+            glm::vec3 camPos = { 0.0, 0.0, 2.0 };
+            glm::mat4 viewFromWorld = glm::lookAt(camPos, { 0,0,0 }, { 0,1,0 });
+            glm::mat4 projectionFromView = glm::perspective(glm::radians(70.f), (float)vc.GetSwapchainInfo().extent.width / vc.GetSwapchainInfo().extent.height, 0.1f, 200.0f);
+            renderViewOff.camera = { viewFromWorld, projectionFromView };
+            renderViewOff.camera.projection[1][1] *= -1;
+
+            const AllocatedBuffer& camBuf = renderViewOff.GetCameraBuffer();
+            void* data;
+            vmaMapMemory(vc.GetAllocator(), camBuf.allocation, &data);
+            memcpy(data, &renderViewOff.camera, sizeof(RenderView::Camera));
+            vmaUnmapMemory(vc.GetAllocator(), camBuf.allocation);
+
+            vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normalLayout, 0, 1, &renderViewOff.GetDescriptorSet(), 0, nullptr);
+        }
+
         {
             std::vector<VkClearValue> clearValues(2);
             clearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -699,14 +718,12 @@ public:
             vkCmdBeginRenderPass(mainCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
             {
-                vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normalLayout, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
-
                 // Example simple mesh drawing
                 VkDeviceSize offset = 0;
                 vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &vr.meshes["monkey_flat"].vertexBuffer.buffer, &offset);
                 glm::mat4 worldFromObject = glm::mat4{ 1.0f };
                 worldFromObject = glm::scale(worldFromObject, { 0.5, 0.5, 0.5 });
-                worldFromObject = glm::rotate(worldFromObject, time * 0.1f, glm::vec3(1, 0, 0));
+                worldFromObject = glm::rotate(worldFromObject, time * 0.3f, glm::vec3(1, 0, 0));
                 MeshPushConstants::PushConstant2 constants;
                 // constants.data unused so far
                 constants.transform = worldFromObject;
@@ -740,43 +757,53 @@ public:
         // Bind RenderView (Camera) UBO for ViewProjection
         {
             float r = 2.0f;
-            glm::vec3 camPos = { r * sin(time), 0.f, r * cos(time) };
+            float sy = my / vc.GetSwapchainInfo().extent.height;
+            float sx = mx / vc.GetSwapchainInfo().extent.width;
+            float theta = sy * glm::pi<float>();
+            float phi = sx * glm::pi<float>();
+            glm::vec3 xyz = { r * sin(theta) * cos(phi), r * sin(theta) * sin(phi), r * cos(theta) };
+            glm::vec3 camPos = { xyz.x, xyz.z, xyz.y };
+            //Log::Debug("theta {:.3f} phi {:.3f} || x {:.3f} y {:.3f} z {:.3f}", theta, phi, camPos.x, camPos.y, camPos.z);
             glm::mat4 viewFromWorld = glm::lookAt(camPos, { 0,0,0 }, { 0,1,0 });
             glm::mat4 projectionFromView = glm::perspective(glm::radians(70.f), (float)vc.GetSwapchainInfo().extent.width / vc.GetSwapchainInfo().extent.height, 0.1f, 200.0f);
             renderView.camera = { viewFromWorld, projectionFromView };
             renderView.camera.projection[1][1] *= -1;
+
+            const AllocatedBuffer& camBuf = renderView.GetCameraBuffer();
+            void* data;
+            vmaMapMemory(vc.GetAllocator(), camBuf.allocation, &data);
+            memcpy(data, &renderView.camera, sizeof(RenderView::Camera));
+            vmaUnmapMemory(vc.GetAllocator(), camBuf.allocation);
+
+            vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normalLayout, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
         }
-        const AllocatedBuffer& camBuf = renderView.GetCameraBuffer();
-        void* data;
-        vmaMapMemory(vc.GetAllocator(), camBuf.allocation, &data);
-        memcpy(data, &renderView.camera, sizeof(RenderView::Camera));
-        vmaUnmapMemory(vc.GetAllocator(), camBuf.allocation);
 
-        // Needed only when pipeline has dynamic states for viewport and scissors
-        const auto& [width, height] = vc.GetSwapchainInfo().extent;
-        VkViewport viewport = { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
-        vkCmdSetViewport(mainCommandBuffer, 0, 1, &viewport);
-        VkRect2D scissor = { {0, 0}, {width, height} };
-        vkCmdSetScissor(mainCommandBuffer, 0, 1, &scissor);
+        {
+            // Needed only when pipeline has dynamic states for viewport and scissors
+            const auto& [width, height] = vc.GetSwapchainInfo().extent;
+            VkViewport viewport = { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
+            vkCmdSetViewport(mainCommandBuffer, 0, 1, &viewport);
+            VkRect2D scissor = { {0, 0}, {width, height} };
+            vkCmdSetScissor(mainCommandBuffer, 0, 1, &scissor);
 
-        vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normalLayout, 0, 1, &renderView.GetDescriptorSet(), 0, nullptr);
+            // Example textured mesh drawing
+            VkDeviceSize offset = 0;
+            vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &vr.meshes["plane"].vertexBuffer.buffer, &offset);
+            glm::mat4 worldFromObject = glm::mat4{ 1.0f };
+            worldFromObject = glm::mat4{ 1.0f };
+            worldFromObject = glm::translate(worldFromObject, { 0.0, 0, 0.0 });
+            worldFromObject = glm::scale(worldFromObject, { 0.75, 0.75, 0.75 });
+            //worldFromObject = glm::rotate(worldFromObject, glm::pi<float>()/2, glm::vec3(0, 0, 1));
+            MeshPushConstants::PushConstant2 constants;
+            constants.transform = worldFromObject;
+            vkCmdPushConstants(mainCommandBuffer, pipelines.texturedLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
+            vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.texturedLayout, 1, 1, &descriptorSetTexture, 0, nullptr);
+            vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.textured);
+            vkCmdDraw(mainCommandBuffer, (uint32_t)vr.meshes["plane"].vertices.size(), 1, 0, 0);
 
-        // Example textured mesh drawing
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &vr.meshes["cube"].vertexBuffer.buffer, &offset);
-        glm::mat4 worldFromObject = glm::mat4{ 1.0f };
-        worldFromObject = glm::mat4{ 1.0f };
-        worldFromObject = glm::translate(worldFromObject, { 0.0, 0, 0.0 });
-        worldFromObject = glm::scale(worldFromObject, { 0.3, 0.3, 0.3 });
-        worldFromObject = glm::rotate(worldFromObject, time, glm::vec3(0, 0, 1));
-        MeshPushConstants::PushConstant2 constants;
-        constants.transform = worldFromObject;
-        vkCmdPushConstants(mainCommandBuffer, pipelines.texturedLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
-        vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.texturedLayout, 1, 1, &descriptorSetTexture, 0, nullptr);
-        vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.textured);
-        vkCmdDraw(mainCommandBuffer, (uint32_t)vr.meshes["cube"].vertices.size(), 1, 0, 0);
+            vkCmdEndRenderPass(mainCommandBuffer);
+        }
 
-        vkCmdEndRenderPass(mainCommandBuffer);
         assert(vkEndCommandBuffer(mainCommandBuffer) == VK_SUCCESS);
         // --- FILL COMMAND BUFFER
 
