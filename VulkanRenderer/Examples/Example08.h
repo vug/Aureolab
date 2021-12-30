@@ -52,26 +52,28 @@ static void prepareOffscreen(const VulkanContext& vc) {
     offscreenPass.width = 512;
     offscreenPass.height = 512;
     const VkFormat fbColorFormat = VK_FORMAT_R8G8B8A8_UNORM;
+    const VkFormat fbDepthFormat = VK_FORMAT_D24_UNORM_S8_UINT; // VK_FORMAT_D32_SFLOAT won't work because we have stencil info too
     {
+        // 1) PREPARE OFFSCREEN FRAMEBUFFER COLOR AND DEPTH ATTACHMENTS
         // Color attachment
-        VkImageCreateInfo info = {};
-        info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        info.imageType = VK_IMAGE_TYPE_2D;
-        info.format = fbColorFormat;
-        info.extent.width = offscreenPass.width;
-        info.extent.height = offscreenPass.height;
-        info.extent.depth = 1;
-        info.mipLevels = 1;
-        info.arrayLayers = 1;
-        info.samples = VK_SAMPLE_COUNT_1_BIT;
-        info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        VkImageCreateInfo imageInfo = {};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.format = fbColorFormat;
+        imageInfo.extent.width = offscreenPass.width;
+        imageInfo.extent.height = offscreenPass.height;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         // We will sample directly from the color attachment
-        info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
         // manual allocation without vmaCreateImage
         VkMemoryAllocateInfo memAlloc = {};
         memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        assert(vkCreateImage(device, &info, nullptr, &offscreenPass.color.image) == VK_SUCCESS);
+        assert(vkCreateImage(device, &imageInfo, nullptr, &offscreenPass.color.image) == VK_SUCCESS);
         VkMemoryRequirements memReqs;
         vkGetImageMemoryRequirements(device, offscreenPass.color.image, &memReqs);
         memAlloc.allocationSize = memReqs.size;
@@ -94,6 +96,52 @@ static void prepareOffscreen(const VulkanContext& vc) {
         colorImageView.image = offscreenPass.color.image;
         assert(vkCreateImageView(device, &colorImageView, nullptr, &offscreenPass.color.view) == VK_SUCCESS);
         vc.destroyer->Add(offscreenPass.color.view);
+
+        // Create sampler to sample from the attachment in the fragment shader
+        VkSamplerCreateInfo samplerInfo = {};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeV = samplerInfo.addressModeU;
+        samplerInfo.addressModeW = samplerInfo.addressModeU;
+        samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.maxAnisotropy = 1.0f;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = 1.0f;
+        samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+        assert(vkCreateSampler(device, &samplerInfo, nullptr, &offscreenPass.sampler) == VK_SUCCESS);
+        vc.destroyer->Add(offscreenPass.sampler);
+
+        // Depth stencil attachment
+        // reuse color format CreateInfo
+        imageInfo.format = fbDepthFormat;
+        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        assert(vkCreateImage(device, &imageInfo, nullptr, &offscreenPass.depth.image) == VK_SUCCESS);
+        vkGetImageMemoryRequirements(device, offscreenPass.depth.image, &memReqs);
+        memAlloc.allocationSize = memReqs.size;
+        memAlloc.memoryTypeIndex = GetMemoryType(vc.physicalDevice.memoryProperties, memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        assert(vkAllocateMemory(device, &memAlloc, nullptr, &offscreenPass.depth.mem) == VK_SUCCESS);
+        assert(vkBindImageMemory(device, offscreenPass.depth.image, offscreenPass.depth.mem, 0) == VK_SUCCESS);
+        vc.destroyer->Add(offscreenPass.depth.image);
+        vc.destroyer->Add(offscreenPass.depth.mem);
+
+        VkImageViewCreateInfo depthStencilView = {};
+        depthStencilView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        depthStencilView.format = fbDepthFormat;
+        depthStencilView.flags = 0;
+        depthStencilView.subresourceRange = {};
+        depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        depthStencilView.subresourceRange.baseMipLevel = 0;
+        depthStencilView.subresourceRange.levelCount = 1;
+        depthStencilView.subresourceRange.baseArrayLayer = 0;
+        depthStencilView.subresourceRange.layerCount = 1;
+        depthStencilView.image = offscreenPass.depth.image;
+        assert(vkCreateImageView(device, &depthStencilView, nullptr, &offscreenPass.depth.view) == VK_SUCCESS);
+        vc.destroyer->Add(offscreenPass.depth.view);
+    }
     }
 }
 
