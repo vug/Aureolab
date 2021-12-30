@@ -210,7 +210,6 @@ VkPipeline CreatePipeline(
 // Basic functional scene example with no abstractions for command generation, frames-in-flight handling, or pipeline creation etc.
 class Ex08Offscreen : public Example {
 public:
-    Mesh mesh;
     // Frame sync
     VkSemaphore presentSemaphore, renderSemaphore;
     VkFence renderFence;
@@ -237,10 +236,16 @@ public:
     Ex08Offscreen(VulkanContext& vc, VulkanRenderer& vr) : Example(vc, vr) {
         // Mesh Assets
         {
+            Mesh mesh;
             mesh.LoadFromOBJ("assets/models/suzanne.obj");
             vr.UploadMesh(mesh);
             vr.meshes["monkey_flat"] = mesh;
             destroyer.Add(vr.meshes["monkey_flat"].vertexBuffer);
+
+            mesh.LoadFromOBJ("assets/models/cube.obj");
+            vr.UploadMesh(mesh);
+            vr.meshes["cube"] = mesh;
+            destroyer.Add(vr.meshes["cube"].vertexBuffer);
         }
 
         // Frame Synchronization
@@ -424,10 +429,8 @@ public:
         // Commands for early passes
 
         // Example: Update Clear Color
-        float val = cos(time) * 0.5f + 0.5f;
-        val *= 0.05f;
         std::vector<VkClearValue> clearValues(2);
-        clearValues[0].color = { val, 0.05f - val, 0.0f, 1.0f };
+        clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
         clearValues[1].depthStencil.depth = 1.0f;
 
         VkRenderPassBeginInfo rpInfo = {};
@@ -443,12 +446,6 @@ public:
         // Commands for presentation pass
         // Cursor coordinates if needed
         const auto& [mx, my] = vc.win.GetMouseCursorPosition();
-
-        // Example: drawing w/o mesh
-        if (true) {
-            vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.screenSquare);
-            vkCmdDraw(mainCommandBuffer, 6, 1, 0, 0);
-        }
 
         // Bind RenderView (Camera) UBO for ViewProjection
         {
@@ -477,7 +474,7 @@ public:
         // Example simple mesh drawing
         // Bind Mesh
         VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &mesh.vertexBuffer.buffer, &offset);
+        vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &vr.meshes["monkey_flat"].vertexBuffer.buffer, &offset);
 
         // Bind PushConstant for Model
         glm::mat4 worldFromObject = glm::mat4{ 1.0f };
@@ -489,10 +486,10 @@ public:
         constants.transform = worldFromObject;
         vkCmdPushConstants(mainCommandBuffer, pipelines.normalLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
         vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.normal);
-        vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
+        vkCmdDraw(mainCommandBuffer, (uint32_t)vr.meshes["monkey_flat"].vertices.size(), 1, 0, 0);
 
         // Example textured mesh drawing
-        vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &mesh.vertexBuffer.buffer, &offset);
+        vkCmdBindVertexBuffers(mainCommandBuffer, 0, 1, &vr.meshes["cube"].vertexBuffer.buffer, &offset);
         worldFromObject = glm::mat4{ 1.0f };
         worldFromObject = glm::translate(worldFromObject, { 1.5, 0, 0.0 });
         worldFromObject = glm::scale(worldFromObject, { 0.3, 0.3, 0.3 });
@@ -501,7 +498,7 @@ public:
         vkCmdPushConstants(mainCommandBuffer, pipelines.texturedLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants::PushConstant2), &constants);
         vkCmdBindDescriptorSets(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.texturedLayout, 1, 1, &descriptorSetTexture, 0, nullptr);
         vkCmdBindPipeline(mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.textured);
-        vkCmdDraw(mainCommandBuffer, (uint32_t)mesh.vertices.size(), 1, 0, 0);
+        vkCmdDraw(mainCommandBuffer, (uint32_t)vr.meshes["cube"].vertices.size(), 1, 0, 0);
 
         vkCmdEndRenderPass(mainCommandBuffer);
         assert(vkEndCommandBuffer(mainCommandBuffer) == VK_SUCCESS);
