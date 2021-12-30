@@ -209,6 +209,25 @@ static void prepareOffscreen(const VulkanContext& vc) {
         assert(vkCreateRenderPass(device, &renderPassInfo, nullptr, &offscreenPass.renderPass) == VK_SUCCESS);
         vc.destroyer->Add(offscreenPass.renderPass);
     }
+
+    // 3) PREPARE OFFSCREEN FRAMEBUFFER
+    {
+        VkImageView attachments[2];
+        attachments[0] = offscreenPass.color.view;
+        attachments[1] = offscreenPass.depth.view;
+
+        VkFramebufferCreateInfo fbufCreateInfo = {};
+        fbufCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        fbufCreateInfo.renderPass = offscreenPass.renderPass;
+        fbufCreateInfo.attachmentCount = 2;
+        fbufCreateInfo.pAttachments = attachments;
+        fbufCreateInfo.width = offscreenPass.width;
+        fbufCreateInfo.height = offscreenPass.height;
+        fbufCreateInfo.layers = 1;
+
+        assert(vkCreateFramebuffer(device, &fbufCreateInfo, nullptr, &offscreenPass.frameBuffer) == VK_SUCCESS);
+        vc.destroyer->Add(offscreenPass.frameBuffer);
+    }
 }
 
 static VkPipelineLayout CreatePipelineLayout(
